@@ -6,5 +6,6 @@ import (
 )
 
 func main() {
-	log.Fatalln(http.ListenAndServe(":80", http.FileServer(http.Dir("public"))))
+	log.Println("Starting web server on :8443")
+	log.Fatalln(http.ListenAndServe(":8443", http.FileServer(http.Dir("public"))))
 }
