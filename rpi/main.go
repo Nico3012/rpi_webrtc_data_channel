@@ -369,7 +369,7 @@ func (s *Server) sendPeriodicMessages() {
 				if randomMsg == "Random number: %d" {
 					randomMsg = fmt.Sprintf(randomMsg, rand.Intn(1000))
 				}
-				
+
 				fmt.Printf("Sending periodic message: %s\n", randomMsg)
 				if err := s.dataChannel.SendText(randomMsg); err != nil {
 					fmt.Printf("Error sending message: %v\n", err)
