@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -48,6 +49,39 @@ func (s *Server) setupWebRTC() {
 }
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
+	// Parse URL parameters
+	offerParam := r.URL.Query().Get("offer")
+
+	var offerSDP string
+	var hasOffer bool
+	var answerSDP string
+	var errorMessage string
+
+	if offerParam != "" {
+		// Decode the base64 encoded offer
+		decodedBytes, err := base64.StdEncoding.DecodeString(offerParam)
+		if err != nil {
+			errorMessage = "Failed to decode offer parameter: " + err.Error()
+		} else {
+			// Parse the JSON offer
+			var offerRequest SDPRequest
+			if err := json.Unmarshal(decodedBytes, &offerRequest); err != nil {
+				errorMessage = "Failed to parse offer JSON: " + err.Error()
+			} else {
+				offerSDP = offerRequest.SDP
+				hasOffer = true
+
+				// Automatically process the offer
+				answer, err := s.processOffer(offerRequest.Type, offerRequest.SDP)
+				if err != nil {
+					errorMessage = "Failed to process offer: " + err.Error()
+				} else {
+					answerSDP = answer
+				}
+			}
+		}
+	}
+
 	tmpl := `
 <!DOCTYPE html>
 <html lang="en">
@@ -74,14 +108,27 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
             text-align: center;
             margin-bottom: 30px;
         }
-        .form-group {
+        .status {
+            padding: 15px;
+            border-radius: 5px;
             margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
+            text-align: center;
             font-weight: bold;
-            color: #555;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .waiting {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
         }
         textarea {
             width: 100%;
@@ -92,10 +139,7 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
             font-family: monospace;
             font-size: 14px;
             resize: vertical;
-        }
-        textarea:focus {
-            border-color: #007bff;
-            outline: none;
+            margin: 10px 0;
         }
         button {
             background-color: #007bff;
@@ -105,120 +149,90 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
-            margin-top: 10px;
+            margin: 10px 5px 10px 0;
         }
         button:hover {
             background-color: #0056b3;
         }
-        button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-        .result {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 5px;
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-            display: none;
-        }
-        .error {
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-        }
         .copy-btn {
             background-color: #28a745;
-            margin-left: 10px;
-            padding: 8px 16px;
-            font-size: 14px;
         }
         .copy-btn:hover {
             background-color: #218838;
         }
-        .instructions {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-            padding: 15px;
-            border-radius: 5px;
+        .close-btn {
+            background-color: #dc3545;
+        }
+        .close-btn:hover {
+            background-color: #c82333;
+        }
+        .form-group {
             margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🥧 RPI WebRTC Server</h1>
-          <div class="instructions">
-            <strong>Instructions:</strong><br>
-            1. Paste the complete SDP offer JSON from the web client below<br>
-            2. Click "Generate Answer" to create the SDP answer JSON<br>
-            3. Copy the generated answer JSON back to the web client<br>
-            4. Close this tab after copying the answer
+        
+        {{if .ErrorMessage}}
+        <div class="status error">
+            <strong>Error:</strong> {{.ErrorMessage}}
+        </div>
+        {{else if .AnswerSDP}}
+        <div class="status success">
+            ✅ SDP Answer Generated Successfully!
         </div>
         
-        <form id="sdpForm">
-            <div class="form-group">
-                <label for="offer">SDP Offer JSON from Web Client:</label>
-                <textarea id="offer" name="offer" placeholder="Paste the complete SDP offer JSON here..." required></textarea>
-            </div>
-            <button type="submit">Generate Answer</button>
-        </form>
-        
-        <div id="result" class="result">
-            <label for="answer">SDP Answer JSON (copy this back to web client):</label>
-            <textarea id="answer" readonly></textarea>
-            <button type="button" class="copy-btn" onclick="copyAnswer()">Copy Answer</button>
+        <div class="form-group">
+            <label>Generated SDP Answer:</label>
+            <textarea id="answer" readonly>{{.AnswerJSON}}</textarea>
+            <button class="copy-btn" onclick="copyAndSendAnswer()">Copy & Send Answer to Web Client</button>
+            <button class="close-btn" onclick="window.close()">Close Window</button>
         </div>
+        {{else if .HasOffer}}
+        <div class="status waiting">
+            Processing SDP offer...
+        </div>
+        {{else}}
+        <div class="status waiting">
+            Waiting for SDP offer via URL parameter...
+        </div>
+        <p>This page should be opened automatically with the SDP offer from the web client.</p>
+        {{end}}
     </div>
 
     <script>
-        document.getElementById('sdpForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const offer = document.getElementById('offer').value;
-            const resultDiv = document.getElementById('result');
-            const answerTextarea = document.getElementById('answer');
-            
-            if (!offer.trim()) {
-                alert('Please paste the SDP offer');
-                return;
-            }
-              try {
-                const response = await fetch('/offer', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: offer
-                });
-                
-                const data = await response.json();
-                
-                if (data.error) {
-                    resultDiv.className = 'result error';
-                    answerTextarea.value = 'Error: ' + data.error;
-                } else {
-                    resultDiv.className = 'result';
-                    // Format the JSON response nicely
-                    const formattedAnswer = JSON.stringify({
-                        type: data.type,
-                        sdp: data.sdp
-                    }, null, 2);
-                    answerTextarea.value = formattedAnswer;
-                }
-                
-                resultDiv.style.display = 'block';
-                
-            } catch (error) {
-                resultDiv.className = 'result error';
-                answerTextarea.value = 'Error: ' + error.message;
-                resultDiv.style.display = 'block';
-            }
-        });
+        {{if .AnswerSDP}}
+        // Automatically send the answer back to the parent window
+        const answerData = {
+            type: "sdp_answer",
+            answer: {{.AnswerJS}}
+        };
         
-        function copyAnswer() {
+        // Try to send to parent window
+        if (window.opener) {
+            try {
+                window.opener.postMessage(answerData, '*');
+                console.log('Answer sent to parent window');
+                
+                // Auto-close after a short delay
+                setTimeout(() => {
+                    window.close();
+                }, 2000);
+            } catch (error) {
+                console.error('Failed to send answer to parent:', error);
+            }
+        }
+        {{end}}
+        
+        function copyAndSendAnswer() {
             const answerTextarea = document.getElementById('answer');
             answerTextarea.select();
             document.execCommand('copy');
@@ -228,30 +242,59 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
             btn.textContent = 'Copied!';
             btn.style.backgroundColor = '#218838';
             
+            // Send answer to parent if available
+            {{if .AnswerSDP}}
+            if (window.opener) {
+                try {
+                    const answerData = {
+                        type: "sdp_answer",
+                        answer: {{.AnswerJS}}
+                    };
+                    window.opener.postMessage(answerData, '*');
+                } catch (error) {
+                    console.error('Failed to send answer to parent:', error);
+                }
+            }
+            {{end}}
+            
             setTimeout(() => {
                 btn.textContent = originalText;
                 btn.style.backgroundColor = '#28a745';
             }, 2000);
         }
-          // Auto-paste from clipboard if available
-        window.addEventListener('load', async function() {
-            try {
-                const clipboardText = await navigator.clipboard.readText();
-                if (clipboardText && clipboardText.includes('"type"') && clipboardText.includes('"sdp"')) {
-                    document.getElementById('offer').value = clipboardText;
-                }
-            } catch (err) {
-                // Clipboard access not available or denied
-                console.log('Clipboard access not available');
-            }
-        });
     </script>
 </body>
 </html>
 	`
+
+	// Prepare template data
+	data := struct {
+		HasOffer     bool
+		OfferSDP     string
+		AnswerSDP    string
+		AnswerJSON   string
+		AnswerJS     template.JS
+		ErrorMessage string
+	}{
+		HasOffer:     hasOffer,
+		OfferSDP:     offerSDP,
+		AnswerSDP:    answerSDP,
+		ErrorMessage: errorMessage,
+	}
+
+	// If we have an answer, format it for display
+	if answerSDP != "" {
+		answerResponse := SDPResponse{Type: "answer", SDP: answerSDP}
+		answerJSONBytes, _ := json.MarshalIndent(answerResponse, "", "  ")
+		data.AnswerJSON = string(answerJSONBytes)
+
+		// For JavaScript embedding
+		answerJSBytes, _ := json.Marshal(answerResponse)
+		data.AnswerJS = template.JS(string(answerJSBytes))
+	}
 	w.Header().Set("Content-Type", "text/html")
 	tmplParsed := template.Must(template.New("index").Parse(tmpl))
-	tmplParsed.Execute(w, nil)
+	tmplParsed.Execute(w, data)
 }
 
 func (s *Server) handleOffer(w http.ResponseWriter, r *http.Request) {
