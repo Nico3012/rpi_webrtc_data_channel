@@ -17,6 +17,7 @@ type Server struct {
 	dataChannel    *webrtc.DataChannel
 	api            *webrtc.API
 	mutex          sync.Mutex
+	stopChan       chan bool
 }
 
 type SDPRequest struct {
@@ -36,7 +37,7 @@ func main() {
 
 	// Serve static files from public directory
 	http.Handle("/", http.FileServer(http.Dir("public")))
-	
+
 	// API routes
 	http.HandleFunc("/api/offer", server.handleOffer)
 
@@ -51,6 +52,12 @@ func (s *Server) setupWebRTC() {
 }
 
 func (s *Server) closeExistingConnections() {
+	// Stop any existing periodic message sending
+	if s.stopChan != nil {
+		close(s.stopChan)
+		s.stopChan = nil
+	}
+
 	// Close existing data channel
 	if s.dataChannel != nil {
 		fmt.Println("Closing existing data channel")
@@ -59,7 +66,7 @@ func (s *Server) closeExistingConnections() {
 		}
 		s.dataChannel = nil
 	}
-	
+
 	// Close existing peer connection
 	if s.peerConnection != nil {
 		fmt.Println("Closing existing peer connection")
@@ -75,11 +82,11 @@ func (s *Server) handleOffer(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	
+
 	if r.Method == "OPTIONS" {
 		return
 	}
-	
+
 	if r.Method != "POST" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -107,14 +114,14 @@ func (s *Server) processOffer(offerType, offerSDP string) (string, error) {
 	if offerType != "offer" {
 		return "", fmt.Errorf("expected offer type 'offer', got '%s'", offerType)
 	}
-	
+
 	// Lock to ensure only one connection at a time
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	
+
 	// Close any existing connections
 	s.closeExistingConnections()
-	
+
 	// Create a new peer connection
 	config := webrtc.Configuration{
 		ICEServers: []webrtc.ICEServer{
@@ -138,9 +145,10 @@ func (s *Server) processOffer(offerType, offerSDP string) (string, error) {
 		dc.OnMessage(func(msg webrtc.DataChannelMessage) {
 			fmt.Printf("Received message from web client: %s\n", string(msg.Data))
 		})
-
 		dc.OnOpen(func() {
 			fmt.Println("Data channel opened - new connection established")
+			// Create a new stop channel for this connection
+			s.stopChan = make(chan bool)
 			// Start sending periodic messages
 			go s.sendPeriodicMessages()
 		})
@@ -195,6 +203,9 @@ func (s *Server) sendPeriodicMessages() {
 
 	for {
 		select {
+		case <-s.stopChan:
+			fmt.Println("Stopping periodic messages")
+			return
 		case <-ticker.C:
 			if s.dataChannel != nil && s.dataChannel.ReadyState() == webrtc.DataChannelStateOpen {
 				randomMsg := messages[rand.Intn(len(messages))]
