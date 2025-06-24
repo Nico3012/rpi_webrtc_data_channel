@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/pion/webrtc/v4"
@@ -15,6 +16,7 @@ type Server struct {
 	peerConnection *webrtc.PeerConnection
 	dataChannel    *webrtc.DataChannel
 	api            *webrtc.API
+	mutex          sync.Mutex
 }
 
 type SDPRequest struct {
@@ -46,6 +48,26 @@ func (s *Server) setupWebRTC() {
 	// Create a new API with a SettingEngine
 	settingEngine := webrtc.SettingEngine{}
 	s.api = webrtc.NewAPI(webrtc.WithSettingEngine(settingEngine))
+}
+
+func (s *Server) closeExistingConnections() {
+	// Close existing data channel
+	if s.dataChannel != nil {
+		fmt.Println("Closing existing data channel")
+		if err := s.dataChannel.Close(); err != nil {
+			fmt.Printf("Error closing data channel: %v\n", err)
+		}
+		s.dataChannel = nil
+	}
+	
+	// Close existing peer connection
+	if s.peerConnection != nil {
+		fmt.Println("Closing existing peer connection")
+		if err := s.peerConnection.Close(); err != nil {
+			fmt.Printf("Error closing peer connection: %v\n", err)
+		}
+		s.peerConnection = nil
+	}
 }
 
 func (s *Server) handleOffer(w http.ResponseWriter, r *http.Request) {
@@ -85,6 +107,14 @@ func (s *Server) processOffer(offerType, offerSDP string) (string, error) {
 	if offerType != "offer" {
 		return "", fmt.Errorf("expected offer type 'offer', got '%s'", offerType)
 	}
+	
+	// Lock to ensure only one connection at a time
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	
+	// Close any existing connections
+	s.closeExistingConnections()
+	
 	// Create a new peer connection
 	config := webrtc.Configuration{
 		ICEServers: []webrtc.ICEServer{
@@ -99,7 +129,6 @@ func (s *Server) processOffer(offerType, offerSDP string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to create peer connection: %v", err)
 	}
-
 	// Set up data channel event handler
 	s.peerConnection.OnDataChannel(func(dc *webrtc.DataChannel) {
 		fmt.Printf("New DataChannel %s %d\n", dc.Label(), dc.ID())
@@ -111,13 +140,13 @@ func (s *Server) processOffer(offerType, offerSDP string) (string, error) {
 		})
 
 		dc.OnOpen(func() {
-			fmt.Println("Data channel opened")
+			fmt.Println("Data channel opened - new connection established")
 			// Start sending periodic messages
 			go s.sendPeriodicMessages()
 		})
 
 		dc.OnClose(func() {
-			fmt.Println("Data channel closed")
+			fmt.Println("Data channel closed - connection terminated")
 		})
 	})
 

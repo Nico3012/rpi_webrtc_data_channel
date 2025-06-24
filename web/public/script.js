@@ -22,7 +22,8 @@ class WebRTCClient {
         this.connectBtn = document.getElementById('connectBtn');
         this.urlInfo = document.getElementById('urlInfo');
         this.urlLength = document.getElementById('urlLength');
-    }bindEvents() {
+        this.closeConnectionBtn = document.getElementById('closeConnection');
+    }    bindEvents() {
         this.sendMessageBtn.addEventListener('click', () => this.sendMessage());
         this.messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.sendMessage();
@@ -33,6 +34,7 @@ class WebRTCClient {
         });
         this.rpiAddressInput.addEventListener('blur', () => this.validateIP());
         this.connectBtn.addEventListener('click', () => this.setAnswer());
+        this.closeConnectionBtn.addEventListener('click', () => this.closeConnection());
     }
     
     loadSavedIP() {
@@ -200,17 +202,18 @@ class WebRTCClient {
         }
     }
     
-    setupDataChannel() {
-        this.dataChannel.onopen = () => {
+    setupDataChannel() {        this.dataChannel.onopen = () => {
             console.log('Data channel opened');
             this.updateStatus('Connected!', true);
             this.enableMessaging(true);
+            this.closeConnectionBtn.style.display = 'inline-block';
         };
         
         this.dataChannel.onclose = () => {
             console.log('Data channel closed');
             this.updateStatus('Connection closed');
             this.enableMessaging(false);
+            this.closeConnectionBtn.style.display = 'none';
         };
         
         this.dataChannel.onmessage = (event) => {
@@ -299,10 +302,30 @@ class WebRTCClient {
         this.status.textContent = message;
         this.status.className = isConnected ? 'status connected' : 'status';
     }
-    
-    enableMessaging(enabled) {
+      enableMessaging(enabled) {
         this.messageInput.disabled = !enabled;
         this.sendMessageBtn.disabled = !enabled;
+    }
+    
+    closeConnection() {
+        if (this.dataChannel) {
+            this.dataChannel.close();
+            this.dataChannel = null;
+        }
+        
+        if (this.peerConnection) {
+            this.peerConnection.close();
+            this.peerConnection = null;
+        }
+        
+        this.updateStatus('Connection closed manually');
+        this.enableMessaging(false);
+        this.closeConnectionBtn.style.display = 'none';
+        
+        // Clear the answer textarea for next connection
+        this.answerSdp.value = '';
+        
+        console.log('Connection closed manually');
     }
 }
 
