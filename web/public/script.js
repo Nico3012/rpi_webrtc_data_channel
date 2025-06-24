@@ -7,24 +7,30 @@ class WebRTCClient {
         this.initializeElements();
         this.bindEvents();
         this.loadSavedIP();
-    }
-      initializeElements() {
-        this.generateOfferBtn = document.getElementById('generateOffer');
+        
+        // Generate offer automatically when page loads
+        this.generateOfferAutomatically();
+    }      initializeElements() {
         this.sendMessageBtn = document.getElementById('sendMessage');
         this.messageInput = document.getElementById('messageInput');
-        this.offerSdp = document.getElementById('offerSdp');
         this.answerSdp = document.getElementById('answerSdp');
         this.status = document.getElementById('status');
         this.messages = document.getElementById('messages');
         this.rpiAddressInput = document.getElementById('rpiAddress');
-    }      bindEvents() {
-        this.generateOfferBtn.addEventListener('click', () => this.generateOffer());
+        this.openRpiBtn = document.getElementById('openRpiBtn');
+        this.rpiLink = document.getElementById('rpiLink');
+        this.connectBtn = document.getElementById('connectBtn');
+    }bindEvents() {
         this.sendMessageBtn.addEventListener('click', () => this.sendMessage());
         this.messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.sendMessage();
         });
-        this.rpiAddressInput.addEventListener('input', () => this.saveIP());
+        this.rpiAddressInput.addEventListener('input', () => {
+            this.saveIP();
+            this.generateOfferAutomatically();
+        });
         this.rpiAddressInput.addEventListener('blur', () => this.validateIP());
+        this.connectBtn.addEventListener('click', () => this.setAnswer());
     }
     
     loadSavedIP() {
@@ -66,14 +72,13 @@ class WebRTCClient {
             this.updateStatus('Please enter the Raspberry Pi IP address');
         }
         return true;
-    }
-      getRpiServerUrl() {
+    }    getRpiServerUrl() {
         const ip = this.rpiAddressInput.value.trim();
         if (!ip) {
-            throw new Error('Please enter the Raspberry Pi IP address');
+            return null; // Return null instead of throwing an error
         }
         if (!this.validateIP()) {
-            throw new Error('Please enter a valid IP address');
+            return null; // Return null instead of throwing an error
         }
         return `http://${ip}:${CONFIG.RPI_SERVER_PORT}`;
     }
@@ -98,22 +103,16 @@ class WebRTCClient {
             }
             // In no-cors mode, we can't read the response, but if we get here without timeout, server is likely reachable
             return true;
-        }
-    }    async generateOffer() {
+        }    }    async generateOfferAutomatically() {
         try {
-            // Disable button during process
-            this.generateOfferBtn.disabled = true;
-            this.generateOfferBtn.textContent = 'Processing...';
-            
-            // Validate IP address first
+            // Check if IP address is valid first
             this.rpiServerUrl = this.getRpiServerUrl();
+            if (!this.rpiServerUrl) {
+                this.updateStatus('Please enter a valid Raspberry Pi IP address');
+                return;
+            }
             
-            this.updateStatus('Testing connection to RPI server...');
-            
-            // Test if RPI server is reachable
-            await this.testRpiConnection(this.rpiServerUrl);
-            
-            this.updateStatus('RPI server reachable! Generating offer...');
+            this.updateStatus('Generating SDP offer automatically...');
             
             // Create peer connection
             this.peerConnection = new RTCPeerConnection({
@@ -131,97 +130,39 @@ class WebRTCClient {
             // Create offer
             const offer = await this.peerConnection.createOffer();
             await this.peerConnection.setLocalDescription(offer);
-              // Wait for ICE gathering to complete
+                // Wait for ICE gathering to complete
             await this.waitForIceGathering();
             
             // Get the complete SessionDescription object
             const offerSessionDescription = this.peerConnection.localDescription;
+            
+            // Encode offer as base64 for URL
             const offerJson = JSON.stringify(offerSessionDescription);
-            this.offerSdp.value = JSON.stringify(offerSessionDescription, null, 2);
+            const encodedOffer = btoa(offerJson);
             
-            this.updateStatus('Offer generated! Opening RPI server...');
+            // Create URL with offer parameter
+            const rpiUrlWithOffer = `${this.rpiServerUrl}?offer=${encodeURIComponent(encodedOffer)}`;
             
-            // Encode offer as URL parameter
-            const encodedOffer = encodeURIComponent(btoa(offerJson));
-            const rpiUrlWithOffer = `${this.rpiServerUrl}?offer=${encodedOffer}`;
+            // Update the RPI link
+            this.rpiLink.href = rpiUrlWithOffer;
+            this.rpiLink.textContent = 'Open RPI Server (with offer)';
+            this.rpiLink.style.display = 'block';
             
-            // Open RPI server with encoded offer
-            const rpiWindow = window.open(rpiUrlWithOffer, '_blank');
-            
-            // Wait for the answer via message from RPI window
-            this.waitForAnswer(rpiWindow);
+            this.updateStatus('Offer generated! Click the link below to open the RPI server');
             
         } catch (error) {
             console.error('Error generating offer:', error);
             this.updateStatus('Error generating offer: ' + error.message);
-        } finally {
-            // Re-enable button
-            this.generateOfferBtn.disabled = false;
-            this.generateOfferBtn.textContent = 'Generate SDP Offer & Connect';
         }
-    }    waitForAnswer(rpiWindow) {
-        this.updateStatus('Waiting for RPI to generate answer...');
-        
-        // Listen for messages from the RPI window
-        const messageHandler = async (event) => {
-            // Check if message is from our RPI server
-            const rpiOrigin = new URL(this.rpiServerUrl).origin;
-            if (event.origin !== rpiOrigin) {
-                return;
-            }
-            
-            if (event.data && event.data.type === 'sdp_answer') {
-                try {
-                    await this.processAnswer(event.data.answer);
-                    window.removeEventListener('message', messageHandler);
-                    rpiWindow.close();
-                } catch (error) {
-                    console.error('Error processing answer:', error);
-                    this.updateStatus('Error processing answer: ' + error.message);
-                }
-            }
-        };
-        
-        window.addEventListener('message', messageHandler);
-        
-        // Fallback: if window is closed without answer, clean up
-        const checkClosed = setInterval(() => {
-            if (rpiWindow.closed) {
-                clearInterval(checkClosed);
-                window.removeEventListener('message', messageHandler);
-                this.updateStatus('RPI window closed. Please try again if connection didn\'t establish.');
-            }
-        }, 1000);
-    }
-
-    async processAnswer(answerSessionDescription) {
-        try {
-            this.updateStatus('Processing answer from RPI...');
-            
-            // Validate the answer object
-            if (!answerSessionDescription.type || !answerSessionDescription.sdp) {
-                throw new Error('Answer must contain both "type" and "sdp" properties');
-            }
-            
-            this.answerSdp.value = JSON.stringify(answerSessionDescription, null, 2);
-            
-            const answer = new RTCSessionDescription(answerSessionDescription);
-            await this.peerConnection.setRemoteDescription(answer);
-            
-            this.updateStatus('Answer processed successfully! Waiting for connection...');
-            
-        } catch (error) {
-            throw new Error('Error processing answer: ' + error.message);
-        }
-    }
-
-    async setAnswer() {
+    }async setAnswer() {
         try {
             const answerJson = this.answerSdp.value.trim();
             if (!answerJson) {
-                alert('No SDP answer available. Please generate an offer first.');
+                alert('Please paste the SDP answer from the RPI server first.');
                 return;
             }
+            
+            this.updateStatus('Processing answer from RPI...');
             
             // Parse the JSON answer
             let answerSessionDescription;
@@ -231,7 +172,19 @@ class WebRTCClient {
                 throw new Error('Invalid JSON format for answer.');
             }
             
-            await this.processAnswer(answerSessionDescription);
+            // Validate the answer object
+            if (!answerSessionDescription.type || !answerSessionDescription.sdp) {
+                throw new Error('Answer must contain both "type" and "sdp" properties');
+            }
+            
+            if (answerSessionDescription.type !== 'answer') {
+                throw new Error('Expected answer type "answer", got "' + answerSessionDescription.type + '"');
+            }
+            
+            const answer = new RTCSessionDescription(answerSessionDescription);
+            await this.peerConnection.setRemoteDescription(answer);
+            
+            this.updateStatus('Answer processed successfully! Waiting for connection...');
             
         } catch (error) {
             console.error('Error setting answer:', error);

@@ -205,6 +205,16 @@ textarea:focus {
     border-color: #667eea;
 }
 
+/* Anchor styling for RPI link */
+a {
+    text-decoration: none;
+    display: inline-block;
+}
+
+a button {
+    margin: 0; /* Remove margin when inside anchor */
+}
+
 @media (max-width: 600px) {
     .container {
         margin: 10px;
