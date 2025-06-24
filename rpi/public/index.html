@@ -107,25 +107,32 @@
         #answerDisplay {
             background-color: #f8f9fa;
             border: 2px solid #28a745;
-        }
-        .hidden {
+        }        .hidden {
             display: none;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
-<body>
-    <div class="container">
+<body>    <div class="container">
         <h1>🥧 RPI WebRTC Server</h1>
         
-        <div id="waitingSection">
-            <div class="status info">
-                Paste the SDP offer from the web client below and click "Generate Answer"
-            </div>
-            
-            <div class="form-group">
-                <label for="offerInput">SDP Offer from Web Client:</label>
-                <textarea id="offerInput" placeholder="Paste the SDP offer JSON here..."></textarea>
-                <button id="generateAnswerBtn" onclick="generateAnswer()">Generate Answer</button>
+        <div id="loadingSection">
+            <div class="status waiting">
+                <div class="spinner"></div>
+                Processing SDP offer from web client...
             </div>
         </div>
         
@@ -146,13 +153,12 @@
                 <span id="errorMessage"></span>
             </div>
         </div>
-    </div>    <script>
+    </div><script>
         async function processOfferFromUrl() {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
                 const offerParam = urlParams.get('offer');
-                
-                if (!offerParam) {
+                  if (!offerParam) {
                     showError('No offer found in URL parameters. Please access this page via the web client.');
                     return;
                 }
@@ -187,17 +193,14 @@
                 if (!response.ok || result.error) {
                     throw new Error(result.error || 'Failed to generate answer');
                 }
-                
-                // Display the answer
+                  // Display the answer
                 document.getElementById('answerDisplay').value = JSON.stringify(result, null, 2);
-                document.getElementById('waitingSection').classList.add('hidden');
+                document.getElementById('loadingSection').classList.add('hidden');
                 document.getElementById('answerSection').classList.remove('hidden');
                 document.getElementById('errorSection').classList.add('hidden');
-                
-            } catch (error) {
+                  } catch (error) {
                 console.error('Error processing offer:', error);
                 showError('Error processing offer: ' + error.message);
-                document.getElementById('waitingSection').classList.add('hidden');
             }
         }
         
@@ -223,12 +226,11 @@
                 alert('Failed to copy to clipboard. Please select and copy manually.');
             }
         }
-        
-        function showError(message) {
+          function showError(message) {
             document.getElementById('errorMessage').textContent = message;
             document.getElementById('errorSection').classList.remove('hidden');
             document.getElementById('answerSection').classList.add('hidden');
-            document.getElementById('waitingSection').classList.add('hidden');
+            document.getElementById('loadingSection').classList.add('hidden');
         }
         
         // Process offer from URL when page loads

@@ -10,7 +10,7 @@ class WebRTCClient {
         
         // Generate offer automatically when page loads
         this.generateOfferAutomatically();
-    }      initializeElements() {
+    }    initializeElements() {
         this.sendMessageBtn = document.getElementById('sendMessage');
         this.messageInput = document.getElementById('messageInput');
         this.answerSdp = document.getElementById('answerSdp');
@@ -20,6 +20,8 @@ class WebRTCClient {
         this.openRpiBtn = document.getElementById('openRpiBtn');
         this.rpiLink = document.getElementById('rpiLink');
         this.connectBtn = document.getElementById('connectBtn');
+        this.urlInfo = document.getElementById('urlInfo');
+        this.urlLength = document.getElementById('urlLength');
     }bindEvents() {
         this.sendMessageBtn.addEventListener('click', () => this.sendMessage());
         this.messageInput.addEventListener('keypress', (e) => {
@@ -106,9 +108,11 @@ class WebRTCClient {
         }    }    async generateOfferAutomatically() {
         try {
             // Check if IP address is valid first
-            this.rpiServerUrl = this.getRpiServerUrl();
-            if (!this.rpiServerUrl) {
+            this.rpiServerUrl = this.getRpiServerUrl();            if (!this.rpiServerUrl) {
                 this.updateStatus('Please enter a valid Raspberry Pi IP address');
+                // Hide URL info when invalid
+                this.urlInfo.style.display = 'none';
+                this.rpiLink.style.display = 'none';
                 return;
             }
             
@@ -142,17 +146,21 @@ class WebRTCClient {
             
             // Create URL with offer parameter
             const rpiUrlWithOffer = `${this.rpiServerUrl}?offer=${encodeURIComponent(encodedOffer)}`;
-            
-            // Update the RPI link
+              // Update the RPI link
             this.rpiLink.href = rpiUrlWithOffer;
-            this.rpiLink.textContent = 'Open RPI Server (with offer)';
             this.rpiLink.style.display = 'block';
             
-            this.updateStatus('Offer generated! Click the link below to open the RPI server');
+            // Show URL info and length
+            this.urlInfo.style.display = 'block';
+            this.urlLength.textContent = rpiUrlWithOffer.length;
             
-        } catch (error) {
+            this.updateStatus('Offer generated! Click the link below to open the RPI server');
+              } catch (error) {
             console.error('Error generating offer:', error);
             this.updateStatus('Error generating offer: ' + error.message);
+            // Hide URL info on error
+            this.urlInfo.style.display = 'none';
+            this.rpiLink.style.display = 'none';
         }
     }async setAnswer() {
         try {
