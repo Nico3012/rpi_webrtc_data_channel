@@ -3,11 +3,6 @@ const CONFIG = {
     // Server Configuration
     RPI_SERVER_PORT: '8080',
     
-    // WebRTC Configuration
-    ICE_SERVERS: [
-        { urls: 'stun:stun.l.google.com:19302' }
-    ],
-    
     // Data Channel Configuration
     DATA_CHANNEL_LABEL: 'messages',
     DATA_CHANNEL_ORDERED: true,

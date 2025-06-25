@@ -136,9 +136,7 @@ class WebRTCClient {
     async generateOffer() {
         try {
             // Create peer connection
-            this.peerConnection = new RTCPeerConnection({
-                iceServers: CONFIG.ICE_SERVERS
-            });
+            this.peerConnection = new RTCPeerConnection();
             
             // Create data channel
             this.dataChannel = this.peerConnection.createDataChannel(CONFIG.DATA_CHANNEL_LABEL, {
