@@ -132,7 +132,7 @@ class WebRTCConnection extends LitElement {
         try {
             // Update the RPI server URL using the attributes
             this.rpiServerUrl = `http://${this.rpiAddress}:${this.rpiPort}`;
-            
+
             // Create peer connection
             this.peerConnection = new RTCPeerConnection({
                 iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -165,17 +165,21 @@ class WebRTCConnection extends LitElement {
         }
     }
 
-    copyOffer() {
+    async copyOffer() {
         const offerDisplay = this.shadowRoot.querySelector('#offerDisplay');
-        if (offerDisplay) {
-            offerDisplay.select();
-            offerDisplay.setSelectionRange(0, 99999);
-            
-            try {
-                document.execCommand('copy');
-                // Show feedback
-                const btn = this.shadowRoot.querySelector('[data-copy-offer]') || 
-                           this.shadowRoot.querySelector('button');
+
+        if (offerDisplay && offerDisplay.value) {
+
+            // using old execCommand library to ensure consistency between the copy mechanism between both servers. (The http server has no access to navigator.clipboard)
+            offerDisplay.focus();
+            offerDisplay.setSelectionRange(0, offerDisplay.value.length);
+            const copied = document.execCommand('copy');
+            offerDisplay.blur();
+
+            // if copy was successful, show feedback to the user
+            if (copied) {
+                const btn = this.shadowRoot.querySelector('[data-copy-offer]') ||
+                    this.shadowRoot.querySelector('button');
                 if (btn) {
                     const originalText = btn.textContent;
                     btn.textContent = 'Copied!';
@@ -183,9 +187,6 @@ class WebRTCConnection extends LitElement {
                         btn.textContent = originalText;
                     }, 2000);
                 }
-            } catch (error) {
-                console.error('Failed to copy to clipboard:', error);
-                alert('Failed to copy to clipboard. Please select and copy manually.');
             }
         }
     }
@@ -238,7 +239,7 @@ class WebRTCConnection extends LitElement {
 
         this.dataChannel.onmessage = (event) => {
             console.log('Received message:', event.data);
-            
+
             // Call user-defined callback if set
             if (this.messageCallback) {
                 this.messageCallback(event.data);
@@ -254,7 +255,7 @@ class WebRTCConnection extends LitElement {
     setupPeerConnection() {
         this.peerConnection.oniceconnectionstatechange = () => {
             console.log('ICE connection state:', this.peerConnection.iceConnectionState);
-            
+
             switch (this.peerConnection.iceConnectionState) {
                 case 'connected':
                 case 'completed':
@@ -318,15 +319,15 @@ class WebRTCConnection extends LitElement {
         this.isConnectedState = false;
         this.currentStep = 1;
         this.updateStatus('Connection closed manually', false);
-        
+
         // Clear answer input
         const answerInput = this.shadowRoot.querySelector('#answerSdp');
         if (answerInput) {
             answerInput.value = '';
         }
-        
+
         this.requestUpdate();
-        
+
         // Generate a new offer when returning to step 1
         setTimeout(() => {
             this.generateOffer();
