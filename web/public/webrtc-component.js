@@ -6,8 +6,7 @@ class WebRTCConnection extends LitElement {
         isConnectedState: { type: Boolean },
         rpiAddress: { type: String, attribute: 'rpi-address' },
         rpiPort: { type: String, attribute: 'rpi-port' },
-        connectionStatus: { type: String },
-        messages: { type: Array }
+        connectionStatus: { type: String }
     };
 
     static styles = css`
@@ -161,49 +160,6 @@ class WebRTCConnection extends LitElement {
             color: #155724;
             border: 1px solid #c3e6cb;
         }
-
-        .chat-container {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 15px;
-        }
-
-        .messages {
-            height: 200px;
-            overflow-y: auto;
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            border: 1px solid #ddd;
-        }
-
-        .message {
-            margin: 8px 0;
-            padding: 8px 12px;
-            border-radius: 8px;
-            max-width: 80%;
-        }
-
-        .message.sent {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            margin-left: auto;
-            text-align: right;
-        }
-
-        .message.received {
-            background: #e9ecef;
-            color: #333;
-            margin-right: auto;
-        }
-
-        .message .timestamp {
-            font-size: 0.8em;
-            opacity: 0.7;
-            margin-top: 5px;
-        }
     `;
 
     constructor() {
@@ -213,7 +169,6 @@ class WebRTCConnection extends LitElement {
         this.rpiAddress = '192.168.1.100';
         this.rpiPort = '8080';
         this.connectionStatus = 'Disconnected';
-        this.messages = [];
         this.peerConnection = null;
         this.dataChannel = null;
         this.rpiServerUrl = null;
@@ -237,31 +192,11 @@ class WebRTCConnection extends LitElement {
         return html`
             <div class="step-container">
                 <div class="step-header">
-                    <h2>WebRTC Data Channel Communication</h2>
+                    <h2>WebRTC Data Channel Connected</h2>
                     <div class="step-indicator">Connected</div>
                 </div>
                 <div class="status connected">${this.connectionStatus}</div>
                 <button @click="${this.closeConnection}" class="btn btn-danger">Close Connection</button>
-                
-                <div class="chat-container">
-                    <div class="messages">
-                        ${this.messages.map(msg => html`
-                            <div class="message ${msg.type}">
-                                <div>${msg.text}</div>
-                                <div class="timestamp">${msg.timestamp}</div>
-                            </div>
-                        `)}
-                    </div>
-                    <div class="input-group">
-                        <input 
-                            type="text" 
-                            id="messageInput" 
-                            placeholder="Type your message..." 
-                            @keypress="${this.handleMessageKeypress}"
-                        >
-                        <button @click="${this.sendMessage}" class="btn btn-primary">Send</button>
-                    </div>
-                </div>
             </div>
         `;
     }
@@ -303,35 +238,10 @@ class WebRTCConnection extends LitElement {
             <!-- Step 3: Communication -->
             <div class="step-container ${this.currentStep !== 3 ? 'hidden' : ''}">
                 <div class="step-header">
-                    <h2>Step 3: Data Channel Communication</h2>
+                    <h2>Step 3: Establishing Connection</h2>
                     <div class="step-indicator">3 / 3</div>
                 </div>
                 <div class="status">${this.connectionStatus}</div>
-                
-                <div class="chat-container">
-                    <div class="messages">
-                        ${this.messages.map(msg => html`
-                            <div class="message ${msg.type}">
-                                <div>${msg.text}</div>
-                                <div class="timestamp">${msg.timestamp}</div>
-                            </div>
-                        `)}
-                    </div>
-                    <div class="input-group">
-                        <input 
-                            type="text" 
-                            id="messageInput" 
-                            placeholder="Type your message..." 
-                            ?disabled="${!this.isConnectedState}"
-                            @keypress="${this.handleMessageKeypress}"
-                        >
-                        <button 
-                            @click="${this.sendMessage}" 
-                            class="btn btn-primary" 
-                            ?disabled="${!this.isConnectedState}"
-                        >Send</button>
-                    </div>
-                </div>
             </div>
         `;
     }
@@ -348,7 +258,6 @@ class WebRTCConnection extends LitElement {
 
         try {
             this.dataChannel.send(data);
-            this.addMessage(data, 'sent');
             return Promise.resolve();
         } catch (error) {
             return Promise.reject(error);
@@ -466,7 +375,6 @@ class WebRTCConnection extends LitElement {
                 this.isConnectedState = false;
                 this.updateStatus('Disconnected', false);
                 this.currentStep = 1;
-                this.messages = []; // Clear messages when data channel closes
                 this.requestUpdate();
                 // Generate a new offer when data channel closes
                 setTimeout(() => {
@@ -477,7 +385,6 @@ class WebRTCConnection extends LitElement {
 
         this.dataChannel.onmessage = (event) => {
             console.log('Received message:', event.data);
-            this.addMessage(event.data, 'received');
             
             // Call user-defined callback if set
             if (this.messageCallback) {
@@ -504,7 +411,6 @@ class WebRTCConnection extends LitElement {
                     this.updateStatus('Disconnected', false);
                     this.isConnectedState = false;
                     this.currentStep = 1;
-                    this.messages = []; // Clear messages when disconnected
                     this.requestUpdate();
                     // Generate a new offer when connection is lost
                     setTimeout(() => {
@@ -515,7 +421,6 @@ class WebRTCConnection extends LitElement {
                     this.updateStatus('Connection Failed', false);
                     this.isConnectedState = false;
                     this.currentStep = 1;
-                    this.messages = []; // Clear messages when connection fails
                     this.requestUpdate();
                     // Generate a new offer when connection fails
                     setTimeout(() => {
@@ -540,46 +445,6 @@ class WebRTCConnection extends LitElement {
         });
     }
 
-    sendMessage() {
-        const messageInput = this.shadowRoot.querySelector('#messageInput');
-        if (!messageInput || !messageInput.value.trim()) return;
-
-        const message = messageInput.value.trim();
-        
-        try {
-            this.sendData(message);
-            messageInput.value = '';
-        } catch (error) {
-            console.error('Error sending message:', error);
-            alert('Error sending message: ' + error.message);
-        }
-    }
-
-    handleMessageKeypress(e) {
-        if (e.key === 'Enter') {
-            this.sendMessage();
-        }
-    }
-
-    addMessage(text, type) {
-        const message = {
-            text,
-            type,
-            timestamp: new Date().toLocaleTimeString()
-        };
-        
-        this.messages = [...this.messages, message];
-        this.requestUpdate();
-        
-        // Auto-scroll to bottom
-        this.updateComplete.then(() => {
-            const messagesContainer = this.shadowRoot.querySelector('.messages');
-            if (messagesContainer) {
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            }
-        });
-    }
-
     updateStatus(message, isConnected = false) {
         this.connectionStatus = message;
         if (isConnected) {
@@ -599,7 +464,6 @@ class WebRTCConnection extends LitElement {
 
         this.isConnectedState = false;
         this.currentStep = 1;
-        this.messages = [];
         this.updateStatus('Connection closed manually', false);
         
         // Clear answer input
