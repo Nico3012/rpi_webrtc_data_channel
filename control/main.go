@@ -1,113 +1,43 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"time"
 
 	"github.com/stianeikeland/go-rpio/v4"
 )
 
 const (
-	// GPIO pin 18 (same as Python example)
-	servoPin = 18
+	// GPIO pin connected to the servo signal wire (change this to your actual pin)
+	ServoPin = 18
 
-	// PWM parameters matching the Python example
-	minPulseWidth = 600 * time.Microsecond  // 0.0006 seconds
-	maxPulseWidth = 2300 * time.Microsecond // 0.0023 seconds
+	// PWM constants for 9g servo
+	PWMFrequency  = 50   // 50Hz (20ms period)
+	MinPulseWidth = 500  // 1ms in microseconds (minimum position)
+	MaxPulseWidth = 2500 // 2ms in microseconds (maximum position)
 
-	// Standard servo PWM frequency
-	pwmFrequency = 50 // 50Hz = 20ms period
-	pwmPeriod    = time.Second / pwmFrequency
+	// Servo position (0.0 = min, 1.0 = max)
+	Position = 1.0
 )
 
-type AngularServo struct {
-	pin           rpio.Pin
-	minPulseWidth time.Duration
-	maxPulseWidth time.Duration
-}
-
-func NewAngularServo(pinNum int, minPulse, maxPulse time.Duration) (*AngularServo, error) {
-	// Open GPIO memory for access
-	if err := rpio.Open(); err != nil {
-		return nil, fmt.Errorf("failed to open GPIO: %v", err)
-	}
-
-	// Create pin
-	pin := rpio.Pin(pinNum)
-
-	// Set pin as output
-	pin.Output()
-
-	return &AngularServo{
-		pin:           pin,
-		minPulseWidth: minPulse,
-		maxPulseWidth: maxPulse,
-	}, nil
-}
-
-func (s *AngularServo) SetAngle(angle float64) error {
-	// Clamp angle to -90 to 90 degrees
-	if angle < -90 {
-		angle = -90
-	} else if angle > 90 {
-		angle = 90
-	}
-
-	// Convert angle to pulse width
-	// -90° = minPulseWidth, 90° = maxPulseWidth
-	angleRatio := (angle + 90) / 180 // Convert to 0-1 range
-	pulseWidth := s.minPulseWidth + time.Duration(float64(s.maxPulseWidth-s.minPulseWidth)*angleRatio)
-
-	// Generate PWM signal
-	// For simplicity, we'll generate a few PWM cycles
-	for i := 0; i < 10; i++ {
-		// Set pin high for pulse duration
-		s.pin.High()
-		time.Sleep(pulseWidth)
-
-		// Set pin low for remainder of period
-		s.pin.Low()
-		time.Sleep(pwmPeriod - pulseWidth)
-	}
-
-	return nil
-}
-
-func (s *AngularServo) Close() {
-	rpio.Close()
-}
-
 func main() {
-	fmt.Println("Starting servo control program...")
-
-	// Create servo instance
-	servo, err := NewAngularServo(servoPin, minPulseWidth, maxPulseWidth)
-	if err != nil {
-		log.Fatalf("Failed to create servo: %v", err)
+	// Open and map memory to access gpio
+	if err := rpio.Open(); err != nil {
+		log.Fatalf("Failed to open rpio: %v", err)
 	}
-	defer servo.Close()
+	defer rpio.Close()
 
-	fmt.Println("Servo initialized. Starting movement cycle...")
+	// Set up the servo pin
+	pin := rpio.Pin(ServoPin)
+	pin.Output()
+	pin.Mode(rpio.Pwm)
+	pin.Freq(PWMFrequency * 1024)
 
-	// Main control loop (equivalent to Python while True)
-	for {
-		fmt.Println("Moving to 90 degrees")
-		if err := servo.SetAngle(90); err != nil {
-			log.Printf("Error setting angle to 90: %v", err)
-		}
-		time.Sleep(2 * time.Second)
+	// Calculate pulse width based on position
+	pulseWidth := MinPulseWidth + Position*(MaxPulseWidth-MinPulseWidth)
 
-		fmt.Println("Moving to 0 degrees")
-		if err := servo.SetAngle(0); err != nil {
-			log.Printf("Error setting angle to 0: %v", err)
-		}
-		time.Sleep(2 * time.Second)
+	pwmPeriodMicros := (1.0 / float64(PWMFrequency)) * 1000000.0
+	dutyCycle := uint32((pulseWidth / pwmPeriodMicros) * 1024)
 
-		fmt.Println("Moving to -90 degrees")
-		if err := servo.SetAngle(-90); err != nil {
-			log.Printf("Error setting angle to -90: %v", err)
-		}
-		time.Sleep(2 * time.Second)
-	}
+	// Set PWM duty cycle
+	pin.DutyCycle(dutyCycle, 1024)
 }
