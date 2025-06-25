@@ -4,6 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="importmap">
+        {
+            "imports": {
+                "lit": "/lit@3.2.1/lit-core.min.js"
+            }
+        }
+    </script>
     <title>WebRTC Data Channel - Web Client</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -11,73 +18,28 @@
 <body>
     <div class="container">
         <h1>WebRTC Data Channel - Web Client</h1>
-        
-        <!-- Step 1: Configure IP -->
-        <div id="step1" class="step-container">
-            <div class="step-header">
-                <h2>Step 1: Configure Raspberry Pi</h2>
-                <div class="step-indicator">1 / 4</div>
-            </div>
-            <div class="form-group">
-                <label for="rpiAddress">Raspberry Pi IP Address:</label>
-                <input type="text" id="rpiAddress" placeholder="192.168.1.100" value="192.168.1.100" class="ip-input">
-                <small class="help-text">Enter the IP address of your Raspberry Pi on the local network</small>
-            </div>
-            <button id="step1Continue" class="btn btn-primary">Continue</button>
-        </div>
-
-        <!-- Step 2: Generate and Copy Offer -->
-        <div id="step2" class="step-container hidden">
-            <div class="step-header">
-                <h2>Step 2: Copy SDP Offer</h2>
-                <div class="step-indicator">2 / 4</div>
-            </div>
-            <div id="offerSection">
-                <p>Your SDP offer has been generated. Copy it and open the RPI server:</p>
-                <label for="offerDisplay">SDP Offer (copy this):</label>
-                <div class="input-group">
-                    <input type="text" id="offerDisplay" readonly>
-                    <button id="copyOfferBtn" class="btn btn-success">Copy Offer</button>
-                </div>
-                <p class="help-text">Click the link below to open the RPI server and paste the offer:</p>
-                <a id="rpiLink" href="#" target="_blank" class="rpi-link">
-                    <button class="btn btn-primary">Open RPI Server</button>
-                </a>
-                <p class="help-text"><small>This will open in a new tab and automatically proceed to the next step.</small></p>
-            </div>
-        </div>
-
-        <!-- Step 3: Paste Answer -->
-        <div id="step3" class="step-container hidden">
-            <div class="step-header">
-                <h2>Step 3: Paste SDP Answer</h2>
-                <div class="step-indicator">3 / 4</div>
-            </div>
-            <p>Paste the SDP answer you copied from the RPI server:</p>
-            <input type="text" id="answerSdp" placeholder="Paste the SDP Answer from the RPI server here...">
-            <button id="connectBtn" class="btn btn-primary">Connect with Answer</button>
-        </div>
-
-        <!-- Step 4: Communication -->
-        <div id="step4" class="step-container hidden">
-            <div class="step-header">
-                <h2>Step 4: Data Channel Communication</h2>
-                <div class="step-indicator">4 / 4</div>
-            </div>
-            <div id="status" class="status">Disconnected</div>
-            <button id="closeConnection" class="btn btn-danger" style="display: none;">Close Connection</button>
-            
-            <div class="chat-container">
-                <div id="messages" class="messages"></div>
-                <div class="input-group">
-                    <input type="text" id="messageInput" placeholder="Type your message..." disabled>
-                    <button id="sendMessage" class="btn btn-primary" disabled>Send</button>
-                </div>
-            </div>
-        </div>
+        <webrtc-connection id="webrtcConnection"></webrtc-connection>
     </div>
     <script src="config.js"></script>
-    <script src="script.js"></script>
+    <script src="webrtc-component.js" type="module"></script>
+    <script type="module">
+        // Example of using the component's public API
+        document.addEventListener('DOMContentLoaded', () => {
+            const webrtcComponent = document.getElementById('webrtcConnection');
+            
+            // Set up callback for incoming messages (optional)
+            webrtcComponent.initReadDataCallback((message) => {
+                console.log('Received message via callback:', message);
+                // You can handle incoming messages here
+            });
+            
+            // Example of programmatically sending data (when connected)
+            // webrtcComponent.sendData('Hello from script!');
+            
+            // Example of checking connection status
+            // console.log('Is connected:', webrtcComponent.isConnected());
+        });
+    </script>
 </body>
 
 </html>
