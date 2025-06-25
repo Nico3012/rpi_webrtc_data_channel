@@ -1,6 +1,8 @@
 import { LitElement, html, css } from 'lit';
 
 class WebRTCConnection extends LitElement {
+
+    // lit property
     static properties = {
         currentStep: { type: Number },
         isConnectedState: { type: Boolean },
@@ -9,6 +11,7 @@ class WebRTCConnection extends LitElement {
         connectionStatus: { type: String }
     };
 
+    // lit property
     static styles = css`
         .hidden {
             display: none;
@@ -28,11 +31,12 @@ class WebRTCConnection extends LitElement {
         this.rpiServerUrl = null;
     }
 
+    // lit function
     firstUpdated() {
-        this.initializeEventListeners();
         this.generateOffer(); // Start generating offer immediately
     }
 
+    // lit function
     render() {
         if (this.isConnectedState) {
             return this.renderConnectedView();
@@ -101,11 +105,12 @@ class WebRTCConnection extends LitElement {
         `;
     }
 
-    // Public API methods matching the RPI server interface
+    /** @public @returns {boolean} */ // Public API methods matching the RPI server interface
     isConnected() {
         return this.isConnectedState && this.dataChannel && this.dataChannel.readyState === 'open';
     }
 
+    /** @public @returns {Promise<void>} */
     sendData(data) {
         if (!this.isConnected()) {
             throw new Error('Data channel is not available or not open');
@@ -119,13 +124,16 @@ class WebRTCConnection extends LitElement {
         }
     }
 
-    // Internal methods
+    // Internal methods:
+
+    /** @private */
     async nextStep() {
         if (this.currentStep < 3) {
             this.currentStep++;
         }
     }
 
+    /** @private */
     async generateOffer() {
         try {
             // Update the RPI server URL using the attributes
@@ -163,6 +171,7 @@ class WebRTCConnection extends LitElement {
         }
     }
 
+    /** @private */
     async copyOffer() {
         const offerDisplay = this.shadowRoot.querySelector('#offerDisplay');
 
@@ -189,6 +198,7 @@ class WebRTCConnection extends LitElement {
         }
     }
 
+    /** @private */
     async setAnswer() {
         try {
             const answerInput = this.shadowRoot.querySelector('#answerSdp');
@@ -212,6 +222,7 @@ class WebRTCConnection extends LitElement {
         }
     }
 
+    /** @private */
     setupDataChannel() {
         this.dataChannel.onopen = () => {
             console.log('Data channel opened');
@@ -269,6 +280,7 @@ class WebRTCConnection extends LitElement {
         };
     }
 
+    /** @private */
     setupPeerConnection() {
         this.peerConnection.oniceconnectionstatechange = () => {
             console.log('ICE connection state:', this.peerConnection.iceConnectionState);
@@ -317,6 +329,7 @@ class WebRTCConnection extends LitElement {
         };
     }
 
+    /** @private */
     async waitForIceGathering() {
         return new Promise((resolve) => {
             if (this.peerConnection.iceGatheringState === 'complete') {
@@ -331,6 +344,7 @@ class WebRTCConnection extends LitElement {
         });
     }
 
+    /** @private */
     updateStatus(message, isConnected = false) {
         this.connectionStatus = message;
         if (isConnected) {
@@ -339,6 +353,7 @@ class WebRTCConnection extends LitElement {
         this.requestUpdate();
     }
 
+    /** @private */
     closeConnection() {
         if (this.dataChannel) {
             this.dataChannel.close();
@@ -364,10 +379,6 @@ class WebRTCConnection extends LitElement {
         setTimeout(() => {
             this.generateOffer();
         }, 100);
-    }
-
-    initializeEventListeners() {
-        // Additional initialization if needed
     }
 }
 
