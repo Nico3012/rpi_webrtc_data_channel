@@ -4,7 +4,8 @@ class WebRTCConnection extends LitElement {
     static properties = {
         currentStep: { type: Number },
         isConnectedState: { type: Boolean },
-        rpiAddress: { type: String },
+        rpiAddress: { type: String, attribute: 'rpi-address' },
+        rpiPort: { type: String, attribute: 'rpi-port' },
         connectionStatus: { type: String },
         messages: { type: Array }
     };
@@ -55,22 +56,6 @@ class WebRTCConnection extends LitElement {
             margin-bottom: 8px;
             font-weight: bold;
             color: #333;
-        }
-
-        .ip-input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            font-family: 'Courier New', monospace;
-            transition: border-color 0.3s ease;
-            margin-bottom: 5px;
-        }
-
-        .ip-input:focus {
-            outline: none;
-            border-color: #667eea;
         }
 
         .help-text {
@@ -146,13 +131,18 @@ class WebRTCConnection extends LitElement {
         }
 
         .rpi-link {
-            text-decoration: none;
+            text-decoration: underline;
+            color: #667eea;
             display: inline-block;
             margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            cursor: pointer;
+            transition: color 0.3s ease;
         }
 
-        .rpi-link button {
-            margin: 0;
+        .rpi-link:hover {
+            color: #764ba2;
         }
 
         .status {
@@ -221,18 +211,18 @@ class WebRTCConnection extends LitElement {
         this.currentStep = 1;
         this.isConnectedState = false;
         this.rpiAddress = '192.168.1.100';
+        this.rpiPort = '8080';
         this.connectionStatus = 'Disconnected';
         this.messages = [];
         this.peerConnection = null;
         this.dataChannel = null;
         this.rpiServerUrl = null;
         this.messageCallback = null;
-        
-        this.loadSavedIP();
     }
 
     firstUpdated() {
         this.initializeEventListeners();
+        this.generateOffer(); // Start generating offer immediately
     }
 
     render() {
@@ -278,33 +268,11 @@ class WebRTCConnection extends LitElement {
 
     renderStepsView() {
         return html`
-            <!-- Step 1: Configure IP -->
+            <!-- Step 1: Generate and Copy Offer -->
             <div class="step-container ${this.currentStep !== 1 ? 'hidden' : ''}">
                 <div class="step-header">
-                    <h2>Step 1: Configure Raspberry Pi</h2>
-                    <div class="step-indicator">1 / 4</div>
-                </div>
-                <div class="form-group">
-                    <label for="rpiAddress">Raspberry Pi IP Address:</label>
-                    <input 
-                        type="text" 
-                        id="rpiAddress" 
-                        placeholder="192.168.1.100" 
-                        .value="${this.rpiAddress}" 
-                        @input="${this.handleIPInput}"
-                        @blur="${this.validateIP}"
-                        class="ip-input"
-                    >
-                    <small class="help-text">Enter the IP address of your Raspberry Pi on the local network</small>
-                </div>
-                <button @click="${this.nextStep}" class="btn btn-primary">Continue</button>
-            </div>
-
-            <!-- Step 2: Generate and Copy Offer -->
-            <div class="step-container ${this.currentStep !== 2 ? 'hidden' : ''}">
-                <div class="step-header">
-                    <h2>Step 2: Copy SDP Offer</h2>
-                    <div class="step-indicator">2 / 4</div>
+                    <h2>Step 1: Copy SDP Offer</h2>
+                    <div class="step-indicator">1 / 3</div>
                 </div>
                 <div id="offerSection">
                     <p>Your SDP offer has been generated. Copy it and open the RPI server:</p>
@@ -314,29 +282,29 @@ class WebRTCConnection extends LitElement {
                         <button @click="${this.copyOffer}" class="btn btn-success">Copy Offer</button>
                     </div>
                     <p class="help-text">Click the link below to open the RPI server and paste the offer:</p>
-                    <a href="#" @click="${this.handleRpiLinkClick}" target="_blank" class="rpi-link">
-                        <button class="btn btn-primary">Open RPI Server</button>
+                    <a href="http://${this.rpiAddress}:${this.rpiPort}" target="_blank" class="rpi-link" @click="${this.nextStep}">
+                        http://${this.rpiAddress}:${this.rpiPort}
                     </a>
                     <p class="help-text"><small>This will open in a new tab and automatically proceed to the next step.</small></p>
                 </div>
             </div>
 
-            <!-- Step 3: Paste Answer -->
-            <div class="step-container ${this.currentStep !== 3 ? 'hidden' : ''}">
+            <!-- Step 2: Paste Answer -->
+            <div class="step-container ${this.currentStep !== 2 ? 'hidden' : ''}">
                 <div class="step-header">
-                    <h2>Step 3: Paste SDP Answer</h2>
-                    <div class="step-indicator">3 / 4</div>
+                    <h2>Step 2: Paste SDP Answer</h2>
+                    <div class="step-indicator">2 / 3</div>
                 </div>
                 <p>Paste the SDP answer you copied from the RPI server:</p>
                 <input type="text" id="answerSdp" placeholder="Paste the SDP Answer from the RPI server here...">
                 <button @click="${this.setAnswer}" class="btn btn-primary">Connect with Answer</button>
             </div>
 
-            <!-- Step 4: Communication -->
-            <div class="step-container ${this.currentStep !== 4 ? 'hidden' : ''}">
+            <!-- Step 3: Communication -->
+            <div class="step-container ${this.currentStep !== 3 ? 'hidden' : ''}">
                 <div class="step-header">
-                    <h2>Step 4: Data Channel Communication</h2>
-                    <div class="step-indicator">4 / 4</div>
+                    <h2>Step 3: Data Channel Communication</h2>
+                    <div class="step-indicator">3 / 3</div>
                 </div>
                 <div class="status">${this.connectionStatus}</div>
                 
@@ -392,49 +360,25 @@ class WebRTCConnection extends LitElement {
     }
 
     // Internal methods
-    loadSavedIP() {
-        const savedIP = localStorage.getItem('rpiAddress');
-        if (savedIP) {
-            this.rpiAddress = savedIP;
-        }
-    }
-
-    handleIPInput(e) {
-        this.rpiAddress = e.target.value;
-        localStorage.setItem('rpiAddress', this.rpiAddress);
-    }
-
-    validateIP() {
-        const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
-        if (this.rpiAddress && !ipPattern.test(this.rpiAddress)) {
-            alert('Please enter a valid IP address (e.g., 192.168.1.100)');
-            return false;
-        }
-        return true;
-    }
-
     async nextStep() {
-        if (this.currentStep === 1) {
-            if (!this.validateIP()) return;
-            this.rpiServerUrl = `http://${this.rpiAddress}:${CONFIG.RPI_SERVER_PORT}`;
-            await this.generateOffer();
-        }
-        
-        if (this.currentStep < 4) {
+        if (this.currentStep < 3) {
             this.currentStep++;
         }
     }
 
     async generateOffer() {
         try {
+            // Update the RPI server URL using the attributes
+            this.rpiServerUrl = `http://${this.rpiAddress}:${this.rpiPort}`;
+            
             // Create peer connection
             this.peerConnection = new RTCPeerConnection({
                 iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
             });
 
             // Create data channel
-            this.dataChannel = this.peerConnection.createDataChannel(CONFIG.DATA_CHANNEL_LABEL, {
-                ordered: CONFIG.DATA_CHANNEL_ORDERED
+            this.dataChannel = this.peerConnection.createDataChannel('messages', {
+                ordered: true
             });
 
             this.setupDataChannel();
@@ -484,17 +428,6 @@ class WebRTCConnection extends LitElement {
         }
     }
 
-    handleRpiLinkClick(e) {
-        e.preventDefault();
-        if (this.rpiServerUrl) {
-            window.open(this.rpiServerUrl, '_blank');
-            setTimeout(() => {
-                this.currentStep = 3;
-                this.requestUpdate();
-            }, 1000);
-        }
-    }
-
     async setAnswer() {
         try {
             const answerInput = this.shadowRoot.querySelector('#answerSdp');
@@ -509,7 +442,7 @@ class WebRTCConnection extends LitElement {
             }
 
             await this.peerConnection.setRemoteDescription(answer);
-            this.currentStep = 4;
+            this.currentStep = 3;
             this.updateStatus('Connecting...', false);
 
         } catch (error) {
@@ -528,9 +461,18 @@ class WebRTCConnection extends LitElement {
 
         this.dataChannel.onclose = () => {
             console.log('Data channel closed');
-            this.isConnectedState = false;
-            this.updateStatus('Disconnected', false);
-            this.requestUpdate();
+            // Only handle if not already handled by peer connection state change
+            if (this.isConnectedState) {
+                this.isConnectedState = false;
+                this.updateStatus('Disconnected', false);
+                this.currentStep = 1;
+                this.messages = []; // Clear messages when data channel closes
+                this.requestUpdate();
+                // Generate a new offer when data channel closes
+                setTimeout(() => {
+                    this.generateOffer();
+                }, 100);
+            }
         };
 
         this.dataChannel.onmessage = (event) => {
@@ -561,12 +503,24 @@ class WebRTCConnection extends LitElement {
                 case 'disconnected':
                     this.updateStatus('Disconnected', false);
                     this.isConnectedState = false;
+                    this.currentStep = 1;
+                    this.messages = []; // Clear messages when disconnected
                     this.requestUpdate();
+                    // Generate a new offer when connection is lost
+                    setTimeout(() => {
+                        this.generateOffer();
+                    }, 100);
                     break;
                 case 'failed':
                     this.updateStatus('Connection Failed', false);
                     this.isConnectedState = false;
+                    this.currentStep = 1;
+                    this.messages = []; // Clear messages when connection fails
                     this.requestUpdate();
+                    // Generate a new offer when connection fails
+                    setTimeout(() => {
+                        this.generateOffer();
+                    }, 100);
                     break;
             }
         };
@@ -655,6 +609,11 @@ class WebRTCConnection extends LitElement {
         }
         
         this.requestUpdate();
+        
+        // Generate a new offer when returning to step 1
+        setTimeout(() => {
+            this.generateOffer();
+        }, 100);
     }
 
     initializeEventListeners() {
