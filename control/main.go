@@ -12,11 +12,11 @@ const (
 
 	// PWM constants for 9g servo
 	PWMFrequency  = 50   // 50Hz (20ms period)
-	MinPulseWidth = 500  // 1ms in microseconds (minimum position)
-	MaxPulseWidth = 2500 // 2ms in microseconds (maximum position)
+	MinPulseWidth = 500  // 1ms in microseconds (minimum position) | 1000 beim Racecopter Flightcontroller | 500 beim Elegoo Servo 9g
+	MaxPulseWidth = 2500 // 2ms in microseconds (maximum position) | 2000 beim Racecopter Flightcontroller | 2500 beim Elegoo Servo 9g
 
 	// Servo position (0.0 = min, 1.0 = max)
-	Position = 1.0
+	Position = 0.5
 )
 
 func main() {
