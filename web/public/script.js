@@ -8,10 +8,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let messages = [];
 
-    // Set up callback for incoming messages
-    webrtcComponent.initReadDataCallback((message) => {
-        console.log('Received message via callback:', message);
-        addMessage(message, 'received');
+    // Set up event listeners for WebRTC component
+    webrtcComponent.addEventListener('message-received', (event) => {
+        console.log('Received message via event:', event.detail.message);
+        addMessage(event.detail.message, 'received');
+    });
+
+    webrtcComponent.addEventListener('connection-changed', (event) => {
+        console.log('Connection status changed:', event.detail);
+        updateChatVisibility();
     });
 
     // Monitor connection status to show/hide chat

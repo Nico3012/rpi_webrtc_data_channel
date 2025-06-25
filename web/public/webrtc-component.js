@@ -13,6 +13,7 @@ class WebRTCConnection extends LitElement {
         .hidden {
             display: none;
         }
+
     `;
 
     constructor() {
@@ -25,7 +26,6 @@ class WebRTCConnection extends LitElement {
         this.peerConnection = null;
         this.dataChannel = null;
         this.rpiServerUrl = null;
-        this.messageCallback = null;
     }
 
     firstUpdated() {
@@ -41,6 +41,7 @@ class WebRTCConnection extends LitElement {
         }
     }
 
+    /** @private */
     renderConnectedView() {
         return html`
             <div class="step-container">
@@ -54,6 +55,7 @@ class WebRTCConnection extends LitElement {
         `;
     }
 
+    /** @private */
     renderStepsView() {
         return html`
             <!-- Step 1: Generate and Copy Offer -->
@@ -115,10 +117,6 @@ class WebRTCConnection extends LitElement {
         } catch (error) {
             return Promise.reject(error);
         }
-    }
-
-    initReadDataCallback(callback) {
-        this.messageCallback = callback;
     }
 
     // Internal methods
@@ -220,6 +218,12 @@ class WebRTCConnection extends LitElement {
             this.isConnectedState = true;
             this.updateStatus('Connected', true);
             this.requestUpdate();
+            
+            // Dispatch connection update event
+            this.dispatchEvent(new CustomEvent('connection-changed', {
+                detail: { connected: true, status: 'Connected' },
+                bubbles: true
+            }));
         };
 
         this.dataChannel.onclose = () => {
@@ -230,6 +234,13 @@ class WebRTCConnection extends LitElement {
                 this.updateStatus('Disconnected', false);
                 this.currentStep = 1;
                 this.requestUpdate();
+                
+                // Dispatch connection update event
+                this.dispatchEvent(new CustomEvent('connection-changed', {
+                    detail: { connected: false, status: 'Disconnected' },
+                    bubbles: true
+                }));
+                
                 // Generate a new offer when data channel closes
                 setTimeout(() => {
                     this.generateOffer();
@@ -240,15 +251,21 @@ class WebRTCConnection extends LitElement {
         this.dataChannel.onmessage = (event) => {
             console.log('Received message:', event.data);
 
-            // Call user-defined callback if set
-            if (this.messageCallback) {
-                this.messageCallback(event.data);
-            }
+            // Dispatch custom event for received message
+            this.dispatchEvent(new CustomEvent('message-received', {
+                detail: { message: event.data },
+                bubbles: true
+            }));
         };
 
         this.dataChannel.onerror = (error) => {
             console.error('Data channel error:', error);
             this.updateStatus('Connection Error', false);
+            // Dispatch connection update event
+            this.dispatchEvent(new CustomEvent('connection-changed', {
+                detail: { connected: false, status: 'Connection Error' },
+                bubbles: true
+            }));
         };
     }
 
@@ -260,12 +277,22 @@ class WebRTCConnection extends LitElement {
                 case 'connected':
                 case 'completed':
                     this.updateStatus('Connected', true);
+                    // Dispatch connection update event
+                    this.dispatchEvent(new CustomEvent('connection-changed', {
+                        detail: { connected: true, status: 'Connected' },
+                        bubbles: true
+                    }));
                     break;
                 case 'disconnected':
                     this.updateStatus('Disconnected', false);
                     this.isConnectedState = false;
                     this.currentStep = 1;
                     this.requestUpdate();
+                    // Dispatch connection update event
+                    this.dispatchEvent(new CustomEvent('connection-changed', {
+                        detail: { connected: false, status: 'Disconnected' },
+                        bubbles: true
+                    }));
                     // Generate a new offer when connection is lost
                     setTimeout(() => {
                         this.generateOffer();
@@ -276,6 +303,11 @@ class WebRTCConnection extends LitElement {
                     this.isConnectedState = false;
                     this.currentStep = 1;
                     this.requestUpdate();
+                    // Dispatch connection update event
+                    this.dispatchEvent(new CustomEvent('connection-changed', {
+                        detail: { connected: false, status: 'Connection Failed' },
+                        bubbles: true
+                    }));
                     // Generate a new offer when connection fails
                     setTimeout(() => {
                         this.generateOffer();
