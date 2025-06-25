@@ -2,39 +2,47 @@ class WebRTCClient {
     constructor() {
         this.peerConnection = null;
         this.dataChannel = null;
-        this.rpiServerUrl = null; // Will be set dynamically
+        this.rpiServerUrl = null;
+        this.currentStep = 1;
         
         this.initializeElements();
         this.bindEvents();
         this.loadSavedIP();
-        
-        // Generate offer automatically when page loads
-        this.generateOfferAutomatically();
-    }    initializeElements() {
+        this.showStep(1);
+    }
+
+    initializeElements() {
         this.sendMessageBtn = document.getElementById('sendMessage');
         this.messageInput = document.getElementById('messageInput');
         this.answerSdp = document.getElementById('answerSdp');
         this.status = document.getElementById('status');
         this.messages = document.getElementById('messages');
         this.rpiAddressInput = document.getElementById('rpiAddress');
-        this.openRpiBtn = document.getElementById('openRpiBtn');
-        this.rpiLink = document.getElementById('rpiLink');
         this.connectBtn = document.getElementById('connectBtn');
-        this.urlInfo = document.getElementById('urlInfo');
-        this.urlLength = document.getElementById('urlLength');
         this.closeConnectionBtn = document.getElementById('closeConnection');
-    }    bindEvents() {
+        
+        // Step elements
+        this.step1Continue = document.getElementById('step1Continue');
+        this.copyOfferBtn = document.getElementById('copyOfferBtn');
+        this.offerDisplay = document.getElementById('offerDisplay');
+        this.offerSection = document.getElementById('offerSection');
+        this.rpiLink = document.getElementById('rpiLink');
+    }
+
+    bindEvents() {
         this.sendMessageBtn.addEventListener('click', () => this.sendMessage());
         this.messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.sendMessage();
         });
-        this.rpiAddressInput.addEventListener('input', () => {
-            this.saveIP();
-            this.generateOfferAutomatically();
-        });
+        this.rpiAddressInput.addEventListener('input', () => this.saveIP());
         this.rpiAddressInput.addEventListener('blur', () => this.validateIP());
         this.connectBtn.addEventListener('click', () => this.setAnswer());
         this.closeConnectionBtn.addEventListener('click', () => this.closeConnection());
+        
+        // Step navigation
+        this.step1Continue.addEventListener('click', () => this.nextStep());
+        this.copyOfferBtn.addEventListener('click', () => this.copyOffer());
+        this.rpiLink.addEventListener('click', () => this.handleRpiLinkClick());
     }
     
     loadSavedIP() {
@@ -79,12 +87,104 @@ class WebRTCClient {
     }    getRpiServerUrl() {
         const ip = this.rpiAddressInput.value.trim();
         if (!ip) {
-            return null; // Return null instead of throwing an error
+            return null;
         }
         if (!this.validateIP()) {
-            return null; // Return null instead of throwing an error
+            return null;
         }
         return `http://${ip}:${CONFIG.RPI_SERVER_PORT}`;
+    }
+    
+    showStep(stepNumber) {
+        // Hide all steps
+        for (let i = 1; i <= 4; i++) {
+            const step = document.getElementById(`step${i}`);
+            if (step) {
+                step.classList.add('hidden');
+            }
+        }
+        
+        // Show current step
+        const currentStep = document.getElementById(`step${stepNumber}`);
+        if (currentStep) {
+            currentStep.classList.remove('hidden');
+        }
+        
+        this.currentStep = stepNumber;
+    }
+    
+    nextStep() {
+        if (this.currentStep === 1) {
+            // Validate IP before proceeding
+            if (!this.validateIP() || !this.rpiAddressInput.value.trim()) {
+                alert('Please enter a valid IP address');
+                return;
+            }
+            this.rpiServerUrl = this.getRpiServerUrl();
+        }
+        
+        if (this.currentStep < 4) {
+            this.showStep(this.currentStep + 1);
+            
+            // Auto-generate offer when reaching step 2
+            if (this.currentStep === 2) {
+                this.generateOffer();
+            }
+        }
+    }
+    
+    async generateOffer() {
+        try {
+            // Create peer connection
+            this.peerConnection = new RTCPeerConnection({
+                iceServers: CONFIG.ICE_SERVERS
+            });
+            
+            // Create data channel
+            this.dataChannel = this.peerConnection.createDataChannel(CONFIG.DATA_CHANNEL_LABEL, {
+                ordered: CONFIG.DATA_CHANNEL_ORDERED
+            });
+            
+            this.setupDataChannel();
+            this.setupPeerConnection();
+            
+            // Create offer
+            const offer = await this.peerConnection.createOffer();
+            await this.peerConnection.setLocalDescription(offer);
+            
+            // Wait for ICE gathering to complete
+            await this.waitForIceGathering();
+            
+            // Get the complete SessionDescription object and display as JSON (compact format for single line)
+            const offerSessionDescription = this.peerConnection.localDescription;
+            this.offerDisplay.value = JSON.stringify(offerSessionDescription);
+            
+            // Set up the RPI link
+            this.rpiLink.href = this.rpiServerUrl;
+            
+        } catch (error) {
+            console.error('Error generating offer:', error);
+            alert('Error generating offer: ' + error.message);
+        }
+    }
+    
+    copyOffer() {
+        this.offerDisplay.select();
+        this.offerDisplay.setSelectionRange(0, 99999);
+        
+        try {
+            document.execCommand('copy');
+            
+            const originalText = this.copyOfferBtn.textContent;
+            this.copyOfferBtn.textContent = 'Copied!';
+            
+            setTimeout(() => {
+                this.copyOfferBtn.textContent = originalText;
+            }, 2000);
+        } catch (error) {
+            console.error('Failed to copy to clipboard:', error);
+            alert('Failed to copy to clipboard. Please select and copy manually.');
+        }
     }
     
     async testRpiConnection(url) {
@@ -107,64 +207,9 @@ class WebRTCClient {
             }
             // In no-cors mode, we can't read the response, but if we get here without timeout, server is likely reachable
             return true;
-        }    }    async generateOfferAutomatically() {
-        try {
-            // Check if IP address is valid first
-            this.rpiServerUrl = this.getRpiServerUrl();            if (!this.rpiServerUrl) {
-                this.updateStatus('Please enter a valid Raspberry Pi IP address');
-                // Hide URL info when invalid
-                this.urlInfo.style.display = 'none';
-                this.rpiLink.style.display = 'none';
-                return;
-            }
-            
-            this.updateStatus('Generating SDP offer automatically...');
-            
-            // Create peer connection
-            this.peerConnection = new RTCPeerConnection({
-                iceServers: CONFIG.ICE_SERVERS
-            });
-            
-            // Create data channel
-            this.dataChannel = this.peerConnection.createDataChannel(CONFIG.DATA_CHANNEL_LABEL, {
-                ordered: CONFIG.DATA_CHANNEL_ORDERED
-            });
-            
-            this.setupDataChannel();
-            this.setupPeerConnection();
-            
-            // Create offer
-            const offer = await this.peerConnection.createOffer();
-            await this.peerConnection.setLocalDescription(offer);
-                // Wait for ICE gathering to complete
-            await this.waitForIceGathering();
-            
-            // Get the complete SessionDescription object
-            const offerSessionDescription = this.peerConnection.localDescription;
-            
-            // Encode offer as base64 for URL
-            const offerJson = JSON.stringify(offerSessionDescription);
-            const encodedOffer = btoa(offerJson);
-            
-            // Create URL with offer parameter
-            const rpiUrlWithOffer = `${this.rpiServerUrl}?offer=${encodeURIComponent(encodedOffer)}`;
-              // Update the RPI link
-            this.rpiLink.href = rpiUrlWithOffer;
-            this.rpiLink.style.display = 'block';
-            
-            // Show URL info and length
-            this.urlInfo.style.display = 'block';
-            this.urlLength.textContent = rpiUrlWithOffer.length;
-            
-            this.updateStatus('Offer generated! Click the link below to open the RPI server');
-              } catch (error) {
-            console.error('Error generating offer:', error);
-            this.updateStatus('Error generating offer: ' + error.message);
-            // Hide URL info on error
-            this.urlInfo.style.display = 'none';
-            this.rpiLink.style.display = 'none';
-        }
-    }async setAnswer() {
+        }    }    
+    
+    async setAnswer() {
         try {
             const answerJson = this.answerSdp.value.trim();
             if (!answerJson) {
@@ -195,6 +240,7 @@ class WebRTCClient {
             await this.peerConnection.setRemoteDescription(answer);
             
             this.updateStatus('Answer processed successfully! Waiting for connection...');
+            this.showStep(4);
             
         } catch (error) {
             console.error('Error setting answer:', error);
@@ -326,6 +372,14 @@ class WebRTCClient {
         this.answerSdp.value = '';
         
         console.log('Connection closed manually');
+    }
+    
+    handleRpiLinkClick() {
+        // Automatically proceed to step 3 after a short delay
+        // This gives the user time to see the new tab opening
+        setTimeout(() => {
+            this.showStep(3);
+        }, 1000);
     }
 }
 
