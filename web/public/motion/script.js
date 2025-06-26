@@ -26,14 +26,14 @@ class CameraMovementAnalyzer {
         this.stream = null;
         this.previousFrame = null;
         this.isAnalyzing = false;
-        this.frameRate = 30;
+        this.frameRate = 60; // Increased for faster detection
         this.analysisInterval = null;
         this.availableCameras = [];
         
         // Movement tracking
         this.movementHistory = [];
-        this.maxHistoryLength = 10;
-        this.threshold = 0.5;
+        this.maxHistoryLength = 3; // Reduced from 10 to 3 for faster response
+        this.threshold = 0.3; // Lowered threshold for more sensitivity
         
         this.init();
     }
@@ -214,16 +214,16 @@ class CameraMovementAnalyzer {
     calculateOpticalFlow(prevFrame, currFrame) {
         const width = this.canvas.width;
         const height = this.canvas.height;
-        const blockSize = 16; // Size of blocks to compare
-        const searchRange = 8; // Search range for motion vectors
+        const blockSize = 32; // Increased from 16 for faster processing
+        const searchRange = 4; // Reduced from 8 for speed
         
         let totalX = 0;
         let totalY = 0;
         let blockCount = 0;
         
-        // Convert to grayscale and calculate motion vectors
-        for (let y = 0; y < height - blockSize; y += blockSize) {
-            for (let x = 0; x < width - blockSize; x += blockSize) {
+        // Sample fewer blocks for speed - skip more pixels
+        for (let y = 0; y < height - blockSize; y += blockSize * 2) {
+            for (let x = 0; x < width - blockSize; x += blockSize * 2) {
                 const motion = this.findMotionVector(
                     prevFrame, currFrame, 
                     x, y, blockSize, searchRange
@@ -255,12 +255,12 @@ class CameraMovementAnalyzer {
     findMotionVector(prevFrame, currFrame, x, y, blockSize, searchRange) {
         let bestMatch = { x: 0, y: 0, error: Infinity };
         
-        // Get reference block from previous frame
-        const refBlock = this.getBlock(prevFrame, x, y, blockSize);
+        // Get reference block from previous frame (simplified sampling)
+        const refBlock = this.getBlockSimple(prevFrame, x, y, blockSize);
         
-        // Search in current frame
-        for (let dy = -searchRange; dy <= searchRange; dy++) {
-            for (let dx = -searchRange; dx <= searchRange; dx++) {
+        // Search in current frame with reduced precision
+        for (let dy = -searchRange; dy <= searchRange; dy += 2) { // Step by 2 for speed
+            for (let dx = -searchRange; dx <= searchRange; dx += 2) { // Step by 2 for speed
                 const newX = x + dx;
                 const newY = y + dy;
                 
@@ -268,8 +268,8 @@ class CameraMovementAnalyzer {
                     newX + blockSize < this.canvas.width && 
                     newY + blockSize < this.canvas.height) {
                     
-                    const currBlock = this.getBlock(currFrame, newX, newY, blockSize);
-                    const error = this.calculateBlockError(refBlock, currBlock);
+                    const currBlock = this.getBlockSimple(currFrame, newX, newY, blockSize);
+                    const error = this.calculateBlockErrorSimple(refBlock, currBlock);
                     
                     if (error < bestMatch.error) {
                         bestMatch = { x: dx, y: dy, error: error };
@@ -278,25 +278,24 @@ class CameraMovementAnalyzer {
             }
         }
         
-        // Only return motion if error is below threshold
-        if (bestMatch.error < this.threshold * blockSize * blockSize * 255) {
+        // Lowered threshold for more sensitive detection
+        if (bestMatch.error < this.threshold * blockSize * blockSize * 100) {
             return bestMatch;
         }
         
         return null;
     }
     
-    getBlock(frame, x, y, size) {
+    getBlockSimple(frame, x, y, size) {
         const block = [];
         const width = this.canvas.width;
+        const step = 4; // Sample every 4th pixel for speed
         
-        for (let j = 0; j < size; j++) {
-            for (let i = 0; i < size; i++) {
+        for (let j = 0; j < size; j += step) {
+            for (let i = 0; i < size; i += step) {
                 const pixelIndex = ((y + j) * width + (x + i)) * 4;
-                // Convert to grayscale
-                const gray = (frame.data[pixelIndex] + 
-                             frame.data[pixelIndex + 1] + 
-                             frame.data[pixelIndex + 2]) / 3;
+                // Simple grayscale conversion
+                const gray = frame.data[pixelIndex]; // Just use red channel
                 block.push(gray);
             }
         }
@@ -304,9 +303,10 @@ class CameraMovementAnalyzer {
         return block;
     }
     
-    calculateBlockError(block1, block2) {
+    calculateBlockErrorSimple(block1, block2) {
         let error = 0;
-        for (let i = 0; i < block1.length; i++) {
+        const len = Math.min(block1.length, block2.length);
+        for (let i = 0; i < len; i++) {
             error += Math.abs(block1[i] - block2[i]);
         }
         return error;
@@ -323,12 +323,19 @@ class CameraMovementAnalyzer {
         // Smooth the movement values using history
         const smoothed = this.smoothMovement(movement);
         
-        // Update numerical displays
-        this.horizontalMovement.textContent = Math.abs(smoothed.x).toFixed(2);
-        this.verticalMovement.textContent = Math.abs(smoothed.y).toFixed(2);
-        this.overallSpeed.textContent = smoothed.magnitude.toFixed(2);
+        // Invert the movement values to match camera perspective
+        const invertedMovement = {
+            x: -smoothed.x,
+            y: -smoothed.y,
+            magnitude: smoothed.magnitude
+        };
         
-        // Update direction indicators
+        // Update numerical displays with inverted values
+        this.horizontalMovement.textContent = Math.abs(invertedMovement.x).toFixed(2);
+        this.verticalMovement.textContent = Math.abs(invertedMovement.y).toFixed(2);
+        this.overallSpeed.textContent = invertedMovement.magnitude.toFixed(2);
+        
+        // Update direction indicators (pass original smoothed for calculations)
         this.updateDirections(smoothed);
         this.updateIndicators(smoothed);
         
@@ -337,22 +344,20 @@ class CameraMovementAnalyzer {
     }
     
     smoothMovement(movement) {
-        if (this.movementHistory.length < 3) {
+        if (this.movementHistory.length < 2) { // Reduced from 3
             return movement;
         }
         
-        // Use weighted average of recent movements
-        let totalX = 0, totalY = 0, totalWeight = 0;
+        // Simple average of last 2-3 frames instead of weighted average
+        let totalX = 0, totalY = 0;
         
         for (let i = 0; i < this.movementHistory.length; i++) {
-            const weight = (i + 1) / this.movementHistory.length; // More recent = higher weight
-            totalX += this.movementHistory[i].x * weight;
-            totalY += this.movementHistory[i].y * weight;
-            totalWeight += weight;
+            totalX += this.movementHistory[i].x;
+            totalY += this.movementHistory[i].y;
         }
         
-        const smoothX = totalX / totalWeight;
-        const smoothY = totalY / totalWeight;
+        const smoothX = totalX / this.movementHistory.length;
+        const smoothY = totalY / this.movementHistory.length;
         
         return {
             x: smoothX,
@@ -362,47 +367,59 @@ class CameraMovementAnalyzer {
     }
     
     updateDirections(movement) {
-        const threshold = 0.1;
+        const threshold = 0.05;
         
-        // Horizontal direction
+        // Horizontal direction (inverted)
         if (Math.abs(movement.x) > threshold) {
-            this.horizontalDirection.textContent = movement.x > 0 ? 'RIGHT' : 'LEFT';
+            this.horizontalDirection.textContent = movement.x > 0 ? 'LEFT' : 'RIGHT';
         } else {
             this.horizontalDirection.textContent = '-';
         }
         
-        // Vertical direction
+        // Vertical direction (inverted)
         if (Math.abs(movement.y) > threshold) {
-            this.verticalDirection.textContent = movement.y > 0 ? 'DOWN' : 'UP';
+            this.verticalDirection.textContent = movement.y > 0 ? 'UP' : 'DOWN';
         } else {
             this.verticalDirection.textContent = '-';
         }
     }
     
     updateIndicators(movement) {
-        const threshold = 0.2;
+        const minThreshold = 0.02; // Minimum to show any indicator
+        const maxIntensity = 2.0; // Maximum movement for full opacity
         
         // Reset all indicators
         [this.upIndicator, this.downIndicator, this.leftIndicator, this.rightIndicator]
-            .forEach(indicator => indicator.classList.remove('active'));
+            .forEach(indicator => {
+                indicator.classList.remove('active');
+                indicator.style.opacity = '0.1'; // Base transparency
+            });
         
-        // Activate relevant indicators
-        if (movement.y < -threshold) {
-            this.upIndicator.classList.add('active');
-        }
-        if (movement.y > threshold) {
+        // Calculate intensities and activate relevant indicators (inverted directions)
+        if (movement.y < -minThreshold) { // Camera moves up = object moves down
+            const intensity = Math.min(Math.abs(movement.y) / maxIntensity, 1);
             this.downIndicator.classList.add('active');
+            this.downIndicator.style.opacity = Math.max(0.1, intensity).toString();
         }
-        if (movement.x < -threshold) {
-            this.leftIndicator.classList.add('active');
+        if (movement.y > minThreshold) { // Camera moves down = object moves up
+            const intensity = Math.min(Math.abs(movement.y) / maxIntensity, 1);
+            this.upIndicator.classList.add('active');
+            this.upIndicator.style.opacity = Math.max(0.1, intensity).toString();
         }
-        if (movement.x > threshold) {
+        if (movement.x < -minThreshold) { // Camera moves left = object moves right
+            const intensity = Math.min(Math.abs(movement.x) / maxIntensity, 1);
             this.rightIndicator.classList.add('active');
+            this.rightIndicator.style.opacity = Math.max(0.1, intensity).toString();
+        }
+        if (movement.x > minThreshold) { // Camera moves right = object moves left
+            const intensity = Math.min(Math.abs(movement.x) / maxIntensity, 1);
+            this.leftIndicator.classList.add('active');
+            this.leftIndicator.style.opacity = Math.max(0.1, intensity).toString();
         }
     }
     
     animateMovementItems(movement) {
-        const threshold = 0.1;
+        const threshold = 0.05; // Reduced from 0.1 for faster response
         const items = document.querySelectorAll('.movement-item');
         
         items.forEach(item => item.classList.remove('active'));
