@@ -2,7 +2,10 @@ module rpi-webrtc
 
 go 1.24rc1
 
-require github.com/pion/webrtc/v4 v4.0.0-beta.30
+require (
+	github.com/pion/webrtc/v4 v4.0.0-beta.30
+	github.com/stianeikeland/go-rpio/v4 v4.6.0
+)
 
 require (
 	github.com/google/uuid v1.6.0 // indirect
