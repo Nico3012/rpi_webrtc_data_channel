@@ -265,7 +265,10 @@ class WebRTCConnection extends LitElement {
             this.rpiServerUrl = `http://${this.rpiAddress}:${this.rpiPort}`;
 
             // Create peer connection without STUN/TURN servers for local network
-            this.peerConnection = new RTCPeerConnection();
+            this.peerConnection = new RTCPeerConnection({
+                // No ICE servers needed for local network connections
+                iceServers: []
+            });
 
             // Create data channel
             this.dataChannel = this.peerConnection.createDataChannel('messages', {

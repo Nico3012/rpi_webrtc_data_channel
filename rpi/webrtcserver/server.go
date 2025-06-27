@@ -169,13 +169,9 @@ func (s *Server) processOffer(offerType, offerSDP string) (string, error) {
 	// Close any existing connections
 	s.closeExistingConnections()
 
-	// Create a new peer connection
+	// Create a new peer connection without ICE servers for local network
 	config := webrtc.Configuration{
-		ICEServers: []webrtc.ICEServer{
-			{
-				URLs: []string{"stun:stun.l.google.com:19302"},
-			},
-		},
+		// No ICE servers needed for local network connections
 	}
 
 	var err error
