@@ -3,7 +3,7 @@ async function generateAnswer() {
     const offerText = offerInput.value.trim();
 
     if (!offerText) {
-        showError('Please paste the Controller Code first');
+        alert('Please paste the Controller Code first');
         return;
     }
 
@@ -42,7 +42,7 @@ async function generateAnswer() {
 
     } catch (error) {
         console.error('Error generating answer:', error);
-        showError('Error generating response code: ' + error.message);
+        alert('Error generating response code: ' + error.message);
     } finally {
         // Re-enable button
         const btn = document.getElementById('generateAnswerBtn');
@@ -94,14 +94,6 @@ function showStep(stepNumber) {
     if (currentStep) {
         currentStep.classList.remove('hidden');
     }
-
-    // Hide error section when showing a step
-    document.getElementById('errorSection').classList.add('hidden');
-}
-
-function showError(message) {
-    document.getElementById('errorMessage').textContent = message;
-    document.getElementById('errorSection').classList.remove('hidden');
 }
 
 // Set up event listeners
