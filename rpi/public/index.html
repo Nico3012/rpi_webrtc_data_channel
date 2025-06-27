@@ -6,41 +6,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
     <script type="module" src="script.js"></script>
-    <title>RPI WebRTC Server</title>
+    <title>Drone Setup</title>
 </head>
 
 <body>
     <div class="container">
-        <h1>🥧 RPI WebRTC Server</h1>
+        <h1>Drone Setup</h1>
 
         <!-- Step 1: Paste Offer -->
         <div id="step1" class="step-container">
             <div class="step-header">
-                <h2>Step 1: Paste SDP Offer</h2>
+                <h2>Step 1: Paste Controller Code</h2>
                 <div class="step-indicator">1 / 2</div>
             </div>
-            <p>Paste the SDP offer you copied from the web client:</p>
-            <input type="text" id="offerInput" placeholder="Paste the SDP offer JSON here...">
-            <button id="generateAnswerBtn" class="btn btn-primary">Generate Answer</button>
+            <p>Paste the Controller Code from your device:</p>
+            <div class="input-group">
+                <input type="text" id="offerInput" placeholder="Paste Controller Code here...">
+                <button id="generateAnswerBtn" class="btn">Generate Response</button>
+            </div>
         </div>
 
         <!-- Step 2: Copy Answer -->
         <div id="step2" class="step-container hidden">
             <div class="step-header">
-                <h2>Step 2: Copy SDP Answer</h2>
+                <h2>Step 2: Copy Drone Response Code</h2>
                 <div class="step-indicator">2 / 2</div>
             </div>
-            <div class="status success">
-                ✅ SDP Answer Generated Successfully!
-            </div>
-            <p>Copy the answer below and paste it back into the web client:</p>
+            <div class="status success">Drone Response Code Generated</div>
+            <p>Copy the code below and paste it back into your controller app:</p>
             <div class="input-group">
                 <input type="text" id="answerDisplay" readonly>
-                <button id="copyAnswerBtn" class="btn btn-success">Copy Answer</button>
+                <button id="copyAnswerBtn" class="btn">Copy Response Code</button>
             </div>
-            <button id="closePageBtn" class="btn btn-secondary">Close Page</button>
-            <p class="help-text">Click "Copy Answer" to copy the answer to your clipboard, then "Close Page" to close
-                this tab.</p>
+            <button id="closePageBtn" class="btn secondary">Close</button>
         </div>
 
         <div id="errorSection" class="hidden">

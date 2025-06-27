@@ -14,21 +14,21 @@
     </script>
     <script type="module" src="webrtc-component.js"></script>
     <script type="module" src="script.js"></script>
-    <title>WebRTC Data Channel - Web Client</title>
+    <title>Drone Controller</title>
 </head>
 
 <body>
     <div class="container">
-        <h1>WebRTC Data Channel - Web Client</h1>
+        <h1>Drone Controller</h1>
         <webrtc-connection id="webrtcConnection" rpi-address="192.168.2.53" rpi-port="8080"></webrtc-connection>
 
         <!-- Chat interface - only shown when connected -->
         <div id="chatContainer" class="chat-section" style="display: none;">
-            <h2>Chat Communication</h2>
+            <h2>Send Commands</h2>
             <div id="messages" class="messages"></div>
             <div class="input-group">
-                <input type="text" id="messageInput" placeholder="Type your message...">
-                <button id="sendButton" class="btn btn-primary">Send</button>
+                <input type="text" id="messageInput" placeholder="Enter command...">
+                <button id="sendButton" class="btn">Send</button>
             </div>
         </div>
     </div>

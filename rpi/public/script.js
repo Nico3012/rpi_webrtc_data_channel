@@ -3,7 +3,7 @@ async function generateAnswer() {
     const offerText = offerInput.value.trim();
 
     if (!offerText) {
-        showError('Please paste the SDP offer first');
+        showError('Please paste the Controller Code first');
         return;
     }
 
@@ -13,7 +13,7 @@ async function generateAnswer() {
 
         // Validate offer structure
         if (!offer.type || !offer.sdp || offer.type !== 'offer') {
-            throw new Error('Invalid offer format. Expected an offer with type and sdp properties.');
+            throw new Error('Invalid Controller Code format');
         }
 
         // Disable button during processing
@@ -33,7 +33,7 @@ async function generateAnswer() {
         const result = await response.json();
 
         if (!response.ok || result.error) {
-            throw new Error(result.error || 'Failed to generate answer');
+            throw new Error(result.error || 'Failed to generate response code');
         }
 
         // Display the answer as JSON (compact format for single line)
@@ -42,12 +42,12 @@ async function generateAnswer() {
 
     } catch (error) {
         console.error('Error generating answer:', error);
-        showError('Error generating answer: ' + error.message);
+        showError('Error generating response code: ' + error.message);
     } finally {
         // Re-enable button
         const btn = document.getElementById('generateAnswerBtn');
         btn.disabled = false;
-        btn.textContent = 'Generate Answer';
+        btn.textContent = 'Generate Response';
     }
 }
 
@@ -65,12 +65,12 @@ function copyAnswer() {
         const btn = document.getElementById('copyAnswerBtn');
         const originalText = btn.textContent;
         btn.textContent = 'Copied!';
-        btn.style.backgroundColor = '#218838';
+        btn.style.backgroundColor = '#333';
 
         // Reset button text after 2 seconds
         setTimeout(() => {
             btn.textContent = originalText;
-            btn.style.backgroundColor = '#28a745';
+            btn.style.backgroundColor = '#000';
         }, 2000);
     }
 }

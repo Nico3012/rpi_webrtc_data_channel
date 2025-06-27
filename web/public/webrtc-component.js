@@ -50,11 +50,11 @@ class WebRTCConnection extends LitElement {
         return html`
             <div class="step-container">
                 <div class="step-header">
-                    <h2>WebRTC Data Channel Connected</h2>
-                    <div class="step-indicator">Connected</div>
+                    <h2>Drone Connected</h2>
+                    <div class="step-indicator">Ready</div>
                 </div>
                 <div class="status connected">${this.connectionStatus}</div>
-                <button @click="${this.closeConnection}" class="btn btn-danger">Close Connection</button>
+                <button @click="${this.closeConnection}" class="btn">Disconnect</button>
             </div>
         `;
     }
@@ -65,40 +65,39 @@ class WebRTCConnection extends LitElement {
             <!-- Step 1: Generate and Copy Offer -->
             <div class="step-container ${this.currentStep !== 1 ? 'hidden' : ''}">
                 <div class="step-header">
-                    <h2>Step 1: Copy SDP Offer</h2>
-                    <div class="step-indicator">1 / 3</div>
+                    <h2>Step 1: Copy Controller Code</h2>
+                    <div class="step-indicator">1 / 4</div>
                 </div>
                 <div id="offerSection">
-                    <p>Your SDP offer has been generated. Copy it and open the RPI server:</p>
-                    <label for="offerDisplay">SDP Offer (copy this):</label>
+                    <p>Copy your Controller Code and open the drone setup page:</p>
                     <div class="input-group">
                         <input type="text" id="offerDisplay" readonly>
-                        <button @click="${this.copyOffer}" class="btn btn-success">Copy Offer</button>
+                        <button @click="${this.copyOffer}" class="btn">Copy Controller Code</button>
                     </div>
-                    <p class="help-text">Click the link below to open the RPI server and paste the offer:</p>
-                    <a href="http://${this.rpiAddress}:${this.rpiPort}" target="_blank" class="rpi-link" @click="${this.nextStep}">
-                        http://${this.rpiAddress}:${this.rpiPort}
+                    <a href="http://${this.rpiAddress}:${this.rpiPort}" target="_blank" class="drone-link" @click="${this.nextStep}">
+                        Open Drone Setup
                     </a>
-                    <p class="help-text"><small>This will open in a new tab and automatically proceed to the next step.</small></p>
                 </div>
             </div>
 
             <!-- Step 2: Paste Answer -->
             <div class="step-container ${this.currentStep !== 2 ? 'hidden' : ''}">
                 <div class="step-header">
-                    <h2>Step 2: Paste SDP Answer</h2>
-                    <div class="step-indicator">2 / 3</div>
+                    <h2>Step 2: Paste Drone Response Code</h2>
+                    <div class="step-indicator">2 / 4</div>
                 </div>
-                <p>Paste the SDP answer you copied from the RPI server:</p>
-                <input type="text" id="answerSdp" placeholder="Paste the SDP Answer from the RPI server here...">
-                <button @click="${this.setAnswer}" class="btn btn-primary">Connect with Answer</button>
+                <p>Paste the Drone Response Code you copied from the setup page:</p>
+                <div class="input-group">
+                    <input type="text" id="answerSdp" placeholder="Paste Drone Response Code here...">
+                    <button @click="${this.setAnswer}" class="btn">Connect</button>
+                </div>
             </div>
 
             <!-- Step 3: Communication -->
             <div class="step-container ${this.currentStep !== 3 ? 'hidden' : ''}">
                 <div class="step-header">
-                    <h2>Step 3: Establishing Connection</h2>
-                    <div class="step-indicator">3 / 3</div>
+                    <h2>Step 3: Connecting to Drone</h2>
+                    <div class="step-indicator">3 / 4</div>
                 </div>
                 <div class="status">${this.connectionStatus}</div>
             </div>
@@ -139,10 +138,8 @@ class WebRTCConnection extends LitElement {
             // Update the RPI server URL using the attributes
             this.rpiServerUrl = `http://${this.rpiAddress}:${this.rpiPort}`;
 
-            // Create peer connection
-            this.peerConnection = new RTCPeerConnection({
-                iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-            });
+            // Create peer connection without STUN/TURN servers for local network
+            this.peerConnection = new RTCPeerConnection();
 
             // Create data channel
             this.dataChannel = this.peerConnection.createDataChannel('messages', {
@@ -156,10 +153,7 @@ class WebRTCConnection extends LitElement {
             const offer = await this.peerConnection.createOffer();
             await this.peerConnection.setLocalDescription(offer);
 
-            // Wait for ICE gathering
-            await this.waitForIceGathering();
-
-            // Display offer
+            // Display offer immediately without waiting for ICE candidates
             const offerDisplay = this.shadowRoot.querySelector('#offerDisplay');
             if (offerDisplay) {
                 offerDisplay.value = JSON.stringify(this.peerConnection.localDescription);
@@ -327,21 +321,6 @@ class WebRTCConnection extends LitElement {
                     break;
             }
         };
-    }
-
-    /** @private */
-    async waitForIceGathering() {
-        return new Promise((resolve) => {
-            if (this.peerConnection.iceGatheringState === 'complete') {
-                resolve();
-            } else {
-                this.peerConnection.addEventListener('icegatheringstatechange', () => {
-                    if (this.peerConnection.iceGatheringState === 'complete') {
-                        resolve();
-                    }
-                });
-            }
-        });
     }
 
     /** @private */

@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Set up event listeners for WebRTC component
     webrtcComponent.addEventListener('message-received', (event) => {
-        console.log('Received message via event:', event.detail.message);
+        console.log('Received response via event:', event.detail.message);
         addMessage(event.detail.message, 'received');
     });
 
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
             chatContainer.style.display = 'block';
         } else {
             chatContainer.style.display = 'none';
-            // Clear messages when disconnected
+            // Clear commands when disconnected
             messages = [];
             renderMessages();
         }
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Also check immediately
     updateChatVisibility();
 
-    // Send message function
+    // Send command function
     function sendMessage() {
         const message = messageInput.value.trim();
         if (!message) return;
@@ -47,8 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
             addMessage(message, 'sent');
             messageInput.value = '';
         } catch (error) {
-            console.error('Error sending message:', error);
-            alert('Error sending message: ' + error.message);
+            console.error('Error sending command:', error);
+            alert('Error sending command: ' + error.message);
         }
     }
 
