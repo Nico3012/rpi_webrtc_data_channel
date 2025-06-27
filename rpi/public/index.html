@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
     <script type="module" src="script.js"></script>
-    <title>Drone Setup</title>
+    <title>Device Setup</title>
 </head>
 
 <body>
     <div class="container">
-        <h1>Drone Setup</h1>
+        <h1>Device Setup</h1>
 
         <!-- Step 1: Paste Offer -->
         <div id="step1" class="step-container">
@@ -20,25 +20,26 @@
                 <div class="step-indicator">1 / 2</div>
             </div>
             <p>Paste the Controller Code from your device:</p>
-            <div class="input-group">
-                <input type="text" id="offerInput" placeholder="Paste Controller Code here...">
-                <button id="generateAnswerBtn" class="btn">Generate Response</button>
-            </div>
+            <input type="text" id="offerInput" placeholder="Paste Controller Code here...">
+            <button id="generateAnswerBtn" class="btn">Generate Response</button>
         </div>
 
         <!-- Step 2: Copy Answer -->
         <div id="step2" class="step-container hidden">
             <div class="step-header">
-                <h2>Step 2: Copy Drone Response Code</h2>
+                <h2>Step 2: Copy device Response Code</h2>
                 <div class="step-indicator">2 / 2</div>
             </div>
-            <div class="status success">Drone Response Code Generated</div>
             <p>Copy the code below and paste it back into your controller app:</p>
             <div class="input-group">
                 <input type="text" id="answerDisplay" readonly>
-                <button id="copyAnswerBtn" class="btn">Copy Response Code</button>
+                <button id="copyAnswerBtn" class="btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                    </svg>
+                </button>
             </div>
-            <button id="closePageBtn" class="btn secondary">Close</button>
+            <button id="closePageBtn" class="btn">Close</button>
         </div>
 
         <div id="errorSection" class="hidden">

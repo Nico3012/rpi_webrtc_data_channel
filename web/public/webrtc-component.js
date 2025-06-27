@@ -12,11 +12,138 @@ class WebRTCConnection extends LitElement {
     };
 
     // lit property
+    // static styles = css`
+    //     * {
+    //         margin: 0;
+    //         padding: 0;
+    //         box-sizing: border-box;
+    //     }
+
+    //     :host {
+    //         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    //         background: #fff;
+    //         color: #000;
+    //         line-height: 1.5;
+    //         display: block;
+    //     }
+
+    //     h2 {
+    //         font-size: 1.2rem;
+    //         font-weight: 500;
+    //     }
+
+    //     .step-container {
+    //         border: 1px solid #000;
+    //         padding: 1.5rem;
+    //         display: flex;
+    //         flex-direction: column;
+    //         gap: 0.5rem;
+    //     }
+
+    //     .step-header {
+    //         display: flex;
+    //         justify-content: space-between;
+    //         align-items: center;
+    //     }
+
+    //     .step-indicator {
+    //         font-size: 0.875rem;
+    //         color: #fff;
+    //         background: #000;
+    //         padding: 0.25rem 0.5rem;
+    //         border: 1px solid #000;
+    //     }
+
+    //     .input-group {
+    //         display: flex;
+    //         gap: 0.5rem;
+    //     }
+
+    //     .input-group input {
+    //         flex-grow: 1;
+    //         flex-shrink: 1;
+    //     }
+
+    //     .input-group .btn {
+    //         width: auto;
+    //     }
+
+    //     input {
+    //         flex: 1;
+    //         padding: 0.75rem;
+    //         border: 1px solid #000;
+    //         background: #fff;
+    //         color: #000;
+    //     }
+
+    //     input:focus {
+    //         outline: 2px solid #000;
+    //         outline-offset: -2px;
+    //     }
+
+    //     .btn {
+    //         padding: 0.5rem 0.5rem;
+    //         border: 1px solid #000;
+    //         background: #000;
+    //         color: #fff;
+    //         cursor: pointer;
+    //         white-space: nowrap;
+    //         width: 100%;
+    //         display: flex;
+    //         align-items: center;
+    //         justify-content: center;
+    //         gap: 0.5rem;
+    //     }
+
+    //     .btn:hover {
+    //         background: #333;
+    //     }
+
+    //     .btn:disabled {
+    //         background: #ccc;
+    //         border-color: #ccc;
+    //         cursor: not-allowed;
+    //     }
+
+    //     .drone-link {
+    //         display: block;
+    //         padding: 0.5rem;
+    //         border: 1px solid #000;
+    //         color: #fff;
+    //         background-color: #000;
+    //         text-decoration: none;
+    //         text-align: center;
+    //         width: 100%;
+    //     }
+
+    //     .status {
+    //         padding: 0.75rem;
+    //         border: 1px solid #000;
+    //         text-align: center;
+    //     }
+
+    //     .status.connected {
+    //         background: #f0f0f0;
+    //     }
+
+    //     .status.error {
+    //         background: #000;
+    //         color: #fff;
+    //     }
+
+    //     p {
+    //         color: #333;
+    //     }
+
+    //     .hidden {
+    //         display: none;
+    //     }
+    // `;
+
     static styles = css`
-        .hidden {
+        .step-container.hidden {
             display: none;
         }
-
     `;
 
     constructor() {
@@ -50,8 +177,7 @@ class WebRTCConnection extends LitElement {
         return html`
             <div class="step-container">
                 <div class="step-header">
-                    <h2>Drone Connected</h2>
-                    <div class="step-indicator">Ready</div>
+                    <h2>Step 3: Device Connected</h2>
                 </div>
                 <div class="status connected">${this.connectionStatus}</div>
                 <button @click="${this.closeConnection}" class="btn">Disconnect</button>
@@ -66,38 +192,38 @@ class WebRTCConnection extends LitElement {
             <div class="step-container ${this.currentStep !== 1 ? 'hidden' : ''}">
                 <div class="step-header">
                     <h2>Step 1: Copy Controller Code</h2>
-                    <div class="step-indicator">1 / 4</div>
+                    <div class="step-indicator">1 / 3</div>
                 </div>
-                <div id="offerSection">
-                    <p>Copy your Controller Code and open the drone setup page:</p>
-                    <div class="input-group">
-                        <input type="text" id="offerDisplay" readonly>
-                        <button @click="${this.copyOffer}" class="btn">Copy Controller Code</button>
-                    </div>
-                    <a href="http://${this.rpiAddress}:${this.rpiPort}" target="_blank" class="drone-link" @click="${this.nextStep}">
-                        Open Drone Setup
-                    </a>
+                <p>Copy your Controller Code to connect to the device:</p>
+                <div class="input-group">
+                    <input type="text" id="offerDisplay" readonly>
+                    <button @click="${this.copyOffer}" class="btn" id="copyOfferBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                        </svg>
+                    </button>
                 </div>
+                <a href="http://${this.rpiAddress}:${this.rpiPort}" target="_blank" class="drone-link" @click="${this.nextStep}">
+                    Open device Setup
+                </a>
             </div>
 
             <!-- Step 2: Paste Answer -->
             <div class="step-container ${this.currentStep !== 2 ? 'hidden' : ''}">
                 <div class="step-header">
-                    <h2>Step 2: Paste Drone Response Code</h2>
-                    <div class="step-indicator">2 / 4</div>
+                    <h2>Step 2: Paste device Response Code</h2>
+                    <div class="step-indicator">2 / 3</div>
                 </div>
-                <p>Paste the Drone Response Code you copied from the setup page:</p>
-                <div class="input-group">
-                    <input type="text" id="answerSdp" placeholder="Paste Drone Response Code here...">
-                    <button @click="${this.setAnswer}" class="btn">Connect</button>
-                </div>
+                <p>Paste the device Response Code you copied from the setup page:</p>
+                <input type="text" id="answerSdp" placeholder="Paste device Response Code here...">
+                <button @click="${this.setAnswer}" class="btn">Connect</button>
             </div>
 
             <!-- Step 3: Communication -->
             <div class="step-container ${this.currentStep !== 3 ? 'hidden' : ''}">
                 <div class="step-header">
-                    <h2>Step 3: Connecting to Drone</h2>
-                    <div class="step-indicator">3 / 4</div>
+                    <h2>Step 3: Connecting to device</h2>
+                    <div class="step-indicator">3 / 3</div>
                 </div>
                 <div class="status">${this.connectionStatus}</div>
             </div>
@@ -179,13 +305,16 @@ class WebRTCConnection extends LitElement {
 
             // if copy was successful, show feedback to the user
             if (copied) {
-                const btn = this.shadowRoot.querySelector('[data-copy-offer]') ||
-                    this.shadowRoot.querySelector('button');
+                const btn = this.shadowRoot.querySelector('#copyOfferBtn');
+                const originalContent = btn.innerHTML;
                 if (btn) {
-                    const originalText = btn.textContent;
-                    btn.textContent = 'Copied!';
+                    btn.innerHTML = `
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                    `;
                     setTimeout(() => {
-                        btn.textContent = originalText;
+                        btn.innerHTML = originalContent;
                     }, 2000);
                 }
             }
@@ -197,13 +326,13 @@ class WebRTCConnection extends LitElement {
         try {
             const answerInput = this.shadowRoot.querySelector('#answerSdp');
             if (!answerInput || !answerInput.value.trim()) {
-                alert('Please paste the SDP answer first');
+                alert('Please paste the device Response Code first');
                 return;
             }
 
             const answer = JSON.parse(answerInput.value);
             if (!answer.type || !answer.sdp || answer.type !== 'answer') {
-                throw new Error('Invalid answer format');
+                throw new Error('Invalid device Response Code format');
             }
 
             await this.peerConnection.setRemoteDescription(answer);
