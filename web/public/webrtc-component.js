@@ -207,7 +207,7 @@ class WebRTCConnection extends LitElement {
         return this.isConnectedState && this.dataChannel && this.dataChannel.readyState === 'open';
     }
 
-    /** @public @returns {Promise<void>} */
+    /** @public @param {string} data @returns {Promise<void>} */
     sendData(data) {
         if (!this.isConnected()) {
             throw new Error('Data channel is not available or not open');
