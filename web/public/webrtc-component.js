@@ -461,6 +461,12 @@ class WebRTCConnection extends LitElement {
 
         this.requestUpdate();
 
+        // Dispatch connection update event for manual disconnect
+        this.dispatchEvent(new CustomEvent('connection-changed', {
+            detail: { connected: false, status: 'Connection closed manually' },
+            bubbles: true
+        }));
+
         // Generate a new offer when returning to step 1
         setTimeout(() => {
             this.generateOffer();

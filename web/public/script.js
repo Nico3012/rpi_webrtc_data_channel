@@ -31,9 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Check connection status periodically
-    setInterval(updateChatVisibility, 500);
-
     // Also check immediately
     updateChatVisibility();
 
