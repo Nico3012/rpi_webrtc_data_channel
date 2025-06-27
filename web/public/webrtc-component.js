@@ -12,136 +12,107 @@ class WebRTCConnection extends LitElement {
     };
 
     // lit property
-    // static styles = css`
-    //     * {
-    //         margin: 0;
-    //         padding: 0;
-    //         box-sizing: border-box;
-    //     }
-
-    //     :host {
-    //         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    //         background: #fff;
-    //         color: #000;
-    //         line-height: 1.5;
-    //         display: block;
-    //     }
-
-    //     h2 {
-    //         font-size: 1.2rem;
-    //         font-weight: 500;
-    //     }
-
-    //     .step-container {
-    //         border: 1px solid #000;
-    //         padding: 1.5rem;
-    //         display: flex;
-    //         flex-direction: column;
-    //         gap: 0.5rem;
-    //     }
-
-    //     .step-header {
-    //         display: flex;
-    //         justify-content: space-between;
-    //         align-items: center;
-    //     }
-
-    //     .step-indicator {
-    //         font-size: 0.875rem;
-    //         color: #fff;
-    //         background: #000;
-    //         padding: 0.25rem 0.5rem;
-    //         border: 1px solid #000;
-    //     }
-
-    //     .input-group {
-    //         display: flex;
-    //         gap: 0.5rem;
-    //     }
-
-    //     .input-group input {
-    //         flex-grow: 1;
-    //         flex-shrink: 1;
-    //     }
-
-    //     .input-group .btn {
-    //         width: auto;
-    //     }
-
-    //     input {
-    //         flex: 1;
-    //         padding: 0.75rem;
-    //         border: 1px solid #000;
-    //         background: #fff;
-    //         color: #000;
-    //     }
-
-    //     input:focus {
-    //         outline: 2px solid #000;
-    //         outline-offset: -2px;
-    //     }
-
-    //     .btn {
-    //         padding: 0.5rem 0.5rem;
-    //         border: 1px solid #000;
-    //         background: #000;
-    //         color: #fff;
-    //         cursor: pointer;
-    //         white-space: nowrap;
-    //         width: 100%;
-    //         display: flex;
-    //         align-items: center;
-    //         justify-content: center;
-    //         gap: 0.5rem;
-    //     }
-
-    //     .btn:hover {
-    //         background: #333;
-    //     }
-
-    //     .btn:disabled {
-    //         background: #ccc;
-    //         border-color: #ccc;
-    //         cursor: not-allowed;
-    //     }
-
-    //     .drone-link {
-    //         display: block;
-    //         padding: 0.5rem;
-    //         border: 1px solid #000;
-    //         color: #fff;
-    //         background-color: #000;
-    //         text-decoration: none;
-    //         text-align: center;
-    //         width: 100%;
-    //     }
-
-    //     .status {
-    //         padding: 0.75rem;
-    //         border: 1px solid #000;
-    //         text-align: center;
-    //     }
-
-    //     .status.connected {
-    //         background: #f0f0f0;
-    //     }
-
-    //     .status.error {
-    //         background: #000;
-    //         color: #fff;
-    //     }
-
-    //     p {
-    //         color: #333;
-    //     }
-
-    //     .hidden {
-    //         display: none;
-    //     }
-    // `;
-
     static styles = css`
-        .step-container.hidden {
+        .step-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        h2 {
+            margin: 8px;
+            color: black;
+            font-size: 24px;
+            font-family: serif;
+            line-height: 1.5;
+        }
+
+        .step-indicator {
+            margin: 8px;
+            padding: 4px 10px;
+            background-color: black;
+            color: white;
+            font-family: monospace;
+            font-size: 16px;
+            line-height: 1.5;
+            border-radius: 16px;
+        }
+
+        .input-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        input {
+            flex-grow: 1;
+            display: block;
+            appearance: none;
+            margin: 8px;
+            padding: 10px;
+            border: 1px solid black;
+            border-radius: 20px;
+            outline: none;
+            background-color: white;
+            color: black;
+            text-decoration: none;
+            font-family: sans-serif;
+            font-size: 12px;
+            font-weight: normal;
+            line-height: 1.5;
+            text-align: left;
+        }
+
+        svg {
+            display: block;
+            margin: 4px;
+        }
+
+        a,
+        button {
+            display: block;
+            appearance: none;
+            margin: 8px;
+            padding: 8px;
+            border-radius: 20px;
+            border: none;
+            outline: none;
+            background-color: black;
+            color: white;
+            text-decoration: none;
+            font-family: sans-serif;
+            font-size: 16px;
+            font-weight: normal;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        p {
+            margin: 8px;
+            font-family: sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            color: black;
+        }
+
+        .status {
+            margin: 8px;
+            padding: 10px;
+            border: 1px solid black;
+            border-radius: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        .hidden {
             display: none;
         }
     `;
@@ -177,9 +148,9 @@ class WebRTCConnection extends LitElement {
         return html`
             <div class="step-container">
                 <div class="step-header">
-                    <h2>Step 3: Device Connected</h2>
+                    <h2>Step 4: Device Connected</h2>
+                    <div class="step-indicator">4 / 4</div>
                 </div>
-                <div class="status connected">${this.connectionStatus}</div>
                 <button @click="${this.closeConnection}" class="btn">Disconnect</button>
             </div>
         `;
@@ -192,7 +163,7 @@ class WebRTCConnection extends LitElement {
             <div class="step-container ${this.currentStep !== 1 ? 'hidden' : ''}">
                 <div class="step-header">
                     <h2>Step 1: Copy Controller Code</h2>
-                    <div class="step-indicator">1 / 3</div>
+                    <div class="step-indicator">1 / 4</div>
                 </div>
                 <p>Copy your Controller Code to connect to the device:</p>
                 <div class="input-group">
@@ -212,7 +183,7 @@ class WebRTCConnection extends LitElement {
             <div class="step-container ${this.currentStep !== 2 ? 'hidden' : ''}">
                 <div class="step-header">
                     <h2>Step 2: Paste device Response Code</h2>
-                    <div class="step-indicator">2 / 3</div>
+                    <div class="step-indicator">2 / 4</div>
                 </div>
                 <p>Paste the device Response Code you copied from the setup page:</p>
                 <input type="text" id="answerSdp" placeholder="Paste device Response Code here...">
@@ -223,7 +194,7 @@ class WebRTCConnection extends LitElement {
             <div class="step-container ${this.currentStep !== 3 ? 'hidden' : ''}">
                 <div class="step-header">
                     <h2>Step 3: Connecting to device</h2>
-                    <div class="step-indicator">3 / 3</div>
+                    <div class="step-indicator">3 / 4</div>
                 </div>
                 <div class="status">${this.connectionStatus}</div>
             </div>
@@ -355,7 +326,7 @@ class WebRTCConnection extends LitElement {
             this.isConnectedState = true;
             this.updateStatus('Connected', true);
             this.requestUpdate();
-            
+
             // Dispatch connection update event
             this.dispatchEvent(new CustomEvent('connection-changed', {
                 detail: { connected: true, status: 'Connected' },
@@ -371,13 +342,13 @@ class WebRTCConnection extends LitElement {
                 this.updateStatus('Disconnected', false);
                 this.currentStep = 1;
                 this.requestUpdate();
-                
+
                 // Dispatch connection update event
                 this.dispatchEvent(new CustomEvent('connection-changed', {
                     detail: { connected: false, status: 'Disconnected' },
                     bubbles: true
                 }));
-                
+
                 // Generate a new offer when data channel closes
                 setTimeout(() => {
                     this.generateOffer();

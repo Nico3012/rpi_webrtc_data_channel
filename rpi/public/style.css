@@ -1,3 +1,106 @@
-.step-container.hidden {
+.hidden {
+    display: none;
+}
+
+.step-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.step-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+h2 {
+    margin: 8px;
+    color: black;
+    font-size: 24px;
+    font-family: serif;
+    line-height: 1.5;
+}
+
+.step-indicator {
+    margin: 8px;
+    padding: 4px 10px;
+    background-color: black;
+    color: white;
+    font-family: monospace;
+    font-size: 16px;
+    line-height: 1.5;
+    border-radius: 16px;
+}
+
+.input-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+input {
+    flex-grow: 1;
+    display: block;
+    appearance: none;
+    margin: 8px;
+    padding: 10px;
+    border: 1px solid black;
+    border-radius: 20px;
+    outline: none;
+    background-color: white;
+    color: black;
+    text-decoration: none;
+    font-family: sans-serif;
+    font-size: 12px;
+    font-weight: normal;
+    line-height: 1.5;
+    text-align: left;
+}
+
+svg {
+    display: block;
+    margin: 4px;
+}
+
+a,
+button {
+    display: block;
+    appearance: none;
+    margin: 8px;
+    padding: 8px;
+    border-radius: 20px;
+    border: none;
+    outline: none;
+    background-color: black;
+    color: white;
+    text-decoration: none;
+    font-family: sans-serif;
+    font-size: 16px;
+    font-weight: normal;
+    line-height: 1.5;
+    text-align: center;
+}
+
+p {
+    margin: 8px;
+    font-family: sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    color: black;
+}
+
+.status {
+    margin: 8px;
+    padding: 10px;
+    border: 1px solid black;
+    border-radius: 20px;
+    font-family: monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.hidden {
     display: none;
 }
