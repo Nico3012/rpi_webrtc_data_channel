@@ -42,6 +42,7 @@ class WebRTCConnection extends LitElement {
             font-size: 16px;
             line-height: 1.5;
             border-radius: 16px;
+            flex-shrink: 0;
         }
 
         .input-group {
