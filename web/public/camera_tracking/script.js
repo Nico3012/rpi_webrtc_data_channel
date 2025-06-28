@@ -151,10 +151,10 @@ function updateThreeCamera() {
     const { pitch, roll } = deviceOrientation;
     
     // Convert device orientation to camera rotation with configurable sensitivity
-    // Pitch controls looking up/down (X-axis rotation) - INVERTED
+    // Pitch controls looking up/down (X-axis rotation) - NORMAL DIRECTION
     // Roll controls looking left/right (Y-axis rotation)
     threeCamera.rotation.set(
-        THREE.MathUtils.degToRad(-pitch * config.sensitivity), // X-axis (pitch) - INVERTED
+        THREE.MathUtils.degToRad(pitch * config.sensitivity), // X-axis (pitch) - NORMAL DIRECTION
         THREE.MathUtils.degToRad(-roll * config.sensitivity), // Y-axis (yaw from roll)
         0                                                     // Z-axis (no rotation)
     );
