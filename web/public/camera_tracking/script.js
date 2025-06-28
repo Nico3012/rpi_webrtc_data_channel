@@ -12,12 +12,31 @@ let previousFeatures = [];
 let currentFeatures = [];
 let featureMovements = [];
 let frameCount = 0;
-let trackedFeatures = new Map(); // Store feature history with colors
+let trackedFeatures = new Map();
 let nextFeatureId = 0;
 
+// 2D Projection variables
+let projectionMode = false;
+let orientationEnabled = false;
+let deviceOrientation = { pitch: 0, roll: 0, yaw: 0 };
+
+// Three.js variables
+let threeScene, threeCamera, threeRenderer;
+let threeContainer;
+let featurePoints3D = []; // 3D representations of OpenCV feature points
+let featurePointsMesh; // Three.js mesh for the points
+
+// Configurable parameters
+let config = {
+    fov: 75,
+    featureDepth: 10,
+    pointSize: 0.1,
+    sensitivity: 0.5
+};
+
 // Visual parameters
-const trailDuration = 1000; // 1 second in milliseconds
-const maxTrailPoints = 30; // Maximum trail points per feature (assuming 30 FPS)
+const trailDuration = 1000;
+const maxTrailPoints = 30;
 
 // Feature detection parameters
 const maxCorners = 100;
@@ -28,7 +47,142 @@ const useHarrisDetector = false;
 const k = 0.04;
 
 // Movement tracking parameters
-const matchingThreshold = 15; // pixels - max distance to consider points as matching
+const matchingThreshold = 15;
+
+// Initialize Three.js scene
+function initThreeJS() {
+    threeContainer = document.getElementById('threeContainer');
+    
+    // Create scene
+    threeScene = new THREE.Scene();
+    
+    // Create camera with configurable FOV
+    threeCamera = new THREE.PerspectiveCamera(config.fov, threeContainer.clientWidth / threeContainer.clientHeight, 0.1, 1000);
+    threeCamera.position.set(0, 0, 0); // Camera at origin
+    threeCamera.rotation.set(0, 0, 0); // Looking down negative Z axis initially
+    
+    // Create renderer
+    threeRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    threeRenderer.setSize(threeContainer.clientWidth, threeContainer.clientHeight);
+    threeRenderer.setClearColor(0x000000, 0); // Transparent background
+    threeContainer.appendChild(threeRenderer.domElement);
+    
+    // Start render loop
+    animateThree();
+}
+
+// Convert 2D feature points to 3D positions
+function convertFeaturePointsTo3D() {
+    if (!currentFeatures || currentFeatures.length === 0) {
+        featurePoints3D = [];
+        return;
+    }
+    
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+    
+    featurePoints3D = currentFeatures.map(feature => {
+        // Convert from screen coordinates to normalized device coordinates (-1 to 1)
+        const x = ((feature.x / canvasWidth) * 2 - 1) * (canvasWidth / canvasHeight);
+        const y = -((feature.y / canvasHeight) * 2 - 1); // Flip Y axis
+        
+        // Project to 3D space at fixed depth using configurable FOV
+        const fov = THREE.MathUtils.degToRad(config.fov);
+        const aspectRatio = canvasWidth / canvasHeight;
+        const halfHeight = Math.tan(fov / 2) * config.featureDepth;
+        const halfWidth = halfHeight * aspectRatio;
+        
+        return new THREE.Vector3(
+            x * halfWidth,
+            y * halfHeight,
+            -config.featureDepth // Negative Z is forward in Three.js
+        );
+    });
+}
+
+// Create or update 3D feature points visualization (no trails, only current points)
+function updateFeaturePoints3D() {
+    // Remove existing points and lines
+    if (featurePointsMesh) {
+        threeScene.remove(featurePointsMesh);
+        featurePointsMesh.geometry.dispose();
+        featurePointsMesh.material.dispose();
+        featurePointsMesh = null;
+    }
+    
+    // Remove any existing line segments
+    const linesToRemove = [];
+    threeScene.traverse((child) => {
+        if (child instanceof THREE.LineSegments) {
+            linesToRemove.push(child);
+        }
+    });
+    linesToRemove.forEach(line => {
+        threeScene.remove(line);
+        line.geometry.dispose();
+        line.material.dispose();
+    });
+    
+    if (featurePoints3D.length === 0) return;
+    
+    // Create geometry from current 3D points only
+    const geometry = new THREE.BufferGeometry().setFromPoints(featurePoints3D);
+    
+    // Create material for points with configurable size
+    const material = new THREE.PointsMaterial({
+        color: 0x00ff88,
+        size: config.pointSize,
+        sizeAttenuation: true
+    });
+    
+    // Create points mesh
+    featurePointsMesh = new THREE.Points(geometry, material);
+    threeScene.add(featurePointsMesh);
+}
+
+// Update camera rotation based on device orientation
+function updateThreeCamera() {
+    if (!projectionMode || !orientationEnabled) {
+        // When orientation is disabled, keep camera looking straight ahead
+        threeCamera.rotation.set(0, 0, 0);
+        return;
+    }
+    
+    const { pitch, roll } = deviceOrientation;
+    
+    // Convert device orientation to camera rotation with configurable sensitivity
+    // Pitch controls looking up/down (X-axis rotation) - INVERTED
+    // Roll controls looking left/right (Y-axis rotation)
+    threeCamera.rotation.set(
+        THREE.MathUtils.degToRad(-pitch * config.sensitivity), // X-axis (pitch) - INVERTED
+        THREE.MathUtils.degToRad(-roll * config.sensitivity), // Y-axis (yaw from roll)
+        0                                                     // Z-axis (no rotation)
+    );
+}
+
+// Three.js render loop
+function animateThree() {
+    if (!projectionMode || !threeRenderer || !threeScene || !threeCamera) {
+        requestAnimationFrame(animateThree);
+        return;
+    }
+    
+    updateThreeCamera();
+    threeRenderer.render(threeScene, threeCamera);
+    requestAnimationFrame(animateThree);
+}
+
+// Resize Three.js renderer
+function resizeThreeRenderer() {
+    if (!threeRenderer || !threeCamera || !threeContainer) return;
+    
+    const width = threeContainer.clientWidth || 640;
+    const height = threeContainer.clientHeight || 480;
+    
+    threeCamera.aspect = width / height;
+    threeCamera.updateProjectionMatrix();
+    threeRenderer.setSize(width, height);
+}
 
 // Initialize when OpenCV is ready
 function onOpenCvReady() {
@@ -96,11 +250,32 @@ function init() {
     
     const startButton = document.getElementById('startButton');
     const stopButton = document.getElementById('stopButton');
+    const projectionToggle = document.getElementById('projectionToggle');
+    const orientationToggle = document.getElementById('orientationToggle');
     const retryButton = document.getElementById('retryOpenCv');
     
     startButton.addEventListener('click', startCamera);
     stopButton.addEventListener('click', stopCamera);
+    projectionToggle.addEventListener('click', toggleProjectionMode);
+    orientationToggle.addEventListener('click', toggleOrientation);
     retryButton.addEventListener('click', retryOpenCvLoading);
+    
+    // Add configuration control event listeners
+    const fovSlider = document.getElementById('fovSlider');
+    const depthSlider = document.getElementById('depthSlider');
+    const sizeSlider = document.getElementById('sizeSlider');
+    const sensitivitySlider = document.getElementById('sensitivitySlider');
+    
+    fovSlider.addEventListener('input', updateFOV);
+    depthSlider.addEventListener('input', updateDepth);
+    sizeSlider.addEventListener('input', updatePointSize);
+    sensitivitySlider.addEventListener('input', updateSensitivity);
+    
+    // Initialize Three.js
+    initThreeJS();
+    
+    // Handle window resize
+    window.addEventListener('resize', resizeThreeRenderer);
     
     // Check if OpenCV is already loaded
     if (typeof cv !== 'undefined' && cv.Mat) {
@@ -189,6 +364,9 @@ async function startCamera() {
                 updateStatus('Camera started - Feature detection disabled (OpenCV not loaded)');
             }
             
+            // Resize Three.js renderer to match video
+            resizeThreeRenderer();
+            
             updateButtons(false, true);
             
             // Start processing (will work with or without OpenCV)
@@ -243,6 +421,57 @@ function stopCamera() {
     updateMovementDisplay([]);
 }
 
+// Old 2D projection functions replaced with Three.js implementation above
+
+// Device orientation handling
+function requestOrientationPermission() {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        // iOS 13+ permission request
+        DeviceOrientationEvent.requestPermission()
+            .then(response => {
+                if (response === 'granted') {
+                    enableOrientationListeners();
+                } else {
+                    updateStatus('Orientation permission denied');
+                }
+            })
+            .catch(error => {
+                console.error('Error requesting orientation permission:', error);
+                updateStatus('Error requesting orientation permission');
+            });
+    } else {
+        // For other browsers, just enable listeners
+        enableOrientationListeners();
+    }
+}
+
+function enableOrientationListeners() {
+    window.addEventListener('deviceorientation', handleOrientationChange);
+    orientationEnabled = true;
+    updateOrientationButton();
+    updateStatus('Orientation tracking enabled');
+}
+
+function disableOrientationListeners() {
+    window.removeEventListener('deviceorientation', handleOrientationChange);
+    orientationEnabled = false;
+    deviceOrientation = { pitch: 0, roll: 0, yaw: 0 };
+    updateOrientationButton();
+    updateOrientationDisplay();
+    updateStatus('Orientation tracking disabled');
+}
+
+function handleOrientationChange(event) {
+    if (!orientationEnabled) return;
+    
+    // Get orientation values (adjusting for different browser implementations)
+    deviceOrientation.pitch = event.beta || 0;   // X-axis rotation (-180 to 180)
+    deviceOrientation.roll = event.gamma || 0;   // Y-axis rotation (-90 to 90)
+    deviceOrientation.yaw = event.alpha || 0;    // Z-axis rotation (0 to 360)
+    
+    updateOrientationDisplay();
+}
+
 // Process each frame
 function processFrame() {
     if (!video || video.paused || video.ended) {
@@ -251,6 +480,8 @@ function processFrame() {
     
     // Always draw the video frame
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Three.js handles 3D projection rendering automatically
     
     // Only do feature detection if OpenCV is available
     if (isOpenCvReady && !isProcessing && typeof cv !== 'undefined' && src && gray && corners) {
@@ -302,8 +533,16 @@ function processFrame() {
                 updateMovementDisplay(featureMovements);
             }
             
-            // Draw feature points on top of the video
-            drawFeaturePoints();
+            // Draw feature points on top of the video (2D canvas overlay)
+            if (!projectionMode) {
+                drawFeaturePoints();
+            }
+            
+            // Update 3D feature points for projection mode
+            if (projectionMode) {
+                convertFeaturePointsTo3D();
+                updateFeaturePoints3D();
+            }
             
             updateFeatureCount(corners.rows);
             frameCount++;
@@ -319,6 +558,12 @@ function processFrame() {
         // Update feature count to 0 when OpenCV is not available
         updateFeatureCount(0);
         updateMovementDisplay([]);
+        
+        // Clear 3D feature points if in projection mode
+        if (projectionMode) {
+            featurePoints3D = [];
+            updateFeaturePoints3D();
+        }
     }
     
     // Schedule next frame
@@ -576,6 +821,62 @@ function updateMovementDisplay(movements) {
     movementList.innerHTML = html;
 }
 
+// Toggle projection mode
+function toggleProjectionMode() {
+    projectionMode = !projectionMode;
+    const button = document.getElementById('projectionToggle');
+    const orientationButton = document.getElementById('orientationToggle');
+    const configControls = document.querySelector('.config-controls');
+    
+    if (projectionMode) {
+        button.textContent = 'Disable 3D Projection';
+        button.classList.add('active');
+        orientationButton.disabled = false;
+        
+        // Show configuration controls
+        configControls.style.display = 'flex';
+        
+        // Show Three.js container
+        threeContainer.style.display = 'block';
+        
+        // Ensure proper sizing
+        resizeThreeRenderer();
+        
+        // Force render once to make grid visible
+        if (threeRenderer && threeScene && threeCamera) {
+            threeRenderer.render(threeScene, threeCamera);
+        }
+        
+        updateStatus('3D Projection enabled - Feature points will be visualized');
+    } else {
+        button.textContent = 'Enable 3D Projection';
+        button.classList.remove('active');
+        orientationButton.disabled = true;
+        
+        // Hide configuration controls
+        configControls.style.display = 'none';
+        
+        // Hide Three.js container
+        threeContainer.style.display = 'none';
+        
+        if (orientationEnabled) {
+            disableOrientationListeners();
+        }
+        updateStatus('3D Projection disabled');
+    }
+}
+
+// Toggle orientation tracking
+function toggleOrientation() {
+    if (!projectionMode) return;
+    
+    if (orientationEnabled) {
+        disableOrientationListeners();
+    } else {
+        requestOrientationPermission();
+    }
+}
+
 // Update UI elements
 function updateButtons(startEnabled, stopEnabled) {
     document.getElementById('startButton').disabled = !startEnabled;
@@ -590,9 +891,87 @@ function updateFeatureCount(count) {
     document.getElementById('featureCount').textContent = `Features: ${count}`;
 }
 
+function updateOrientationDisplay() {
+    const { pitch, roll } = deviceOrientation;
+    document.getElementById('orientationData').textContent = 
+        `Pitch: ${Math.round(pitch)}° Roll: ${Math.round(roll)}°`;
+}
+
+function updateOrientationButton() {
+    const button = document.getElementById('orientationToggle');
+    if (orientationEnabled) {
+        button.textContent = 'Disable Orientation';
+        button.classList.add('active');
+    } else {
+        button.textContent = 'Enable Orientation';
+        button.classList.remove('active');
+    }
+}
+
+// Configuration update functions
+function updateFOV() {
+    const fovSlider = document.getElementById('fovSlider');
+    const fovValue = document.getElementById('fovValue');
+    
+    config.fov = parseInt(fovSlider.value);
+    fovValue.textContent = config.fov;
+    
+    // Update Three.js camera FOV
+    if (threeCamera) {
+        threeCamera.fov = config.fov;
+        threeCamera.updateProjectionMatrix();
+    }
+    
+    // Recompute 3D points with new FOV
+    if (projectionMode && currentFeatures.length > 0) {
+        convertFeaturePointsTo3D();
+        updateFeaturePoints3D();
+    }
+}
+
+function updateDepth() {
+    const depthSlider = document.getElementById('depthSlider');
+    const depthValue = document.getElementById('depthValue');
+    
+    config.featureDepth = parseInt(depthSlider.value);
+    depthValue.textContent = config.featureDepth;
+    
+    // Recompute 3D points with new depth
+    if (projectionMode && currentFeatures.length > 0) {
+        convertFeaturePointsTo3D();
+        updateFeaturePoints3D();
+    }
+}
+
+function updatePointSize() {
+    const sizeSlider = document.getElementById('sizeSlider');
+    const sizeValue = document.getElementById('sizeValue');
+    
+    config.pointSize = parseFloat(sizeSlider.value);
+    sizeValue.textContent = config.pointSize;
+    
+    // Update Three.js point size
+    if (featurePointsMesh && featurePointsMesh.material) {
+        featurePointsMesh.material.size = config.pointSize;
+    }
+}
+
+function updateSensitivity() {
+    const sensitivitySlider = document.getElementById('sensitivitySlider');
+    const sensitivityValue = document.getElementById('sensitivityValue');
+    
+    config.sensitivity = parseFloat(sensitivitySlider.value);
+    sensitivityValue.textContent = config.sensitivity;
+    
+    // Camera rotation will be updated automatically in the next frame
+}
+
 // Handle page unload
 window.addEventListener('beforeunload', () => {
     stopCamera();
+    if (orientationEnabled) {
+        disableOrientationListeners();
+    }
 });
 
 // Initialize when page loads

@@ -6,6 +6,7 @@
     <title>Camera Feature Tracking</title>
     <link rel="stylesheet" href="style.css">
     <script async src="https://cdn.jsdelivr.net/npm/opencv.js@4.9.0/opencv.js" onload="onOpenCvReady();" onerror="onOpenCvError();" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -13,13 +14,23 @@
         <div class="video-container">
             <video id="videoElement" autoplay playsinline></video>
             <canvas id="canvasOutput"></canvas>
+            <div id="threeContainer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none;"></div>
         </div>
         <div class="controls">
             <button id="startButton">Start Camera</button>
             <button id="stopButton" disabled>Stop Camera</button>
+            <button id="projectionToggle">Enable 3D Projection</button>
+            <button id="orientationToggle" disabled>Enable Orientation</button>
             <button id="retryOpenCv" style="display: none;">Retry OpenCV Loading</button>
+            <div class="config-controls">
+                <label>FOV: <input type="range" id="fovSlider" min="30" max="120" value="75" step="1"> <span id="fovValue">75</span>°</label>
+                <label>Depth: <input type="range" id="depthSlider" min="5" max="50" value="10" step="1"> <span id="depthValue">10</span></label>
+                <label>Point Size: <input type="range" id="sizeSlider" min="0.05" max="0.5" value="0.1" step="0.01"> <span id="sizeValue">0.1</span></label>
+                <label>Sensitivity: <input type="range" id="sensitivitySlider" min="0.1" max="2.0" value="0.5" step="0.1"> <span id="sensitivityValue">0.5</span></label>
+            </div>
             <div class="info">
                 <span id="featureCount">Features: 0</span>
+                <span id="orientationData">Pitch: 0° Roll: 0°</span>
                 <span id="status">Status: Ready</span>
             </div>
         </div>
