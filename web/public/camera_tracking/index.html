@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Feature Tracking</title>
+    <link rel="stylesheet" href="style.css">
+    <script async src="https://cdn.jsdelivr.net/npm/opencv.js@4.9.0/opencv.js" onload="onOpenCvReady();" onerror="onOpenCvError();" type="text/javascript"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Camera Feature Tracking</h1>
+        <div class="video-container">
+            <video id="videoElement" autoplay playsinline></video>
+            <canvas id="canvasOutput"></canvas>
+        </div>
+        <div class="controls">
+            <button id="startButton">Start Camera</button>
+            <button id="stopButton" disabled>Stop Camera</button>
+            <button id="retryOpenCv" style="display: none;">Retry OpenCV Loading</button>
+            <div class="info">
+                <span id="featureCount">Features: 0</span>
+                <span id="status">Status: Ready</span>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
