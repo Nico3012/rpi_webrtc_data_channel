@@ -5,6 +5,8 @@ go 1.24rc1
 require (
 	github.com/pion/webrtc/v4 v4.0.0-beta.30
 	github.com/stianeikeland/go-rpio/v4 v4.6.0
+	periph.io/x/conn/v3 v3.7.2
+	periph.io/x/host/v3 v3.8.5
 )
 
 require (
