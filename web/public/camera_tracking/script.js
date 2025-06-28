@@ -49,6 +49,74 @@ const k = 0.04;
 // Movement tracking parameters
 const matchingThreshold = 15;
 
+// Orientation compensation variables
+let compensatedMovements = [];
+let medianPosition = { x: 0, y: 0 };
+
+// Compensate feature point for device orientation (pitch and roll)
+function compensateForOrientation(point, pitch, roll) {
+    if (!orientationEnabled || (pitch === 0 && roll === 0)) {
+        return { x: point.x, y: point.y };
+    }
+    
+    // Convert angles to radians
+    const pitchRad = pitch * Math.PI / 180;
+    const rollRad = roll * Math.PI / 180;
+    
+    // Get canvas center
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    
+    // Translate to center origin
+    let x = point.x - centerX;
+    let y = point.y - centerY;
+    
+    // Apply pitch compensation (rotation around X-axis affects Y coordinate)
+    const cosP = Math.cos(pitchRad);
+    const sinP = Math.sin(pitchRad);
+    const yPitch = y * cosP;
+    
+    // Apply roll compensation (rotation around Y-axis affects X coordinate)
+    const cosR = Math.cos(rollRad);
+    const sinR = Math.sin(rollRad);
+    const xRoll = x * cosR;
+    
+    // Translate back to canvas coordinates
+    return {
+        x: xRoll + centerX,
+        y: yPitch + centerY
+    };
+}
+
+// Calculate median position from an array of points
+function calculateMedianPosition(points) {
+    if (points.length === 0) {
+        return { x: 0, y: 0 };
+    }
+    
+    const xValues = points.map(p => p.x).sort((a, b) => a - b);
+    const yValues = points.map(p => p.y).sort((a, b) => a - b);
+    
+    const mid = Math.floor(points.length / 2);
+    
+    let medianX, medianY;
+    
+    if (points.length % 2 === 0) {
+        // Even number of points - average of two middle values
+        medianX = (xValues[mid - 1] + xValues[mid]) / 2;
+        medianY = (yValues[mid - 1] + yValues[mid]) / 2;
+    } else {
+        // Odd number of points - middle value
+        medianX = xValues[mid];
+        medianY = yValues[mid];
+    }
+    
+    return {
+        x: Math.round(medianX * 10) / 10,
+        y: Math.round(medianY * 10) / 10
+    };
+}
+
 // Initialize Three.js scene
 function initThreeJS() {
     threeContainer = document.getElementById('threeContainer');
@@ -686,6 +754,11 @@ function hexToRgba(hex, alpha) {
 function calculateFeatureMovements(prevFeatures, currFeatures) {
     const movements = [];
     const currentTime = Date.now();
+    const { pitch, roll } = deviceOrientation;
+    
+    // Arrays to store compensated positions for median calculation
+    const compensatedCurrentPositions = [];
+    const compensatedPreviousPositions = [];
     
     // Match current features with previous features based on proximity
     for (let i = 0; i < currFeatures.length; i++) {
@@ -710,11 +783,22 @@ function calculateFeatureMovements(prevFeatures, currFeatures) {
             }
         }
         
-        // If we found a match, update existing tracked feature
+        // If we found a match, calculate compensated movement
         if (bestMatch && bestMatch.trackedId !== undefined) {
             prevFeatures[bestIndex].matched = true; // Mark as matched
-            const dx = curr.x - bestMatch.x;
-            const dy = curr.y - bestMatch.y;
+            
+            // Apply orientation compensation to both previous and current positions
+            const compensatedPrev = compensateForOrientation(bestMatch, pitch, roll);
+            const compensatedCurr = compensateForOrientation(curr, pitch, roll);
+            
+            // Add to arrays for median calculation
+            compensatedPreviousPositions.push(compensatedPrev);
+            compensatedCurrentPositions.push(compensatedCurr);
+            
+            // Calculate movement after compensation
+            const dx = compensatedCurr.x - compensatedPrev.x;
+            const dy = compensatedCurr.y - compensatedPrev.y;
+            const compensatedDistance = Math.sqrt(dx * dx + dy * dy);
             
             // Update tracked feature with new position
             if (trackedFeatures.has(bestMatch.trackedId)) {
@@ -748,15 +832,23 @@ function calculateFeatureMovements(prevFeatures, currFeatures) {
                 prevY: Math.round(bestMatch.y * 10) / 10,
                 currX: Math.round(curr.x * 10) / 10,
                 currY: Math.round(curr.y * 10) / 10,
+                compensatedPrevX: Math.round(compensatedPrev.x * 10) / 10,
+                compensatedPrevY: Math.round(compensatedPrev.y * 10) / 10,
+                compensatedCurrX: Math.round(compensatedCurr.x * 10) / 10,
+                compensatedCurrY: Math.round(compensatedCurr.y * 10) / 10,
                 dx: Math.round(dx * 10) / 10,
                 dy: Math.round(dy * 10) / 10,
-                distance: Math.round(bestDistance * 10) / 10
+                distance: Math.round(bestDistance * 10) / 10,
+                compensatedDistance: Math.round(compensatedDistance * 10) / 10
             });
             
             curr.trackedId = bestMatch.trackedId;
         } else {
             // New feature - create a new tracked feature
             const newId = nextFeatureId++;
+            const compensatedCurr = compensateForOrientation(curr, pitch, roll);
+            compensatedCurrentPositions.push(compensatedCurr);
+            
             trackedFeatures.set(newId, {
                 id: newId,
                 color: generateFeatureColor(newId),
@@ -773,6 +865,17 @@ function calculateFeatureMovements(prevFeatures, currFeatures) {
         }
     }
     
+    // Calculate median positions
+    const medianPrevious = calculateMedianPosition(compensatedPreviousPositions);
+    const medianCurrent = calculateMedianPosition(compensatedCurrentPositions);
+    
+    // Store compensated movements and median position
+    compensatedMovements = movements;
+    medianPosition = medianCurrent;
+    
+    // Update median position display
+    updateMedianPositionDisplay(medianPrevious, medianCurrent, compensatedPreviousPositions.length);
+    
     // Clean up old tracked features (not seen for more than trail duration)
     for (const [id, feature] of trackedFeatures.entries()) {
         if (currentTime - feature.lastSeen > trailDuration) {
@@ -786,7 +889,7 @@ function calculateFeatureMovements(prevFeatures, currFeatures) {
     return movements;
 }
 
-// Update the movement display
+// Update the movement display with compensation information
 function updateMovementDisplay(movements) {
     const movementList = document.getElementById('movementList');
     
@@ -804,11 +907,16 @@ function updateMovementDisplay(movements) {
         const trackedFeature = trackedFeatures.get(movement.id);
         const featureColor = trackedFeature ? trackedFeature.color : '#666666';
         
+        const isCompensated = orientationEnabled && (deviceOrientation.pitch !== 0 || deviceOrientation.roll !== 0);
+        
         html += `
             <div class="movement-item">
                 <span class="point-id" style="color: ${featureColor}; border-left: 4px solid ${featureColor}; padding-left: 8px;">P${movement.id}</span>
                 <span class="coordinates">
-                    (${movement.prevX}, ${movement.prevY}) → (${movement.currX}, ${movement.currY})
+                    ${isCompensated ? 
+                        `Compensated: (${movement.compensatedPrevX}, ${movement.compensatedPrevY}) → (${movement.compensatedCurrX}, ${movement.compensatedCurrY})` :
+                        `Raw: (${movement.prevX}, ${movement.prevY}) → (${movement.currX}, ${movement.currY})`
+                    }
                 </span>
                 <span class="movement">
                     Δx: <span class="${dxClass}">${movement.dx > 0 ? '+' : ''}${movement.dx}</span>, 
@@ -819,6 +927,29 @@ function updateMovementDisplay(movements) {
     });
     
     movementList.innerHTML = html;
+}
+
+// Update median position display
+function updateMedianPositionDisplay(medianPrev, medianCurr, featureCount) {
+    const medianDisplay = document.getElementById('medianPosition');
+    
+    if (featureCount === 0) {
+        medianDisplay.textContent = 'Median: No features';
+        return;
+    }
+    
+    const isCompensated = orientationEnabled && (deviceOrientation.pitch !== 0 || deviceOrientation.roll !== 0);
+    const prefix = isCompensated ? 'Compensated Median' : 'Raw Median';
+    
+    if (medianPrev.x === 0 && medianPrev.y === 0) {
+        // First frame or no previous data
+        medianDisplay.textContent = `${prefix}: (${medianCurr.x}, ${medianCurr.y})`;
+    } else {
+        // Show movement
+        const dx = medianCurr.x - medianPrev.x;
+        const dy = medianCurr.y - medianPrev.y;
+        medianDisplay.textContent = `${prefix}: (${medianCurr.x}, ${medianCurr.y}) Δ(${dx > 0 ? '+' : ''}${Math.round(dx * 10) / 10}, ${dy > 0 ? '+' : ''}${Math.round(dy * 10) / 10})`;
+    }
 }
 
 // Toggle projection mode

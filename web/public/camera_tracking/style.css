@@ -293,3 +293,10 @@ button:disabled {
         min-width: auto;
     }
 }
+
+#medianPosition {
+    background: rgba(72, 187, 120, 0.1);
+    border-color: rgba(72, 187, 120, 0.3);
+    color: #2d5016;
+    font-family: 'Courier New', monospace;
+}
