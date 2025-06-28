@@ -19,18 +19,8 @@
 
 <body>
     <div class="container">
-        <h1>Drone Controller</h1>
-        <webrtc-connection id="webrtcConnection" rpi-address="192.168.2.53" rpi-port="8080"></webrtc-connection>
-
-        <!-- Chat interface - only shown when connected -->
-        <div id="chatContainer" class="chat-section" style="display: none;">
-            <h2>Send Commands</h2>
-            <div id="messages" class="messages"></div>
-            <div class="input-group">
-                <input type="text" id="messageInput" placeholder="Enter command...">
-                <button id="sendButton" class="btn">Send</button>
-            </div>
-        </div>
+        <webrtc-connection id="webrtcConnection" rpi-address="192.168.2.39" rpi-port="8080"></webrtc-connection>
+        <input id="rangeInput" type="range" min="0" max="1" step="0.01" value="0.5">
     </div>
 </body>
 
