@@ -32,27 +32,35 @@ h1 {
     position: relative;
     display: flex;
     justify-content: center;
+    align-items: center;
     margin-bottom: 30px;
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    background: #000;
+    max-width: 100%;
+    margin: 20px auto 30px auto;
 }
 
 #video {
-    width: 640px;
-    height: 480px;
+    width: 100%;
+    height: auto;
+    max-width: 640px;
     background: #000;
     border-radius: 10px;
+    display: block;
+    object-fit: contain;
 }
 
 #canvas {
     position: absolute;
     top: 0;
     left: 0;
-    width: 640px;
-    height: 480px;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
     z-index: 10;
+    object-fit: contain;
 }
 
 .controls {
@@ -258,10 +266,15 @@ button:disabled {
         font-size: 2em;
     }
     
-    #video, #canvas {
+    .video-container {
+        margin: 10px auto 20px auto;
+        max-width: calc(100vw - 40px);
+    }
+    
+    #video {
         width: 100%;
-        max-width: 480px;
         height: auto;
+        max-width: 100%;
     }
     
     .button-group {

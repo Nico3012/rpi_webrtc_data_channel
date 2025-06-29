@@ -30,6 +30,10 @@ class FeaturePointDetector {
         // 3D Camera instance
         this.camera3D = null;
         
+        // Video scaling factors for responsive display
+        this.scaleX = 1;
+        this.scaleY = 1;
+        
         this.setupEventListeners();
         this.initializeDeviceOrientation();
         this.updateStatus('Waiting for OpenCV...', 'loading');
@@ -60,7 +64,18 @@ class FeaturePointDetector {
             this.canvas.width = this.video.videoWidth;
             this.canvas.height = this.video.videoHeight;
             
-            // Initialize 3D camera with video dimensions
+            // Get the displayed video dimensions (scaled by CSS)
+            const videoRect = this.video.getBoundingClientRect();
+            const displayWidth = videoRect.width;
+            const displayHeight = videoRect.height;
+            
+            // Calculate scaling factors for drawing coordinates
+            this.scaleX = displayWidth / this.video.videoWidth;
+            this.scaleY = displayHeight / this.video.videoHeight;
+            
+            console.log(`Video: ${this.video.videoWidth}x${this.video.videoHeight}, Display: ${displayWidth.toFixed(1)}x${displayHeight.toFixed(1)}, Scale: ${this.scaleX.toFixed(3)}x${this.scaleY.toFixed(3)}`);
+            
+            // Initialize 3D camera with actual video dimensions (not display dimensions)
             this.camera3D = new Camera3D(
                 this.video.videoWidth,
                 this.video.videoHeight,
@@ -148,8 +163,8 @@ class FeaturePointDetector {
             
             this.stream = await navigator.mediaDevices.getUserMedia({
                 video: {
-                    width: { exact: 640 },
-                    height: { exact: 480 },
+                    width: { ideal: 640 },
+                    height: { ideal: 480 },
                     facingMode: 'user'
                 }
             });
@@ -160,7 +175,20 @@ class FeaturePointDetector {
                 this.canvas.width = this.video.videoWidth;
                 this.canvas.height = this.video.videoHeight;
                 
-                // Initialize or update 3D camera with video dimensions
+                // Get the displayed video dimensions (scaled by CSS)
+                const videoRect = this.video.getBoundingClientRect();
+                const displayWidth = videoRect.width;
+                const displayHeight = videoRect.height;
+                
+                // Calculate scaling factors for drawing coordinates
+                this.scaleX = displayWidth / this.video.videoWidth;
+                this.scaleY = displayHeight / this.video.videoHeight;
+                
+                console.log(`Actual Video Resolution: ${this.video.videoWidth}x${this.video.videoHeight}`);
+                console.log(`Display Size: ${displayWidth.toFixed(1)}x${displayHeight.toFixed(1)}`);
+                console.log(`Scale Factors: ${this.scaleX.toFixed(3)}x${this.scaleY.toFixed(3)}`);
+                
+                // Initialize 3D camera with actual video dimensions chosen by browser
                 this.camera3D = new Camera3D(
                     this.video.videoWidth,
                     this.video.videoHeight,
