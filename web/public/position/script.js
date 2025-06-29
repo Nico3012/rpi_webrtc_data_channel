@@ -110,13 +110,13 @@ class FeaturePointDetector {
     
     setupDeviceOrientation() {
         window.addEventListener('deviceorientation', (event) => {
-            // Convert device orientation to our coordinate system with amplification for testing
+            // Use actual device orientation values without artificial amplification
             const pitchDegrees = event.beta || 0;
             const rollDegrees = event.gamma || 0;
             
-            // Amplify the rotation for more visible effect (remove this multiplier once it's working)
-            this.devicePitch = pitchDegrees * (Math.PI / 180) * 2; // Amplify by 2x for testing
-            this.deviceRoll = rollDegrees * (Math.PI / 180) * 2;   // Amplify by 2x for testing
+            // Convert to radians without artificial amplification
+            this.devicePitch = pitchDegrees * (Math.PI / 180);
+            this.deviceRoll = rollDegrees * (Math.PI / 180);
             
             // Update display
             this.deviceRotation.textContent = `Pitch: ${pitchDegrees.toFixed(1)}°, Roll: ${rollDegrees.toFixed(1)}°`;
@@ -335,9 +335,12 @@ class FeaturePointDetector {
         const pitchMultiplier = this.invertPitchCheckbox.checked ? -1 : 1;
         const rollMultiplier = this.invertRollCheckbox.checked ? -1 : 1;
         
-        // Apply the multipliers and fix the rotation mapping
-        const finalPitch = this.devicePitch * pitchMultiplier;
-        const finalRoll = this.deviceRoll * rollMultiplier;
+        // Add sensitivity control (set to 1.0 for normal sensitivity)
+        const sensitivity = 1.0; // Normal sensitivity - can be made configurable later
+        
+        // Apply the multipliers with sensitivity
+        const finalPitch = this.devicePitch * pitchMultiplier * sensitivity;
+        const finalRoll = this.deviceRoll * rollMultiplier * sensitivity;
         
         // Debug: Log the device rotation values
         console.log(`Device Pitch: ${this.devicePitch.toFixed(3)} rad (final: ${finalPitch.toFixed(3)}), Roll: ${this.deviceRoll.toFixed(3)} rad (final: ${finalRoll.toFixed(3)})`);
@@ -352,15 +355,14 @@ class FeaturePointDetector {
                 console.log(`Original center coords: ${centerX.toFixed(2)}, ${centerY.toFixed(2)}`);
             }
             
-            // Apply 3D transformation with device rotation
-            // Fixed: Roll should be applied as yaw (rotationY) for camera-like rotation
-            // This creates the effect of rotating the camera left/right, not spinning it like a wheel
+            // Apply 3D transformation with corrected perspective
             const result = this.camera3D.transform2DPoint(
                 centerX,
                 centerY,
                 finalPitch,    // Pitch rotation (rotationX) - tilting up/down
                 finalRoll,     // Roll applied as Yaw rotation (rotationY) - rotating left/right like turning a camera
-                0              // No rotation around Z-axis (rotationZ) - this was causing the "steering wheel" effect
+                0,             // No rotation around Z-axis (rotationZ) - this was causing the "steering wheel" effect
+                parseFloat(this.depthSlider.value) // Use depth from slider
             );
             
             // Debug: Log transformation result for first few points

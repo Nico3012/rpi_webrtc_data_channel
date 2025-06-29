@@ -7,22 +7,24 @@ class Camera3D {
     constructor(canvasWidth = 640, canvasHeight = 480, fov = 75, depth = 100) {
         this.canvasWidth = canvasWidth;
         this.canvasHeight = canvasHeight;
+        this.fov = fov;
         this.depth = depth; // Constant depth for 2D to 3D conversion
         
         // Create Three.js scene, camera, and renderer (without actually rendering)
         this.scene = new THREE.Scene();
         
-        // Create perspective camera
+        // Create perspective camera with proper settings
         this.camera = new THREE.PerspectiveCamera(
             fov, // field of view
             canvasWidth / canvasHeight, // aspect ratio
             0.1, // near clipping plane
-            1000 // far clipping plane
+            2000 // far clipping plane - increased for better depth range
         );
         
         // Position camera at origin looking down negative Z axis (Three.js default)
         this.camera.position.set(0, 0, 0);
         this.camera.lookAt(0, 0, -1);
+        this.camera.updateMatrixWorld(true);
         
         // Camera rotation (in radians)
         this.cameraRotationX = 0; // pitch
@@ -32,6 +34,14 @@ class Camera3D {
         // Helper objects for calculations
         this.vector3 = new THREE.Vector3();
         this.projectedVector = new THREE.Vector3();
+        
+        console.log('Camera3D initialized with proper perspective:', {
+            canvasWidth,
+            canvasHeight,
+            fov,
+            depth,
+            aspect: canvasWidth / canvasHeight
+        });
     }
     
     /**
@@ -127,31 +137,32 @@ class Camera3D {
         
         console.log(`Input: x2d=${x2d}, y2d=${y2d}, rotX=${rotationX}, rotY=${rotationY}, rotZ=${rotationZ}, depth=${useDepth}`);
         
-        // Convert 2D canvas coordinates to normalized coordinates (-1 to 1)
-        const normalizedX = (x2d * 2) / this.canvasWidth;
-        const normalizedY = -(y2d * 2) / this.canvasHeight; // Flip Y axis for Three.js
+        // Convert 2D canvas coordinates to normalized device coordinates (-1 to 1)
+        const ndcX = (x2d * 2) / this.canvasWidth;
+        const ndcY = -(y2d * 2) / this.canvasHeight; // Flip Y for Three.js coordinate system
         
-        // Create 3D point at specified depth
-        const point3D = new THREE.Vector3(normalizedX, normalizedY, -1);
+        // Calculate the world position using proper perspective projection
+        const aspectRatio = this.canvasWidth / this.canvasHeight;
+        const fovRadians = (this.camera.fov * Math.PI) / 180;
+        const halfHeight = Math.tan(fovRadians / 2) * useDepth;
+        const halfWidth = halfHeight * aspectRatio;
         
-        // Convert from normalized screen coordinates to world coordinates
-        point3D.unproject(this.camera);
+        // Convert NDC to world coordinates using perspective calculation
+        const worldX = ndcX * halfWidth;
+        const worldY = ndcY * halfHeight;
+        const worldZ = -useDepth; // Negative Z for camera space
         
-        // Get direction from camera to the unprojected point
-        const direction = point3D.sub(this.camera.position).normalize();
-        
-        // Place the point at the specified depth
-        const worldPoint = this.camera.position.clone().add(direction.multiplyScalar(useDepth));
+        const worldPoint = new THREE.Vector3(worldX, worldY, worldZ);
         
         console.log(`World point before rotation: ${worldPoint.x.toFixed(3)}, ${worldPoint.y.toFixed(3)}, ${worldPoint.z.toFixed(3)}`);
         
-        // Apply rotations - this is the key part that was missing
+        // Apply rotations using proper order and coordinate system
         if (rotationX !== 0 || rotationY !== 0 || rotationZ !== 0) {
-            // Create rotation matrices for each axis
+            // Create rotation matrix - order matters for camera rotations
             const rotMatrix = new THREE.Matrix4();
             
-            // Apply rotations in XYZ order (pitch, yaw, roll)
-            const euler = new THREE.Euler(rotationX, rotationY, rotationZ, 'XYZ');
+            // Apply rotations in proper camera order (YXZ order for camera-like behavior)
+            const euler = new THREE.Euler(rotationX, rotationY, rotationZ, 'YXZ');
             rotMatrix.makeRotationFromEuler(euler);
             
             // Apply rotation to the world point
@@ -160,23 +171,24 @@ class Camera3D {
             console.log(`World point after rotation: ${worldPoint.x.toFixed(3)}, ${worldPoint.y.toFixed(3)}, ${worldPoint.z.toFixed(3)}`);
         }
         
-        // Project the rotated 3D point back to 2D screen coordinates
-        const screenPoint = worldPoint.clone().project(this.camera);
+        // Project back to 2D using proper perspective division
+        if (worldPoint.z >= 0) {
+            // Point is behind camera
+            return { x: x2d, y: y2d, visible: false };
+        }
         
-        // Convert from normalized device coordinates back to canvas coordinates
-        const finalX = (screenPoint.x * this.canvasWidth) / 2;
-        const finalY = -(screenPoint.y * this.canvasHeight) / 2; // Flip Y back
+        const projectedX = (worldPoint.x / -worldPoint.z) * (this.canvasWidth / 2) / Math.tan(fovRadians / 2);
+        const projectedY = -(worldPoint.y / -worldPoint.z) * (this.canvasHeight / 2) / Math.tan(fovRadians / 2);
         
-        // Check visibility (z < 1 means in front of camera in NDC space)
-        const visible = screenPoint.z < 1 && 
-                       Math.abs(finalX) <= this.canvasWidth / 2 && 
-                       Math.abs(finalY) <= this.canvasHeight / 2;
+        // Check if point is within visible bounds
+        const visible = Math.abs(projectedX) <= this.canvasWidth / 2 && 
+                       Math.abs(projectedY) <= this.canvasHeight / 2;
         
-        console.log(`Final result: x=${finalX.toFixed(3)}, y=${finalY.toFixed(3)}, visible=${visible}`);
+        console.log(`Final result: x=${projectedX.toFixed(3)}, y=${projectedY.toFixed(3)}, visible=${visible}`);
         
         return {
-            x: finalX,
-            y: finalY,
+            x: projectedX,
+            y: projectedY,
             visible: visible
         };
     }
