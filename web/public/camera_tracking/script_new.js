@@ -119,11 +119,10 @@ function updateThreeCamera() {
     const { pitch, roll } = deviceOrientation;
     
     // Convert device orientation to camera rotation with fixed sensitivity
-    // Apply proper roll compensation by rotating around Z-axis
     threeCamera.rotation.set(
-        THREE.MathUtils.degToRad(pitch * config.sensitivity),  // X-axis (pitch)
-        THREE.MathUtils.degToRad(-roll * config.sensitivity),  // Y-axis (yaw from roll)
-        THREE.MathUtils.degToRad(roll * config.sensitivity)    // Z-axis (actual roll compensation)
+        THREE.MathUtils.degToRad(pitch * config.sensitivity),
+        THREE.MathUtils.degToRad(-roll * config.sensitivity),
+        0
     );
 }
 
@@ -430,7 +429,10 @@ function detectFeatures() {
             currentFeatures.push({ x, y });
         }
         
-        // Only update 3D visualization (no 2D canvas drawing)
+        // Draw feature points
+        drawFeaturePoints();
+        
+        // Update 3D visualization
         convertFeaturePointsTo3D();
         updateFeaturePoints3D();
         
@@ -444,6 +446,19 @@ function detectFeatures() {
     } finally {
         isProcessing = false;
     }
+}
+
+// Draw feature points on canvas
+function drawFeaturePoints() {
+    currentFeatures.forEach((feature, index) => {
+        ctx.beginPath();
+        ctx.arc(feature.x, feature.y, 3, 0, 2 * Math.PI);
+        ctx.fillStyle = '#00ff88';
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    });
 }
 
 // Update UI elements

@@ -119,11 +119,10 @@ function updateThreeCamera() {
     const { pitch, roll } = deviceOrientation;
     
     // Convert device orientation to camera rotation with fixed sensitivity
-    // Apply proper roll compensation by rotating around Z-axis
     threeCamera.rotation.set(
-        THREE.MathUtils.degToRad(pitch * config.sensitivity),  // X-axis (pitch)
-        THREE.MathUtils.degToRad(-roll * config.sensitivity),  // Y-axis (yaw from roll)
-        THREE.MathUtils.degToRad(roll * config.sensitivity)    // Z-axis (actual roll compensation)
+        THREE.MathUtils.degToRad(pitch * config.sensitivity),
+        THREE.MathUtils.degToRad(-roll * config.sensitivity),
+        0
     );
 }
 
@@ -242,7 +241,42 @@ function init() {
         setTimeout(() => waitForOpenCV(), 100);
     }
 }
-
+    
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+    const projectionToggle = document.getElementById('projectionToggle');
+    const orientationToggle = document.getElementById('orientationToggle');
+    const retryButton = document.getElementById('retryOpenCv');
+    
+    startButton.addEventListener('click', startCamera);
+    stopButton.addEventListener('click', stopCamera);
+    projectionToggle.addEventListener('click', toggleProjectionMode);
+    orientationToggle.addEventListener('click', toggleOrientation);
+    retryButton.addEventListener('click', retryOpenCvLoading);
+    
+    // Add configuration control event listeners
+    const fovSlider = document.getElementById('fovSlider');
+    const depthSlider = document.getElementById('depthSlider');
+    const sizeSlider = document.getElementById('sizeSlider');
+    const sensitivitySlider = document.getElementById('sensitivitySlider');
+    
+    fovSlider.addEventListener('input', updateFOV);
+    depthSlider.addEventListener('input', updateDepth);
+    sizeSlider.addEventListener('input', updatePointSize);
+    sensitivitySlider.addEventListener('input', updateSensitivity);
+    
+    // Initialize Three.js
+    initThreeJS();
+    
+    // Handle window resize
+    window.addEventListener('resize', resizeThreeRenderer);
+    
+    // Check if OpenCV is already loaded
+    if (typeof cv !== 'undefined' && cv.Mat) {
+        isOpenCvReady = true;
+        updateStatus('Ready - Click Start Camera');
+    } else {
+        updateStatus('Loading OpenCV...');
 // Retry OpenCV loading manually
 function retryOpenCvLoading() {
     document.getElementById('retryOpenCv').style.display = 'none';
@@ -430,7 +464,10 @@ function detectFeatures() {
             currentFeatures.push({ x, y });
         }
         
-        // Only update 3D visualization (no 2D canvas drawing)
+        // Draw feature points
+        drawFeaturePoints();
+        
+        // Update 3D visualization
         convertFeaturePointsTo3D();
         updateFeaturePoints3D();
         
@@ -444,6 +481,19 @@ function detectFeatures() {
     } finally {
         isProcessing = false;
     }
+}
+
+// Draw feature points on canvas
+function drawFeaturePoints() {
+    currentFeatures.forEach((feature, index) => {
+        ctx.beginPath();
+        ctx.arc(feature.x, feature.y, 3, 0, 2 * Math.PI);
+        ctx.fillStyle = '#00ff88';
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    });
 }
 
 // Update UI elements
