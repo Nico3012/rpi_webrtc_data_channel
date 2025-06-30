@@ -15,6 +15,10 @@ class FeaturePointDetector {
         this.fovValue = document.getElementById('fovValue');
         this.depthValue = document.getElementById('depthValue');
         this.deviceRotation = document.getElementById('deviceRotation');
+        this.averageSpeed = document.getElementById('averageSpeed');
+        this.positionX = document.getElementById('positionX');
+        this.positionY = document.getElementById('positionY');
+        this.resetPositionBtn = document.getElementById('resetPositionBtn');
         
         this.stream = null;
         this.animationId = null;
@@ -34,6 +38,14 @@ class FeaturePointDetector {
         this.scaleX = 1;
         this.scaleY = 1;
         
+        // Feature point tracking and velocity calculation
+        this.previousFeaturePoints = []; // Store previous frame's transformed points
+        this.lastFrameTime = Date.now();
+        this.currentPosition = { x: 0, y: 0 }; // Integrated position
+        this.averageVelocity = { x: 0, y: 0 }; // Current average velocity in pixels/sec
+        this.velocityHistory = []; // Store velocity history for smoothing
+        this.maxVelocityHistory = 10; // Number of frames to average
+        
         this.setupEventListeners();
         this.initializeDeviceOrientation();
         this.updateStatus('Waiting for OpenCV...', 'loading');
@@ -43,6 +55,7 @@ class FeaturePointDetector {
         this.startBtn.addEventListener('click', () => this.startCamera());
         this.stopBtn.addEventListener('click', () => this.stopCamera());
         this.toggleRotationBtn.addEventListener('click', () => this.toggleDeviceRotation());
+        this.resetPositionBtn.addEventListener('click', () => this.resetPosition());
         
         // Slider event listeners
         this.fovSlider.addEventListener('input', (e) => {
@@ -199,6 +212,7 @@ class FeaturePointDetector {
                 this.updateStatus('Camera started', '');
                 this.startBtn.disabled = true;
                 this.stopBtn.disabled = false;
+                this.resetPositionBtn.disabled = false;
                 this.startProcessing();
             };
             
@@ -226,12 +240,20 @@ class FeaturePointDetector {
         this.updateStatus('Camera stopped', '');
         this.startBtn.disabled = false;
         this.stopBtn.disabled = true;
+        this.resetPositionBtn.disabled = true;
         
         // Reset device rotation toggle
         this.useDeviceRotation = false;
         this.toggleRotationBtn.textContent = 'Enable Device Rotation';
         this.toggleRotationBtn.classList.remove('enabled');
         this.toggleRotationBtn.disabled = !this.deviceOrientationSupported;
+        
+        // Reset tracking variables
+        this.previousFeaturePoints = [];
+        this.currentPosition = { x: 0, y: 0 };
+        this.averageVelocity = { x: 0, y: 0 };
+        this.velocityHistory = [];
+        this.updatePositionDisplay();
     }
     
     startProcessing() {
@@ -309,9 +331,17 @@ class FeaturePointDetector {
             if (this.useDeviceRotation && this.deviceOrientationSupported) {
                 const transformedPoints = this.transformFeaturePoints(featurePoints);
                 this.drawFeaturePoints(transformedPoints, true);
+                
+                // Track velocities and update position
+                this.trackFeaturePointVelocities(transformedPoints);
+                
                 this.featureCount.textContent = `${numCorners} (${transformedPoints.length} visible after transform)`;
             } else {
                 this.featureCount.textContent = numCorners.toString();
+                // Reset tracking when device rotation is disabled
+                this.previousFeaturePoints = [];
+                this.averageVelocity = { x: 0, y: 0 };
+                this.updatePositionDisplay();
             }
             
             // Clean up
@@ -420,6 +450,116 @@ class FeaturePointDetector {
             this.ctx.lineTo(x, y + 5);
             this.ctx.stroke();
         }
+    }
+    
+    trackFeaturePointVelocities(currentPoints) {
+        const currentTime = Date.now();
+        const deltaTime = (currentTime - this.lastFrameTime) / 1000; // Convert to seconds
+        
+        // Skip if delta time is too small (avoid division by very small numbers)
+        if (deltaTime < 0.01) {
+            return;
+        }
+        
+        const velocities = [];
+        const matchingDistance = 30; // Maximum distance in pixels to consider points as matching
+        
+        // Find matching points between current and previous frames
+        for (const currentPoint of currentPoints) {
+            let bestMatch = null;
+            let bestDistance = Infinity;
+            
+            // Find the closest point from the previous frame
+            for (const prevPoint of this.previousFeaturePoints) {
+                const distance = Math.sqrt(
+                    Math.pow(currentPoint.x - prevPoint.x, 2) + 
+                    Math.pow(currentPoint.y - prevPoint.y, 2)
+                );
+                
+                if (distance < bestDistance && distance < matchingDistance) {
+                    bestDistance = distance;
+                    bestMatch = prevPoint;
+                }
+            }
+            
+            // If we found a matching point, calculate velocity
+            if (bestMatch) {
+                const velocityX = (currentPoint.x - bestMatch.x) / deltaTime; // pixels/sec
+                const velocityY = (currentPoint.y - bestMatch.y) / deltaTime; // pixels/sec
+                
+                velocities.push({
+                    x: velocityX,
+                    y: velocityY,
+                    magnitude: Math.sqrt(velocityX * velocityX + velocityY * velocityY)
+                });
+            }
+        }
+        
+        // Calculate average velocity if we have any matching points
+        if (velocities.length > 0) {
+            const avgVelX = velocities.reduce((sum, vel) => sum + vel.x, 0) / velocities.length;
+            const avgVelY = velocities.reduce((sum, vel) => sum + vel.y, 0) / velocities.length;
+            
+            // Store current average velocity
+            this.averageVelocity = { x: avgVelX, y: avgVelY };
+            
+            // Add to velocity history for smoothing
+            this.velocityHistory.push({ x: avgVelX, y: avgVelY, time: currentTime });
+            
+            // Keep only recent history
+            if (this.velocityHistory.length > this.maxVelocityHistory) {
+                this.velocityHistory.shift();
+            }
+            
+            // Calculate smoothed velocity
+            const smoothedVelocity = this.calculateSmoothedVelocity();
+            
+            // Integrate velocity to get position change
+            this.currentPosition.x += smoothedVelocity.x * deltaTime;
+            this.currentPosition.y += smoothedVelocity.y * deltaTime;
+            
+            // Update display
+            this.updatePositionDisplay();
+            
+            // Debug output
+            console.log(`Tracked ${velocities.length}/${currentPoints.length} points, Avg velocity: ${avgVelX.toFixed(2)}, ${avgVelY.toFixed(2)} px/s`);
+        }
+        
+        // Store current points for next frame
+        this.previousFeaturePoints = currentPoints.map(point => ({ x: point.x, y: point.y }));
+        this.lastFrameTime = currentTime;
+    }
+    
+    calculateSmoothedVelocity() {
+        if (this.velocityHistory.length === 0) {
+            return { x: 0, y: 0 };
+        }
+        
+        // Simple moving average
+        const sumX = this.velocityHistory.reduce((sum, vel) => sum + vel.x, 0);
+        const sumY = this.velocityHistory.reduce((sum, vel) => sum + vel.y, 0);
+        
+        return {
+            x: sumX / this.velocityHistory.length,
+            y: sumY / this.velocityHistory.length
+        };
+    }
+    
+    updatePositionDisplay() {
+        // Update velocity display with directional components
+        this.averageSpeed.textContent = `X: ${this.averageVelocity.x.toFixed(1)}, Y: ${this.averageVelocity.y.toFixed(1)} px/sec`;
+        
+        // Update position display
+        this.positionX.textContent = this.currentPosition.x.toFixed(1);
+        this.positionY.textContent = this.currentPosition.y.toFixed(1);
+    }
+    
+    resetPosition() {
+        this.currentPosition = { x: 0, y: 0 };
+        this.averageVelocity = { x: 0, y: 0 };
+        this.velocityHistory = [];
+        this.previousFeaturePoints = [];
+        this.updatePositionDisplay();
     }
     
     onOpenCvReady() {
