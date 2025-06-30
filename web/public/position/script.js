@@ -46,6 +46,10 @@ class FeaturePointDetector {
         this.velocityHistory = []; // Store velocity history for smoothing
         this.maxVelocityHistory = 10; // Number of frames to average
         
+        // Translation tracking for Method 1 (Track Compensation Offset)
+        this.previousTranslation = null; // Store previous frame's translation offset
+        this.useTranslationTracking = true; // Use the new tracking method
+        
         this.setupEventListeners();
         this.initializeDeviceOrientation();
         this.updateStatus('Waiting for OpenCV...', 'loading');
@@ -250,6 +254,7 @@ class FeaturePointDetector {
         
         // Reset tracking variables
         this.previousFeaturePoints = [];
+        this.previousTranslation = null;
         this.currentPosition = { x: 0, y: 0 };
         this.averageVelocity = { x: 0, y: 0 };
         this.velocityHistory = [];
@@ -332,14 +337,20 @@ class FeaturePointDetector {
                 const transformedPoints = this.transformFeaturePoints(featurePoints);
                 this.drawFeaturePoints(transformedPoints, true);
                 
-                // Track velocities and update position
-                this.trackFeaturePointVelocities(transformedPoints);
+                // Use Method 1: Track translation offset between original and transformed points
+                if (this.useTranslationTracking) {
+                    this.trackTranslationalMotion(featurePoints, transformedPoints);
+                } else {
+                    // Fallback to old method
+                    this.trackFeaturePointVelocities(transformedPoints);
+                }
                 
                 this.featureCount.textContent = `${numCorners} (${transformedPoints.length} visible after transform)`;
             } else {
                 this.featureCount.textContent = numCorners.toString();
                 // Reset tracking when device rotation is disabled
                 this.previousFeaturePoints = [];
+                this.previousTranslation = null;
                 this.averageVelocity = { x: 0, y: 0 };
                 this.updatePositionDisplay();
             }
@@ -530,6 +541,72 @@ class FeaturePointDetector {
         this.lastFrameTime = currentTime;
     }
     
+    // Method 1: Track Compensation Offset
+    trackTranslationalMotion(originalPoints, transformedPoints) {
+        if (originalPoints.length === 0 || transformedPoints.length === 0) return;
+        
+        const currentTime = Date.now();
+        const deltaTime = (currentTime - this.lastFrameTime) / 1000;
+        
+        // Skip if delta time is too small
+        if (deltaTime < 0.01) return;
+        
+        // Calculate center of mass for both point sets
+        const originalCenter = this.calculateCenterOfMass(originalPoints);
+        const transformedCenter = this.calculateCenterOfMass(transformedPoints);
+        
+        // The difference between centers shows pure translation (after rotation compensation)
+        const translationX = transformedCenter.x - originalCenter.x;
+        const translationY = transformedCenter.y - originalCenter.y;
+        
+        // Track this translation over time
+        if (this.previousTranslation) {
+            // Calculate velocity of the translation offset
+            const velocityX = (translationX - this.previousTranslation.x) / deltaTime;
+            const velocityY = (translationY - this.previousTranslation.y) / deltaTime;
+            
+            // This velocity represents camera movement (negate because camera moves opposite to features)
+            this.averageVelocity = { x: -velocityX, y: -velocityY };
+            
+            // Add to velocity history for smoothing
+            this.velocityHistory.push({ x: this.averageVelocity.x, y: this.averageVelocity.y, time: currentTime });
+            
+            // Keep only recent history
+            if (this.velocityHistory.length > this.maxVelocityHistory) {
+                this.velocityHistory.shift();
+            }
+            
+            // Calculate smoothed velocity
+            const smoothedVelocity = this.calculateSmoothedVelocity();
+            
+            // Integrate velocity to get position change
+            this.currentPosition.x += smoothedVelocity.x * deltaTime;
+            this.currentPosition.y += smoothedVelocity.y * deltaTime;
+            
+            // Update display
+            this.updatePositionDisplay();
+            
+            // Debug output
+            console.log(`Translation offset: ${translationX.toFixed(2)}, ${translationY.toFixed(2)}, Camera velocity: ${this.averageVelocity.x.toFixed(2)}, ${this.averageVelocity.y.toFixed(2)} px/s`);
+        }
+        
+        // Store current translation for next frame
+        this.previousTranslation = { x: translationX, y: translationY };
+        this.lastFrameTime = currentTime;
+    }
+    
+    calculateCenterOfMass(points) {
+        if (points.length === 0) return { x: 0, y: 0 };
+        
+        const sumX = points.reduce((sum, point) => sum + point.x, 0);
+        const sumY = points.reduce((sum, point) => sum + point.y, 0);
+        
+        return {
+            x: sumX / points.length,
+            y: sumY / points.length
+        };
+    }
+    
     calculateSmoothedVelocity() {
         if (this.velocityHistory.length === 0) {
             return { x: 0, y: 0 };
@@ -559,6 +636,7 @@ class FeaturePointDetector {
         this.averageVelocity = { x: 0, y: 0 };
         this.velocityHistory = [];
         this.previousFeaturePoints = [];
+        this.previousTranslation = null;
         this.updatePositionDisplay();
     }
     
