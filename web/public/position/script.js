@@ -178,10 +178,10 @@ class FeaturePointDetector {
                 video: {
                     width: { ideal: 640 },
                     height: { ideal: 480 },
-                    facingMode: 'user'
+                    facingMode: 'environment'
                 }
             });
-            
+
             this.video.srcObject = this.stream;
             
             this.video.onloadedmetadata = () => {
