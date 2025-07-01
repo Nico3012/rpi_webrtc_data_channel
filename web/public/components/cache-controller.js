@@ -12,7 +12,6 @@ class CacheController extends LitElement {
         super();
         this.swStatus = 'Initializing...';
         this.isRefreshing = false;
-        this.registration = null;
     }
 
     async connectedCallback() {
@@ -21,11 +20,22 @@ class CacheController extends LitElement {
         // register service worker:
 
         try {
-            this.registration = await navigator.serviceWorker.register('/sw.js');
-            this.swStatus = 'Service Worker registered';
+            if (navigator.serviceWorker.controller) { // check, if a service worker controls the page
+                this.swStatus = 'Service worker active';
+            } else {
+                this.swStatus = 'Installing service worker...';
 
-            await navigator.serviceWorker.ready;
-            this.swStatus = 'Service Worker active';
+                // install new service worker
+                await navigator.serviceWorker.register('/sw.js');
+
+                // wait for service worker to become ready
+                await navigator.serviceWorker.ready;
+
+                this.swStatus = 'Reloading page...';
+
+                // reload the page after installing service worker. Otherwise initial loaded resources might not be cached
+                setTimeout(() => window.location.reload(), 500);
+            }
         } catch (error) {
             this.swStatus = `Registration failed: ${error.message}`;
         }
