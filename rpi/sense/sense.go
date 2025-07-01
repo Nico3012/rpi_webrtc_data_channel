@@ -63,9 +63,26 @@ func (m *MPU6050) Read() (float64, float64, error) {
 	accelY := float64(int16(m.buffer[2])<<8|int16(m.buffer[3])) / 16384.0
 	accelZ := float64(int16(m.buffer[4])<<8|int16(m.buffer[5])) / 16384.0
 
-	// Calculate pitch and roll in degrees
-	pitch := math.Atan2(accelY, math.Sqrt(accelX*accelX+accelZ*accelZ)) * 180.0 / math.Pi
-	roll := math.Atan2(-accelX, math.Sqrt(accelY*accelY+accelZ*accelZ)) * 180.0 / math.Pi
+	// Calculate pitch and roll in degrees with full 360° range
+	// Using atan2 for full quadrant calculation (-180° to +180°)
+	pitch := math.Atan2(accelY, accelZ) * 180.0 / math.Pi
+	roll := math.Atan2(-accelX, accelZ) * 180.0 / math.Pi
+
+	// Convert pitch to 0-180° range, then wrap to -180°
+	if pitch < 0 {
+		pitch = 180.0 + pitch // Convert -180 to 0 range to 0 to 180
+	}
+	if pitch > 180 {
+		pitch = pitch - 360.0 // Wrap values > 180 to negative range
+	}
+
+	// Convert roll to 0-180° range, then wrap to -180°
+	if roll < 0 {
+		roll = 180.0 + roll // Convert -180 to 0 range to 0 to 180
+	}
+	if roll > 180 {
+		roll = roll - 360.0 // Wrap values > 180 to negative range
+	}
 
 	return pitch, roll, nil
 }
