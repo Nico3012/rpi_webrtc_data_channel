@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"rpi-webrtc/sense"
-	"rpi-webrtc/servo"
+	"rpi-webrtc/servohardware"
 	"rpi-webrtc/webrtcserver"
 )
 
@@ -16,7 +16,7 @@ func main() {
 	server := webrtcserver.New("8080", "webrtcserver/public")
 
 	// init servo
-	servoController, err := servo.New(18, 50, 500, 2500)
+	servoController, err := servohardware.New("GPIO18", 50, 500, 2500)
 	if err != nil {
 		log.Fatalf("Failed to initialize servo: %v", err)
 	}
