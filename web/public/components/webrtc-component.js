@@ -311,10 +311,10 @@ class WebRTCConnection extends LitElement {
             }
 
             await this.peerConnection.setRemoteDescription(answer);
-            
+
             // Clear the input immediately after successful connection attempt
             answerInput.value = '';
-            
+
             this.currentStep = 3;
             this.updateStatus('Connecting...', false);
 
