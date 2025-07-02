@@ -155,7 +155,7 @@ class CacheController extends LitElement {
                 </div>
 
                 <button @click=${this.refresh} ?disabled=${this.isRefreshing}>
-                    Update
+                    Update (Uninstall PWA before)
                 </button>
 
                 <p>
