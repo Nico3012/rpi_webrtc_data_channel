@@ -1,0 +1,66 @@
+.content {
+    display: flex;
+    flex-direction: column;
+}
+
+.title {
+    margin: 8px;
+}
+
+.category {
+    margin: 8px;
+    padding: 8px;
+    border: 2px solid black;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+}
+
+.category > div {
+    display: flex;
+    flex-direction: column;
+}
+
+b {
+    margin: 8px;
+}
+
+input[type=number] {
+    display: block;
+    appearance: none;
+    margin: 8px;
+    padding: 10px;
+    border: 1px solid black;
+    border-radius: 20px;
+    outline: none;
+    background-color: white;
+    color: black;
+    text-decoration: none;
+    font-family: sans-serif;
+    font-size: 12px;
+    font-weight: normal;
+    line-height: 1.5;
+    text-align: left;
+}
+
+input[type=range] {
+    margin: 8px;
+}
+
+button {
+    display: block;
+    appearance: none;
+    margin: 8px;
+    padding: 8px;
+    border-radius: 20px;
+    border: none;
+    outline: none;
+    background-color: black;
+    color: white;
+    text-decoration: none;
+    font-family: sans-serif;
+    font-size: 16px;
+    font-weight: normal;
+    line-height: 1.5;
+    text-align: center;
+}
