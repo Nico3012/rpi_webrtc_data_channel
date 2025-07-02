@@ -7,6 +7,12 @@ class CacheController extends LitElement {
             flex-direction: column;
         }
 
+        @media (display-mode: standalone) {
+            .container {
+                display: none;
+            }
+        }
+
         button {
             display: block;
             appearance: none;
@@ -149,7 +155,7 @@ class CacheController extends LitElement {
                 </div>
 
                 <button @click=${this.refresh} ?disabled=${this.isRefreshing}>
-                    Update
+                    Update (Uninstall PWA before)
                 </button>
 
                 <p>
