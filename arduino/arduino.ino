@@ -1,142 +1,207 @@
-#include "Arduino.h"
+#include <PID_v1.h>
 
-// Simple Servo/ESC PWM Demo for Arduino R4 Minima
-// Demonstrates precise PWM control with smooth sweep from 0% to 100%
+// PID variables for first controller
+double input1, output1, setpoint1;
+double kp1 = 2.0, ki1 = 0.1, kd1 = 0.5;
+PID pid1(&input1, &output1, &setpoint1, kp1, ki1, kd1, DIRECT);
 
-// Servo control pin
-const uint8_t SERVO_PIN = 9;
+// PID variables for second controller
+double input2, output2, setpoint2;
+double kp2 = 1.5, ki2 = 0.05, kd2 = 0.3;
+PID pid2(&input2, &output2, &setpoint2, kp2, ki2, kd2, DIRECT);
 
-// PWM frequency configuration
-const uint16_t PWM_FREQUENCY_HZ = 200;  // Configurable frequency (typically 50Hz for servos)
-const uint32_t PWM_PERIOD_US = 1000000UL / PWM_FREQUENCY_HZ;  // Period in microseconds
-
-// Servo timing constants (microseconds)
-const uint16_t SERVO_MIN_PULSE = 1000;  // 0% position (0.5ms)
-const uint16_t SERVO_MAX_PULSE = 2000;  // 100% position (2.5ms)
-
-// Current servo position (0-100%)
-uint8_t servoPosition = 0;
-bool sweepUp = true;
-
-// Function to convert position percentage to pulse width
-uint16_t positionToPulseWidth(uint8_t position_percent) {
-  return SERVO_MIN_PULSE + ((SERVO_MAX_PULSE - SERVO_MIN_PULSE) * position_percent) / 100;
-}
-
-// Function to send PWM signal to servo
-void setServoPosition(uint8_t pin, uint8_t position_percent) {
-  uint16_t pulse_width = positionToPulseWidth(position_percent);
-  
-  // Generate PWM signal: HIGH for pulse_width, then LOW
-  digitalWrite(pin, HIGH);
-  delayMicroseconds(pulse_width);
-  digitalWrite(pin, LOW);
-}
+float sensor_value = 0.0;
+float target_value = 0.0;
 
 void setup() {
-  // Initialize serial communication
-  Serial.begin(115200);
-  while (!Serial);
-  Serial.println("Simple Servo PWM Demo - Arduino R4 Minima");
-  Serial.println("Sweeping servo from 0% to 100% and back");
+  Serial.begin(9600);
+  Serial.println("PID Library-based Controller");
   
-  // Set servo pin as output
-  pinMode(SERVO_PIN, OUTPUT);
-  digitalWrite(SERVO_PIN, LOW);
+  // Initialize PID1
+  setpoint1 = target_value;
+  pid1.SetOutputLimits(-200, 200);
+  pid1.SetSampleTime(20);  // 20ms sample time
+  pid1.SetMode(AUTOMATIC);
   
-  Serial.print("Servo connected to pin: ");
-  Serial.println(SERVO_PIN);
-  Serial.print("PWM Frequency: ");
-  Serial.print(PWM_FREQUENCY_HZ);
-  Serial.println(" Hz");
-  Serial.print("PWM Period: ");
-  Serial.print(PWM_PERIOD_US);
-  Serial.println(" μs");
-  Serial.println("Starting sweep in 2 seconds...");
-  delay(2000);
+  // Initialize PID2
+  setpoint2 = 0.0;
+  pid2.SetOutputLimits(-150, 150);
+  pid2.SetSampleTime(10);  // 10ms sample time
+  pid2.SetMode(AUTOMATIC);
+  
+  Serial.println("PID controllers initialized!");
+  Serial.println("Commands: 't' to set target, 'i' to set input, 'd' for debug, 'p' to tune PID");
 }
 
 void loop() {
-  static unsigned long lastUpdate = 0;
+  // Simulate sensor reading (replace with actual sensor)
+  sensor_value += random(-10, 11) / 10.0;  // Add some noise
   
-  // Update servo position based on configured frequency
-  uint32_t updateInterval = PWM_PERIOD_US / 1000;  // Convert to milliseconds
-  if (millis() - lastUpdate >= updateInterval) {
-    lastUpdate = millis();
-    
-    // Sweep logic: 0% -> 100% -> 0%
-    if (sweepUp) {
-      servoPosition += 1;  // Increase by 1% each step
-      if (servoPosition >= 100) {
-        servoPosition = 100;
-        sweepUp = false;  // Start going down
-        Serial.println("Reached 100% - sweeping down");
-      }
-    } else {
-      servoPosition -= 1;  // Decrease by 1% each step
-      if (servoPosition <= 0) {
-        servoPosition = 0;
-        sweepUp = true;   // Start going up
-        Serial.println("Reached 0% - sweeping up");
-      }
-    }
-    
-    // Send PWM signal to servo
-    setServoPosition(SERVO_PIN, servoPosition);
-    
-    // Print position every 10 steps
-    static uint8_t printCounter = 0;
-    if (printCounter++ >= 10) {
-      printCounter = 0;
-      Serial.print("Position: ");
-      Serial.print(servoPosition);
-      Serial.print("% | Pulse: ");
-      Serial.print(positionToPulseWidth(servoPosition));
-      Serial.println("μs");
+  // Update PID inputs
+  input1 = sensor_value;
+  input2 = sensor_value * 0.8;  // Different input scaling
+  
+  // Compute PID outputs
+  pid1.Compute();
+  pid2.Compute();
+  
+  // Use outputs (e.g., motor control)
+  Serial.print("Sensor:");
+  Serial.print(sensor_value, 2);
+  Serial.print(" | Target:");
+  Serial.print(target_value, 2);
+  Serial.print(" | PID1 Out:");
+  Serial.print(output1, 2);
+  Serial.print(" | PID2 Out:");
+  Serial.println(output2, 2);
+  
+  // Handle serial commands
+  if (Serial.available()) {
+    char cmd = Serial.read();
+    switch (cmd) {
+      case 't':
+        Serial.println("Enter new target value:");
+        while (!Serial.available()) delay(10);
+        target_value = Serial.parseFloat();
+        setpoint1 = target_value;
+        Serial.print("Target set to: ");
+        Serial.println(target_value);
+        break;
+        
+      case 'i':
+        Serial.println("Enter new input value:");
+        while (!Serial.available()) delay(10);
+        sensor_value = Serial.parseFloat();
+        Serial.print("Input set to: ");
+        Serial.println(sensor_value);
+        break;
+        
+      case 'd':
+        printDebugInfo();
+        break;
+        
+      case 'p':
+        tunePID();
+        break;
+        
+      case 'r':
+        // Reset PIDs by switching to manual then back to automatic
+        pid1.SetMode(MANUAL);
+        pid2.SetMode(MANUAL);
+        output1 = 0;
+        output2 = 0;
+        pid1.SetMode(AUTOMATIC);
+        pid2.SetMode(AUTOMATIC);
+        Serial.println("PIDs reset!");
+        break;
+        
+      case 'm':
+        // Toggle between AUTOMATIC and MANUAL mode
+        if (pid1.GetMode() == AUTOMATIC) {
+          pid1.SetMode(MANUAL);
+          pid2.SetMode(MANUAL);
+          Serial.println("Switched to MANUAL mode");
+        } else {
+          pid1.SetMode(AUTOMATIC);
+          pid2.SetMode(AUTOMATIC);
+          Serial.println("Switched to AUTOMATIC mode");
+        }
+        break;
     }
   }
   
-  // Calculate remaining time for LOW period
-  uint16_t pulse_width = positionToPulseWidth(servoPosition);
-  uint32_t low_time = PWM_PERIOD_US - pulse_width;
-  
-  // Ensure we don't exceed maximum delay
-  if (low_time > 16383) {  // delayMicroseconds max reliable value
-    delay(low_time / 1000);  // Use delay() for large values
-    delayMicroseconds(low_time % 1000);
-  } else {
-    delayMicroseconds(low_time);
-  }
+  delay(50);  // Main loop delay
 }
 
-/*
-  Simple Servo PWM Demo for Arduino R4 Minima
+void printDebugInfo() {
+  Serial.println("=== PID Debug Info ===");
   
-  This demo shows how to generate precise PWM signals for servo/ESC control.
+  Serial.print("PID1 - Input:");
+  Serial.print(input1, 3);
+  Serial.print(" Setpoint:");
+  Serial.print(setpoint1, 3);
+  Serial.print(" Output:");
+  Serial.print(output1, 3);
+  Serial.print(" Error:");
+  Serial.print(setpoint1 - input1, 3);
+  Serial.print(" Mode:");
+  Serial.println(pid1.GetMode() == AUTOMATIC ? "AUTO" : "MANUAL");
   
-  How it works:
-  1. Generates configurable frequency PWM signal (default 50Hz)
-  2. Pulse width varies from 500μs (0%) to 2500μs (100%)
-  3. Smoothly sweeps from 0% to 100% and back
+  Serial.print("PID2 - Input:");
+  Serial.print(input2, 3);
+  Serial.print(" Setpoint:");
+  Serial.print(setpoint2, 3);
+  Serial.print(" Output:");
+  Serial.print(output2, 3);
+  Serial.print(" Error:");
+  Serial.print(setpoint2 - input2, 3);
+  Serial.print(" Mode:");
+  Serial.println(pid2.GetMode() == AUTOMATIC ? "AUTO" : "MANUAL");
   
-  Configuration:
-  - Change PWM_FREQUENCY_HZ to adjust frequency (e.g., 50Hz for servos, 400Hz for ESCs)
-  - PWM period is automatically calculated: 1,000,000μs / frequency
-  - Update interval and LOW time are dynamically calculated
+  Serial.print("PID1 Tunings - Kp:");
+  Serial.print(pid1.GetKp(), 3);
+  Serial.print(" Ki:");
+  Serial.print(pid1.GetKi(), 3);
+  Serial.print(" Kd:");
+  Serial.println(pid1.GetKd(), 3);
+}
+
+void tunePID() {
+  Serial.println("PID Tuning Menu:");
+  Serial.println("1. Tune PID1 Kp");
+  Serial.println("2. Tune PID1 Ki");
+  Serial.println("3. Tune PID1 Kd");
+  Serial.println("4. Tune PID2 Kp");
+  Serial.println("5. Tune PID2 Ki");
+  Serial.println("6. Tune PID2 Kd");
+  Serial.println("Enter choice (1-6):");
   
-  Key concepts:
-  - digitalWrite(pin, HIGH) + delayMicroseconds() + digitalWrite(pin, LOW)
-  - Creates precise pulse widths needed for servo control
-  - Frequency determines how often pulses are sent
+  while (!Serial.available()) delay(10);
+  int choice = Serial.parseInt();
   
-  Connections:
-  - Servo signal wire to pin 9
-  - Servo power (red) to 5V or external power
-  - Servo ground (black/brown) to GND
+  Serial.println("Enter new value:");
+  while (!Serial.available()) delay(10);
+  double newValue = Serial.parseFloat();
   
-  Serial Monitor Output:
-  - Shows current frequency and period settings
-  - Shows current position percentage
-  - Shows pulse width in microseconds
-  - Updates every 10 PWM cycles for easy reading
-*/
+  switch (choice) {
+    case 1:
+      kp1 = newValue;
+      pid1.SetTunings(kp1, ki1, kd1);
+      Serial.print("PID1 Kp set to: ");
+      Serial.println(kp1, 3);
+      break;
+    case 2:
+      ki1 = newValue;
+      pid1.SetTunings(kp1, ki1, kd1);
+      Serial.print("PID1 Ki set to: ");
+      Serial.println(ki1, 3);
+      break;
+    case 3:
+      kd1 = newValue;
+      pid1.SetTunings(kp1, ki1, kd1);
+      Serial.print("PID1 Kd set to: ");
+      Serial.println(kd1, 3);
+      break;
+    case 4:
+      kp2 = newValue;
+      pid2.SetTunings(kp2, ki2, kd2);
+      Serial.print("PID2 Kp set to: ");
+      Serial.println(kp2, 3);
+      break;
+    case 5:
+      ki2 = newValue;
+      pid2.SetTunings(kp2, ki2, kd2);
+      Serial.print("PID2 Ki set to: ");
+      Serial.println(ki2, 3);
+      break;
+    case 6:
+      kd2 = newValue;
+      pid2.SetTunings(kp2, ki2, kd2);
+      Serial.print("PID2 Kd set to: ");
+      Serial.println(kd2, 3);
+      break;
+    default:
+      Serial.println("Invalid choice!");
+      break;
+  }
+}
