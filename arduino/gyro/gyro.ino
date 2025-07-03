@@ -22,15 +22,11 @@ void  loop(){
   GyY=Wire.read()<<8|Wire.read();  
   GyZ=Wire.read()<<8|Wire.read();  
   
-  Serial.print("Accelerometer: ");
-  Serial.print("X = "); Serial.print(AcX);
-  Serial.print(" | Y = "); Serial.print(AcY);
-  Serial.print(" | Z = ");  Serial.println(AcZ); 
+  // Calculate pitch and roll in degrees
+  float pitch = atan2(AcY, sqrt(AcX * AcX + AcZ * AcZ)) * 180.0 / PI;
+  float roll = atan2(-AcX, AcZ) * 180.0 / PI;
   
-  Serial.print("Gyroscope: ");
-  Serial.print("X  = "); Serial.print(GyX);
-  Serial.print(" | Y = "); Serial.print(GyY);
-  Serial.print(" | Z = "); Serial.println(GyZ);
-  Serial.println(" ");
-  delay(333);
+  Serial.print("Pitch: "); Serial.print(pitch);
+  Serial.print(" | Roll: "); Serial.println(roll);
+  delay(100);
 }
