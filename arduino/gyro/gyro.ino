@@ -22,9 +22,9 @@ void  loop(){
   GyY=Wire.read()<<8|Wire.read();  
   GyZ=Wire.read()<<8|Wire.read();  
   
-  // Calculate pitch and roll in degrees
-  float pitch = atan2(AcY, sqrt(AcX * AcX + AcZ * AcZ)) * 180.0 / PI;
-  float roll = atan2(-AcX, AcZ) * 180.0 / PI;
+  // Calculate pitch and roll in degrees with full range
+  float pitch = atan2(-AcX, AcZ) * 180.0 / PI;
+  float roll = atan2(AcY, AcZ) * 180.0 / PI;
   
   Serial.print("Pitch: "); Serial.print(pitch);
   Serial.print(" | Roll: "); Serial.println(roll);
