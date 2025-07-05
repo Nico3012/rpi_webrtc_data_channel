@@ -29,7 +29,7 @@ sudo apt-get full-upgrade
 sudo reboot
 ```
 
-# RaspAP (Wifi router)
+# RaspAP (WiFi Router)
 1. Set the WiFi country in raspi-config's **Localisation Options**:
    ```bash
    sudo raspi-config
@@ -48,6 +48,8 @@ sudo reboot
 - Password: secret
 - SSID: RaspAP
 - Password: ChangeMe
+
+The Internet from LAN (over the connected pc) will be used to provide internet into the RaspAP WiFi. The lan connection can still be used and is not affected by RaspAP!
 
 # Go
 Install go from the official website recommendation WITHOUT a package manager!
