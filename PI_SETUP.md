@@ -14,6 +14,7 @@
 8. Unplug the Ethernet cable and plug it in again.
 9. Find the pi ip using:
    ```powershell
+   ipconfig
    arp -a
    ```
 10. ssh into pi
