@@ -1,5 +1,6 @@
 # Install OS
 - Using Raspberry Pi Imager, install Raspbian OS Lite 64bit
+- Set username and password
 - Enable ssh
 
 # Establish connection between pc and pi
@@ -15,14 +16,43 @@
    ```powershell
    arp -a
    ```
+10. ssh into pi
+    ```powershell
+    ssh <username>@<ip>
+    ```
+
+# Update Packages
+```bash
+sudo apt-get update
+sudo apt-get full-upgrade
+sudo reboot
+```
+
+# RaspAP (Wifi router)
+1. Set the WiFi country in raspi-config's **Localisation Options**:
+   ```bash
+   sudo raspi-config
+   ```
+2. Invoke RaspAP's Quick Installer (-y for automatic install with recommended parameters):
+   ```bash
+   curl -sL https://install.raspap.com | bash -y
+   ```
+
+- IP address: 10.3.141.1
+- Username: admin
+- Password: secret
+- SSID: RaspAP
+- Password: ChangeMe
 
 # Go
 Install go from the official website recommendation WITHOUT a package manager!
 This ensures, we always get the latest version!
 
-# I2C Sensor
+# Hardware devices:
+
+### I2C Sensor
 1. Open Raspi Config application, select Interface Options and enable I2C
-   ```shell
+   ```bash
    sudo raspi-config
    ```
 Unknown, if the following steps are nessesarely:
@@ -31,7 +61,7 @@ Unknown, if the following steps are nessesarely:
 Nessesarely:
 4. sudo reboot
 
-# Servo Config
+### Servo Config
 Unknown, if nessesarely:
 1. sudo usermod -a -G gpio $USER
 2. sudo reboot
