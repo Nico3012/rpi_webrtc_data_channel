@@ -36,7 +36,11 @@ sudo reboot
    ```
 2. Invoke RaspAP's Quick Installer (-y for automatic install with recommended parameters):
    ```bash
-   curl -sL https://install.raspap.com | bash -y
+   curl -sL https://install.raspap.com | bash -s -- -y
+   ```
+3. Restart PI
+   ```bash
+   sudo reboot
    ```
 
 - IP address: 10.3.141.1
