@@ -95,6 +95,10 @@ func (s *Server) IsConnected() bool {
 func (s *Server) setupWebRTC() {
 	// Create a new API with a SettingEngine
 	settingEngine := webrtc.SettingEngine{}
+
+	// Enable ICE Lite mode for better performance on server/device side
+	settingEngine.SetLite(true)
+
 	s.api = webrtc.NewAPI(webrtc.WithSettingEngine(settingEngine))
 }
 
