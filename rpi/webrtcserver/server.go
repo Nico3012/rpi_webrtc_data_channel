@@ -1,3 +1,7 @@
+// Use ICELite mode, because this WebRTC Client is public reachable by ip address
+// Wait for ICE Gathering, because they need to be included in the answer
+// webrtc-component.js does not need to wait for ICE Gathering, because it if completely fine, when offer is not complete. This is best practice
+
 package webrtcserver
 
 import (
