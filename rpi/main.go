@@ -10,7 +10,7 @@ import (
 
 func main() {
 	// init web connection with both video and audio enabled
-	server := webrtcvideoserver.New("8080", "webrtcvideoserver/public", true, false)
+	server := webrtcvideoserver.New("8080", "webrtcvideoserver/public", false, false)
 
 	// web message callback
 	server.InitReadDataCallback(func(message string) {
