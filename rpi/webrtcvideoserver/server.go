@@ -25,6 +25,8 @@ type Server struct {
 	publicDir       string
 	videoHandler    *VideoHandler
 	videoEnabled    bool
+	audioHandler    *AudioHandler
+	audioEnabled    bool
 }
 
 // SDPRequest represents an incoming SDP offer
@@ -41,11 +43,12 @@ type SDPResponse struct {
 }
 
 // New creates a new WebRTC server instance and starts it
-func New(port, publicDir string, videoEnabled bool) *Server {
+func New(port, publicDir string, videoEnabled, audioEnabled bool) *Server {
 	server := &Server{
 		port:         port,
 		publicDir:    publicDir,
 		videoEnabled: videoEnabled,
+		audioEnabled: audioEnabled,
 	}
 
 	server.setupWebRTC()
@@ -53,6 +56,11 @@ func New(port, publicDir string, videoEnabled bool) *Server {
 	// Initialize video handler only if video is enabled
 	if server.videoEnabled {
 		server.videoHandler = NewVideoHandler(0)
+	}
+
+	// Initialize audio handler only if audio is enabled
+	if server.audioEnabled {
+		server.audioHandler = NewAudioHandler("default")
 	}
 
 	mux := http.NewServeMux()
@@ -118,6 +126,11 @@ func (s *Server) closeExistingConnections() {
 	// Stop video streaming if it's running
 	if s.videoEnabled && s.videoHandler != nil {
 		s.videoHandler.StopStreaming()
+	}
+
+	// Stop audio streaming if it's running
+	if s.audioEnabled && s.audioHandler != nil {
+		s.audioHandler.StopStreaming()
 	}
 
 	// Stop any existing channels
@@ -214,6 +227,19 @@ func (s *Server) processOffer(offerType, offerSDP string) (string, error) {
 		}
 	}
 
+	// Add audio track if audio is enabled
+	if s.audioEnabled && s.audioHandler != nil {
+		audioTrack, err := s.audioHandler.CreateTrack()
+		if err != nil {
+			return "", fmt.Errorf("failed to create audio track: %v", err)
+		}
+
+		_, err = s.peerConnection.AddTrack(audioTrack)
+		if err != nil {
+			return "", fmt.Errorf("failed to add audio track: %v", err)
+		}
+	}
+
 	// Set up data channel event handler
 	s.peerConnection.OnDataChannel(func(dc *webrtc.DataChannel) {
 		fmt.Printf("New DataChannel %s %d\n", dc.Label(), dc.ID())
@@ -243,6 +269,15 @@ func (s *Server) processOffer(offerType, offerSDP string) (string, error) {
 					fmt.Println("Video streaming started")
 				}
 			}
+
+			// Start audio streaming if enabled
+			if s.audioEnabled && s.audioHandler != nil {
+				if err := s.audioHandler.StartStreaming(); err != nil {
+					fmt.Printf("Failed to start audio streaming: %v\n", err)
+				} else {
+					fmt.Println("Audio streaming started")
+				}
+			}
 		})
 
 		dc.OnClose(func() {
@@ -251,6 +286,11 @@ func (s *Server) processOffer(offerType, offerSDP string) (string, error) {
 			if s.videoEnabled && s.videoHandler != nil {
 				s.videoHandler.StopStreaming()
 				fmt.Println("Video streaming stopped")
+			}
+			// Stop audio streaming
+			if s.audioEnabled && s.audioHandler != nil {
+				s.audioHandler.StopStreaming()
+				fmt.Println("Audio streaming stopped")
 			}
 		})
 	})

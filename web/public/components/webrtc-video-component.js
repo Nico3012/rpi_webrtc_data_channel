@@ -10,7 +10,9 @@ class WebRTCConnection extends LitElement {
         rpiPort: { type: String, attribute: 'rpi-port' },
         connectionStatus: { type: String },
         hasVideoStream: { type: Boolean },
-        requestVideo: { type: Boolean, attribute: 'request-video' }
+        requestVideo: { type: Boolean, attribute: 'request-video' },
+        hasAudioStream: { type: Boolean },
+        requestAudio: { type: Boolean, attribute: 'request-audio' }
     };
 
     // lit property
@@ -140,11 +142,15 @@ class WebRTCConnection extends LitElement {
         this.hasVideoStream = false;
         this.videoStream = null;
         this.requestVideo = false; // Default to false, can be set via attribute
+        this.hasAudioStream = false;
+        this.audioStream = null;
+        this.requestAudio = false; // Default to false, can be set via attribute
         // Track last known connection state to prevent duplicate events
         this.lastConnectionState = {
             connected: false,
             status: 'Disconnected',
-            hasVideo: false
+            hasVideo: false,
+            hasAudio: false
         };
     }
 
@@ -184,6 +190,12 @@ class WebRTCConnection extends LitElement {
     getVideoStream() {
         // Only return video stream if we requested video and actually have a valid stream
         return this.requestVideo && this.hasVideoStream && this.videoStream ? this.videoStream : null;
+    }
+
+    /** @public @returns {MediaStream|null} */
+    getAudioStream() {
+        // Only return audio stream if we requested audio and actually have a valid stream
+        return this.requestAudio && this.hasAudioStream && this.audioStream ? this.audioStream : null;
     }
 
     /** @private */
@@ -271,7 +283,7 @@ class WebRTCConnection extends LitElement {
                 iceServers: []
             });
 
-            // Set up handlers for auto-detecting incoming video tracks
+            // Set up handlers for auto-detecting incoming video and audio tracks
             this.peerConnection.ontrack = (event) => {
                 console.log("Received remote track:", event.track.kind);
                 if (event.track.kind === 'video') {
@@ -283,7 +295,23 @@ class WebRTCConnection extends LitElement {
                         this.dispatchConnectionChangedEvent({
                             connected: true,
                             status: 'Connected',
-                            hasVideo: true
+                            hasVideo: true,
+                            hasAudio: this.hasAudioStream
+                        });
+                    }
+
+                    this.requestUpdate();
+                } else if (event.track.kind === 'audio') {
+                    this.audioStream = new MediaStream([event.track]);
+                    this.hasAudioStream = true;
+
+                    // If we're already connected, dispatch a connection update to notify about the new audio
+                    if (this.isConnectedState) {
+                        this.dispatchConnectionChangedEvent({
+                            connected: true,
+                            status: 'Connected',
+                            hasVideo: this.hasVideoStream,
+                            hasAudio: true
                         });
                     }
 
@@ -294,6 +322,11 @@ class WebRTCConnection extends LitElement {
             // Only add a video transceiver if video is requested
             if (this.requestVideo) {
                 this.peerConnection.addTransceiver('video', { direction: 'recvonly' });
+            }
+
+            // Only add an audio transceiver if audio is requested
+            if (this.requestAudio) {
+                this.peerConnection.addTransceiver('audio', { direction: 'recvonly' });
             }
 
             // Create data channel
@@ -456,11 +489,12 @@ class WebRTCConnection extends LitElement {
                 case 'connected':
                 case 'completed':
                     this.updateStatus('Connected', true);
-                    // Dispatch connection update event with video state
+                    // Dispatch connection update event with video and audio state
                     this.dispatchConnectionChangedEvent({
                         connected: true,
                         status: 'Connected',
-                        hasVideo: this.hasVideoStream
+                        hasVideo: this.hasVideoStream,
+                        hasAudio: this.hasAudioStream
                     });
                     break;
                 case 'disconnected':
@@ -472,6 +506,14 @@ class WebRTCConnection extends LitElement {
                     this.hasVideoStream = false;
                     this.videoStream = null;
 
+                    // Reset audio stream when connection is lost
+                    if (this.audioStream) {
+                        const tracks = this.audioStream.getTracks();
+                        tracks.forEach(track => track.stop());
+                    }
+                    this.hasAudioStream = false;
+                    this.audioStream = null;
+
                     this.updateStatus('Disconnected', false);
                     this.isConnectedState = false;
                     this.currentStep = 1;
@@ -480,7 +522,8 @@ class WebRTCConnection extends LitElement {
                     this.dispatchConnectionChangedEvent({
                         connected: false,
                         status: 'Disconnected',
-                        hasVideo: false
+                        hasVideo: false,
+                        hasAudio: false
                     });
                     // Generate a new offer when connection is lost
                     setTimeout(() => {
@@ -496,6 +539,14 @@ class WebRTCConnection extends LitElement {
                     this.hasVideoStream = false;
                     this.videoStream = null;
 
+                    // Reset audio stream when connection fails
+                    if (this.audioStream) {
+                        const tracks = this.audioStream.getTracks();
+                        tracks.forEach(track => track.stop());
+                    }
+                    this.hasAudioStream = false;
+                    this.audioStream = null;
+
                     this.updateStatus('Connection Failed', false);
                     this.isConnectedState = false;
                     this.currentStep = 1;
@@ -504,7 +555,8 @@ class WebRTCConnection extends LitElement {
                     this.dispatchConnectionChangedEvent({
                         connected: false,
                         status: 'Connection Failed',
-                        hasVideo: false
+                        hasVideo: false,
+                        hasAudio: false
                     });
                     // Generate a new offer when connection fails
                     setTimeout(() => {
@@ -533,6 +585,14 @@ class WebRTCConnection extends LitElement {
         }
         this.hasVideoStream = false;
         this.videoStream = null;
+
+        // Clean up audio resources if any
+        if (this.audioStream) {
+            const tracks = this.audioStream.getTracks();
+            tracks.forEach(track => track.stop());
+        }
+        this.hasAudioStream = false;
+        this.audioStream = null;
 
         // Close data channel
         if (this.dataChannel) {

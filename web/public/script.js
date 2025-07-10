@@ -3,12 +3,17 @@ const servoInput = document.getElementById('servo-input');
 const pitchDiv = document.getElementById('pitch');
 const rollDiv = document.getElementById('roll');
 const videoElement = document.getElementById('external-video');
+const audioElement = document.getElementById('external-audio');
 
-// Handle connection changes (includes video stream status)
+// Handle connection changes (includes video and audio stream status)
 webrtcComponent.addEventListener('connection-changed', () => {
     // Update video element with current stream (or null when disconnected)
     const videoStream = webrtcComponent.getVideoStream();
     videoElement.srcObject = videoStream;
+
+    // Update audio element with current stream (or null when disconnected)
+    const audioStream = webrtcComponent.getAudioStream();
+    audioElement.srcObject = audioStream;
 
     // Send initial servo value when connected
     if (webrtcComponent.isConnected()) {
