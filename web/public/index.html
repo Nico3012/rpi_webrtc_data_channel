@@ -26,7 +26,11 @@
             <cache-controller></cache-controller>
             <div class="title">Verbindung:</div>
             <div class="category">
-                <webrtc-connection id="webrtcConnection" rpi-address="127.0.0.1" rpi-port="8080"></webrtc-connection>
+                <webrtc-connection id="webrtcConnection" rpi-address="127.0.0.1" rpi-port="8080" video-enabled="true"></webrtc-connection>
+            </div>
+            <div class="title">Video:</div>
+            <div class="category">
+                <video id="external-video" autoplay playsinline controls style="width: 100%; border-radius: 10px;"></video>
             </div>
             <div class="title">Regler:</div>
             <div class="category">

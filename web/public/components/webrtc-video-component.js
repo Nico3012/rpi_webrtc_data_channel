@@ -139,7 +139,7 @@ class WebRTCConnection extends LitElement {
         this.rpiServerUrl = null;
         this.hasVideoStream = false;
         this.videoEnabled = true; // Enable video by default
-        this.videoElement = null;
+        this.videoStream = null;
     }
 
     // lit function
@@ -164,36 +164,33 @@ class WebRTCConnection extends LitElement {
                     <h2>Step 4: Device Connected</h2>
                     <div class="step-indicator">4 / 4</div>
                 </div>
-                ${this.hasVideoStream ? 
-                    html`<video id="remote-video" autoplay playsinline controls></video>` : 
-                    ''
-                }
                 <button @click="${this.closeConnection}" class="btn">Disconnect</button>
             </div>
         `;
     }
-    
-    /** @private */
+
+    // lit function
     firstUpdated() {
         this.generateOffer();
     }
-    
-    /** @private */
+
+    // lit function
     updated(changedProperties) {
-        // If the component has rendered and we have a video stream, attach it
-        if (changedProperties.has('hasVideoStream') && this.hasVideoStream) {
-            this.attachVideoStream();
+        // If the component has rendered and we have a video stream, notify external components
+        if (changedProperties.has('hasVideoStream')) {
+            // Dispatch video state change event
+            this.dispatchEvent(new CustomEvent('video-state-changed', {
+                detail: {
+                    videoStream: this.hasVideoStream ? this.videoStream : null
+                },
+                bubbles: true
+            }));
         }
     }
-    
-    /** @private */
-    attachVideoStream() {
-        setTimeout(() => {
-            this.videoElement = this.shadowRoot.querySelector('#remote-video');
-            if (this.videoElement && this.videoStream) {
-                this.videoElement.srcObject = this.videoStream;
-            }
-        }, 0);
+
+    /** @public @returns {MediaStream|null} */
+    getVideoStream() {
+        return this.hasVideoStream ? this.videoStream : null;
     }
 
     /** @private */
@@ -289,14 +286,12 @@ class WebRTCConnection extends LitElement {
                     if (event.track.kind === 'video') {
                         this.videoStream = new MediaStream([event.track]);
                         this.hasVideoStream = true;
-                        
-                        // If we already have the video element, attach the stream
-                        if (this.isConnectedState && this.shadowRoot.querySelector('#remote-video')) {
-                            this.attachVideoStream();
-                        }
+
+                        // The updated() lifecycle method will dispatch the video-state-changed event
+                        this.requestUpdate();
                     }
                 };
-                
+
                 // Add a video transceiver to request video from the server
                 this.peerConnection.addTransceiver('video', { direction: 'recvonly' });
             }
@@ -502,10 +497,9 @@ class WebRTCConnection extends LitElement {
     /** @private */
     closeConnection() {
         // Clean up video resources if any
-        if (this.videoElement && this.videoElement.srcObject) {
-            const tracks = this.videoElement.srcObject.getTracks();
+        if (this.videoStream) {
+            const tracks = this.videoStream.getTracks();
             tracks.forEach(track => track.stop());
-            this.videoElement.srcObject = null;
         }
         this.hasVideoStream = false;
         this.videoStream = null;
