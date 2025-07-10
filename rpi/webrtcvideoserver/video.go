@@ -11,7 +11,6 @@ import (
 	"github.com/pion/webrtc/v4"
 	"github.com/pion/webrtc/v4/pkg/media"
 	"github.com/pion/webrtc/v4/pkg/media/ivfreader"
-	gocv "gocv.io/x/gocv"
 )
 
 // VideoHandler manages the video streaming functionality
@@ -83,69 +82,43 @@ func (vh *VideoHandler) StopStreaming() {
 
 // streamCamera handles the camera capture and streaming
 func (vh *VideoHandler) streamCamera() error {
-	// Open camera
-	webcam, err := gocv.OpenVideoCapture(vh.cameraDevice)
-	if err != nil {
-		return fmt.Errorf("cannot open camera: %w", err)
-	}
-	defer webcam.Close()
+	// Camera device path (e.g., "/dev/video0" for Linux or camera index for other systems)
+	cameraPath := fmt.Sprintf("/dev/video%d", vh.cameraDevice)
 
-	// Configure camera settings
-	webcam.Set(gocv.VideoCaptureFrameWidth, float64(vh.width))
-	webcam.Set(gocv.VideoCaptureFrameHeight, float64(vh.height))
-	webcam.Set(gocv.VideoCaptureFPS, float64(vh.framerate))
-
-	// Setup FFmpeg for VP8 encoding
+	// Setup FFmpeg to capture directly from the camera and encode to VP8
 	ffmpeg := exec.Command(
 		"ffmpeg", "-y",
-		"-f", "rawvideo",
-		"-pixel_format", "bgr24",
+		"-f", "v4l2", // Video4Linux2 input format for Linux
+		"-input_format", "yuyv422", // Common format for webcams
 		"-video_size", fmt.Sprintf("%dx%d", vh.width, vh.height),
 		"-framerate", fmt.Sprintf("%d", vh.framerate),
-		"-i", "pipe:0",
+		"-i", cameraPath,
 		"-c:v", "libvpx",
 		"-deadline", "realtime", // Optimize for realtime encoding
 		"-cpu-used", "7", // Speed up initial encoding
-		"-b:v", "1M",
+		"-b:v", "1M", // 1Mbps bitrate
 		"-keyint_min", "15", // Force keyframes more often initially
 		"-g", "15",
-		"-f", "ivf", "pipe:1",
+		"-f", "ivf",
+		"pipe:1", // Output to stdout
 	)
 
-	stdin, err := ffmpeg.StdinPipe()
-	if err != nil {
-		return fmt.Errorf("ffmpeg stdin error: %w", err)
-	}
+	// Get ffmpeg's stdout to read the encoded video
 	stdout, err := ffmpeg.StdoutPipe()
 	if err != nil {
 		return fmt.Errorf("ffmpeg stdout error: %w", err)
 	}
 
+	// Start the FFmpeg process
 	if err := ffmpeg.Start(); err != nil {
 		return fmt.Errorf("ffmpeg start error: %w", err)
 	}
 
-	// Stream frames to FFmpeg
+	// Setup cleanup to ensure ffmpeg process is terminated
 	go func() {
-		defer stdin.Close()
-
-		frame := gocv.NewMat()
-		defer frame.Close()
-
-		for {
-			select {
-			case <-vh.stopChan:
-				fmt.Println("Camera streaming stopped")
-				return
-			default:
-				if ok := webcam.Read(&frame); !ok || frame.Empty() {
-					time.Sleep(10 * time.Millisecond)
-					continue
-				}
-
-				stdin.Write(frame.ToBytes())
-			}
-		}
+		<-vh.stopChan
+		fmt.Println("Stopping FFmpeg process")
+		ffmpeg.Process.Kill()
 	}()
 
 	// Read encoded frames from FFmpeg and send to WebRTC
@@ -157,7 +130,6 @@ func (vh *VideoHandler) streamCamera() error {
 	for {
 		select {
 		case <-vh.stopChan:
-			ffmpeg.Process.Kill()
 			return nil
 		default:
 			frame, _, err := ivf.ParseNextFrame()
