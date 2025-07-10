@@ -174,19 +174,7 @@ class WebRTCConnection extends LitElement {
         this.generateOffer();
     }
 
-    // lit function
-    updated(changedProperties) {
-        // If the component has rendered and we have a video stream, notify external components
-        if (changedProperties.has('hasVideoStream')) {
-            // Dispatch video state change event
-            this.dispatchEvent(new CustomEvent('video-state-changed', {
-                detail: {
-                    videoStream: this.hasVideoStream ? this.videoStream : null
-                },
-                bubbles: true
-            }));
-        }
-    }
+    // We don't need to track video state changes separately as they're included in connection-changed events
 
     /** @public @returns {MediaStream|null} */
     getVideoStream() {
@@ -287,7 +275,18 @@ class WebRTCConnection extends LitElement {
                         this.videoStream = new MediaStream([event.track]);
                         this.hasVideoStream = true;
 
-                        // The updated() lifecycle method will dispatch the video-state-changed event
+                        // If we're already connected, dispatch a connection update to notify about the new video
+                        if (this.isConnectedState) {
+                            this.dispatchEvent(new CustomEvent('connection-changed', {
+                                detail: {
+                                    connected: true,
+                                    status: 'Connected',
+                                    hasVideo: true
+                                },
+                                bubbles: true
+                            }));
+                        }
+
                         this.requestUpdate();
                     }
                 };
@@ -386,9 +385,13 @@ class WebRTCConnection extends LitElement {
             this.updateStatus('Connected', true);
             this.requestUpdate();
 
-            // Dispatch connection update event
+            // Dispatch connection update event with video information
             this.dispatchEvent(new CustomEvent('connection-changed', {
-                detail: { connected: true, status: 'Connected' },
+                detail: {
+                    connected: true,
+                    status: 'Connected',
+                    hasVideo: this.hasVideoStream
+                },
                 bubbles: true
             }));
         };
@@ -397,6 +400,14 @@ class WebRTCConnection extends LitElement {
             console.log('Data channel closed');
             // Only handle if not already handled by peer connection state change
             if (this.isConnectedState) {
+                // Reset video stream
+                if (this.videoStream) {
+                    const tracks = this.videoStream.getTracks();
+                    tracks.forEach(track => track.stop());
+                }
+                this.hasVideoStream = false;
+                this.videoStream = null;
+
                 this.isConnectedState = false;
                 this.updateStatus('Disconnected', false);
                 this.currentStep = 1;
@@ -445,13 +456,25 @@ class WebRTCConnection extends LitElement {
                 case 'connected':
                 case 'completed':
                     this.updateStatus('Connected', true);
-                    // Dispatch connection update event
+                    // Dispatch connection update event with video state
                     this.dispatchEvent(new CustomEvent('connection-changed', {
-                        detail: { connected: true, status: 'Connected' },
+                        detail: {
+                            connected: true,
+                            status: 'Connected',
+                            hasVideo: this.hasVideoStream
+                        },
                         bubbles: true
                     }));
                     break;
                 case 'disconnected':
+                    // Reset video stream when connection is lost
+                    if (this.videoStream) {
+                        const tracks = this.videoStream.getTracks();
+                        tracks.forEach(track => track.stop());
+                    }
+                    this.hasVideoStream = false;
+                    this.videoStream = null;
+
                     this.updateStatus('Disconnected', false);
                     this.isConnectedState = false;
                     this.currentStep = 1;
@@ -467,6 +490,14 @@ class WebRTCConnection extends LitElement {
                     }, 100);
                     break;
                 case 'failed':
+                    // Reset video stream when connection fails
+                    if (this.videoStream) {
+                        const tracks = this.videoStream.getTracks();
+                        tracks.forEach(track => track.stop());
+                    }
+                    this.hasVideoStream = false;
+                    this.videoStream = null;
+
                     this.updateStatus('Connection Failed', false);
                     this.isConnectedState = false;
                     this.currentStep = 1;

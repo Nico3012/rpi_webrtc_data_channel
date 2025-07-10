@@ -4,13 +4,13 @@ const pitchDiv = document.getElementById('pitch');
 const rollDiv = document.getElementById('roll');
 const videoElement = document.getElementById('external-video');
 
-// Handle video stream changes
-webrtcComponent.addEventListener('video-state-changed', () => {
+// Handle connection changes (includes video stream status)
+webrtcComponent.addEventListener('connection-changed', () => {
+    // Update video element with current stream (or null when disconnected)
     const videoStream = webrtcComponent.getVideoStream();
     videoElement.srcObject = videoStream;
-});
 
-webrtcComponent.addEventListener('connection-changed', () => {
+    // Send initial servo value when connected
     if (webrtcComponent.isConnected()) {
         webrtcComponent.sendData(servoInput.value);
     }
