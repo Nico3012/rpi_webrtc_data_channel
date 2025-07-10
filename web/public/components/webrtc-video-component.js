@@ -1,5 +1,7 @@
 import { LitElement, html, css } from 'lit';
 
+alert('v1');
+
 class WebRTCConnection extends LitElement {
 
     // lit property
@@ -9,8 +11,7 @@ class WebRTCConnection extends LitElement {
         rpiAddress: { type: String, attribute: 'rpi-address' },
         rpiPort: { type: String, attribute: 'rpi-port' },
         connectionStatus: { type: String },
-        hasVideoStream: { type: Boolean },
-        videoEnabled: { type: Boolean, attribute: 'video-enabled' }
+        hasVideoStream: { type: Boolean }
     };
 
     // lit property
@@ -138,7 +139,6 @@ class WebRTCConnection extends LitElement {
         this.dataChannel = null;
         this.rpiServerUrl = null;
         this.hasVideoStream = false;
-        this.videoEnabled = true; // Enable video by default
         this.videoStream = null;
     }
 
@@ -173,8 +173,6 @@ class WebRTCConnection extends LitElement {
     firstUpdated() {
         this.generateOffer();
     }
-
-    // We don't need to track video state changes separately as they're included in connection-changed events
 
     /** @public @returns {MediaStream|null} */
     getVideoStream() {
@@ -266,34 +264,31 @@ class WebRTCConnection extends LitElement {
                 iceServers: []
             });
 
-            // Setup video handlers if video is enabled
-            if (this.videoEnabled) {
-                // Set up handlers for incoming video tracks
-                this.peerConnection.ontrack = (event) => {
-                    console.log("Received remote track:", event.track.kind);
-                    if (event.track.kind === 'video') {
-                        this.videoStream = new MediaStream([event.track]);
-                        this.hasVideoStream = true;
+            // Set up handlers for auto-detecting incoming video tracks
+            this.peerConnection.ontrack = (event) => {
+                console.log("Received remote track:", event.track.kind);
+                if (event.track.kind === 'video') {
+                    this.videoStream = new MediaStream([event.track]);
+                    this.hasVideoStream = true;
 
-                        // If we're already connected, dispatch a connection update to notify about the new video
-                        if (this.isConnectedState) {
-                            this.dispatchEvent(new CustomEvent('connection-changed', {
-                                detail: {
-                                    connected: true,
-                                    status: 'Connected',
-                                    hasVideo: true
-                                },
-                                bubbles: true
-                            }));
-                        }
-
-                        this.requestUpdate();
+                    // If we're already connected, dispatch a connection update to notify about the new video
+                    if (this.isConnectedState) {
+                        this.dispatchEvent(new CustomEvent('connection-changed', {
+                            detail: {
+                                connected: true,
+                                status: 'Connected',
+                                hasVideo: true
+                            },
+                            bubbles: true
+                        }));
                     }
-                };
 
-                // Add a video transceiver to request video from the server
-                this.peerConnection.addTransceiver('video', { direction: 'recvonly' });
-            }
+                    this.requestUpdate();
+                }
+            };
+
+            // Add a video transceiver to request video from the server
+            this.peerConnection.addTransceiver('video', { direction: 'recvonly' });
 
             // Create data channel
             this.dataChannel = this.peerConnection.createDataChannel('messages', {
