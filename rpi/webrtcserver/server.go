@@ -10,6 +10,9 @@ import (
 	"net/http"
 	"sync"
 
+	"rpi-webrtc/webrtcserver/audio"
+	"rpi-webrtc/webrtcserver/video"
+
 	"github.com/pion/webrtc/v4"
 )
 
@@ -23,6 +26,10 @@ type Server struct {
 	messageCallback func(string)
 	port            string
 	publicDir       string
+	videoHandler    *video.Handler
+	videoEnabled    bool
+	audioHandler    *audio.Handler
+	audioEnabled    bool
 }
 
 // SDPRequest represents an incoming SDP offer
@@ -39,13 +46,25 @@ type SDPResponse struct {
 }
 
 // New creates a new WebRTC server instance and starts it
-func New(port, publicDir string) *Server {
+func New(port, publicDir string, videoEnabled, audioEnabled bool) *Server {
 	server := &Server{
-		port:      port,
-		publicDir: publicDir,
+		port:         port,
+		publicDir:    publicDir,
+		videoEnabled: videoEnabled,
+		audioEnabled: audioEnabled,
 	}
 
 	server.setupWebRTC()
+
+	// Initialize video handler only if video is enabled
+	if server.videoEnabled {
+		server.videoHandler = video.NewHandler(0)
+	}
+
+	// Initialize audio handler only if audio is enabled
+	if server.audioEnabled {
+		server.audioHandler = audio.NewHandler("default")
+	}
 
 	mux := http.NewServeMux()
 
@@ -107,6 +126,16 @@ func (s *Server) setupWebRTC() {
 }
 
 func (s *Server) closeExistingConnections() {
+	// Stop video streaming if it's running
+	if s.videoEnabled && s.videoHandler != nil {
+		s.videoHandler.StopStreaming()
+	}
+
+	// Stop audio streaming if it's running
+	if s.audioEnabled && s.audioHandler != nil {
+		s.audioHandler.StopStreaming()
+	}
+
 	// Stop any existing channels
 	if s.stopChan != nil {
 		close(s.stopChan)
@@ -188,6 +217,32 @@ func (s *Server) processOffer(offerType, offerSDP string) (string, error) {
 		return "", fmt.Errorf("failed to create peer connection: %v", err)
 	}
 
+	// Add video track if video is enabled
+	if s.videoEnabled && s.videoHandler != nil {
+		videoTrack, err := s.videoHandler.CreateTrack()
+		if err != nil {
+			return "", fmt.Errorf("failed to create video track: %v", err)
+		}
+
+		_, err = s.peerConnection.AddTrack(videoTrack)
+		if err != nil {
+			return "", fmt.Errorf("failed to add video track: %v", err)
+		}
+	}
+
+	// Add audio track if audio is enabled
+	if s.audioEnabled && s.audioHandler != nil {
+		audioTrack, err := s.audioHandler.CreateTrack()
+		if err != nil {
+			return "", fmt.Errorf("failed to create audio track: %v", err)
+		}
+
+		_, err = s.peerConnection.AddTrack(audioTrack)
+		if err != nil {
+			return "", fmt.Errorf("failed to add audio track: %v", err)
+		}
+	}
+
 	// Set up data channel event handler
 	s.peerConnection.OnDataChannel(func(dc *webrtc.DataChannel) {
 		fmt.Printf("New DataChannel %s %d\n", dc.Label(), dc.ID())
@@ -208,10 +263,38 @@ func (s *Server) processOffer(offerType, offerSDP string) (string, error) {
 			fmt.Println("Data channel opened - new connection established")
 			// Create a new stop channel for this connection
 			s.stopChan = make(chan bool)
+
+			// Start video streaming if enabled
+			if s.videoEnabled && s.videoHandler != nil {
+				if err := s.videoHandler.StartStreaming(); err != nil {
+					fmt.Printf("Failed to start video streaming: %v\n", err)
+				} else {
+					fmt.Println("Video streaming started")
+				}
+			}
+
+			// Start audio streaming if enabled
+			if s.audioEnabled && s.audioHandler != nil {
+				if err := s.audioHandler.StartStreaming(); err != nil {
+					fmt.Printf("Failed to start audio streaming: %v\n", err)
+				} else {
+					fmt.Println("Audio streaming started")
+				}
+			}
 		})
 
 		dc.OnClose(func() {
 			fmt.Println("Data channel closed - connection terminated")
+			// Stop video streaming
+			if s.videoEnabled && s.videoHandler != nil {
+				s.videoHandler.StopStreaming()
+				fmt.Println("Video streaming stopped")
+			}
+			// Stop audio streaming
+			if s.audioEnabled && s.audioHandler != nil {
+				s.audioHandler.StopStreaming()
+				fmt.Println("Audio streaming stopped")
+			}
 		})
 	})
 

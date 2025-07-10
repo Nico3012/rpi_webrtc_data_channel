@@ -1,4 +1,4 @@
-package webrtcvideoserver
+package video
 
 import (
 	"errors"
@@ -13,8 +13,8 @@ import (
 	"github.com/pion/webrtc/v4/pkg/media/ivfreader"
 )
 
-// VideoHandler manages the video streaming functionality
-type VideoHandler struct {
+// Handler manages the video streaming functionality
+type Handler struct {
 	videoTrack   *webrtc.TrackLocalStaticSample
 	stopChan     chan struct{}
 	isStreaming  bool
@@ -24,9 +24,9 @@ type VideoHandler struct {
 	framerate    int
 }
 
-// NewVideoHandler creates a new video handler
-func NewVideoHandler(cameraDevice int) *VideoHandler {
-	return &VideoHandler{
+// NewHandler creates a new video handler
+func NewHandler(cameraDevice int) *Handler {
+	return &Handler{
 		cameraDevice: cameraDevice,
 		width:        640,
 		height:       480,
@@ -36,7 +36,7 @@ func NewVideoHandler(cameraDevice int) *VideoHandler {
 }
 
 // CreateTrack creates a video track for WebRTC
-func (vh *VideoHandler) CreateTrack() (*webrtc.TrackLocalStaticSample, error) {
+func (vh *Handler) CreateTrack() (*webrtc.TrackLocalStaticSample, error) {
 	videoTrack, err := webrtc.NewTrackLocalStaticSample(
 		webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeVP8},
 		"video",
@@ -50,7 +50,7 @@ func (vh *VideoHandler) CreateTrack() (*webrtc.TrackLocalStaticSample, error) {
 }
 
 // StartStreaming starts the camera streaming process
-func (vh *VideoHandler) StartStreaming() error {
+func (vh *Handler) StartStreaming() error {
 	if vh.isStreaming {
 		return errors.New("streaming already in progress")
 	}
@@ -73,7 +73,7 @@ func (vh *VideoHandler) StartStreaming() error {
 }
 
 // StopStreaming stops the streaming process
-func (vh *VideoHandler) StopStreaming() {
+func (vh *Handler) StopStreaming() {
 	if vh.isStreaming {
 		close(vh.stopChan)
 		vh.isStreaming = false
@@ -81,7 +81,7 @@ func (vh *VideoHandler) StopStreaming() {
 }
 
 // streamCamera handles the camera capture and streaming
-func (vh *VideoHandler) streamCamera() error {
+func (vh *Handler) streamCamera() error {
 	// Camera device path (e.g., "/dev/video0" for Linux or camera index for other systems)
 	cameraPath := fmt.Sprintf("/dev/video%d", vh.cameraDevice)
 

@@ -5,12 +5,12 @@ import (
 	"log"
 	"time"
 
-	"rpi-webrtc/webrtcvideoserver"
+	"rpi-webrtc/webrtcserver"
 )
 
 func main() {
 	// init web connection with both video and audio enabled
-	server := webrtcvideoserver.New("8080", "webrtcvideoserver/public", false, false)
+	server := webrtcserver.New("8080", "webrtcserver/public", false, false)
 
 	// web message callback
 	server.InitReadDataCallback(func(message string) {

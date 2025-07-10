@@ -1,4 +1,4 @@
-package webrtcvideoserver
+package audio
 
 import (
 	"errors"
@@ -12,8 +12,8 @@ import (
 	"github.com/pion/webrtc/v4/pkg/media"
 )
 
-// AudioHandler manages the audio streaming functionality
-type AudioHandler struct {
+// Handler manages the audio streaming functionality
+type Handler struct {
 	audioTrack  *webrtc.TrackLocalStaticSample
 	stopChan    chan struct{}
 	isStreaming bool
@@ -22,13 +22,13 @@ type AudioHandler struct {
 	channels    int
 }
 
-// NewAudioHandler creates a new audio handler
-func NewAudioHandler(audioDevice string) *AudioHandler {
+// NewHandler creates a new audio handler
+func NewHandler(audioDevice string) *Handler {
 	if audioDevice == "" {
 		audioDevice = "default" // Use default ALSA device
 	}
 
-	return &AudioHandler{
+	return &Handler{
 		audioDevice: audioDevice,
 		sampleRate:  48000, // Standard WebRTC sample rate
 		channels:    2,     // Stereo
@@ -37,7 +37,7 @@ func NewAudioHandler(audioDevice string) *AudioHandler {
 }
 
 // CreateTrack creates an audio track for WebRTC
-func (ah *AudioHandler) CreateTrack() (*webrtc.TrackLocalStaticSample, error) {
+func (ah *Handler) CreateTrack() (*webrtc.TrackLocalStaticSample, error) {
 	audioTrack, err := webrtc.NewTrackLocalStaticSample(
 		webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeOpus},
 		"audio",
@@ -51,7 +51,7 @@ func (ah *AudioHandler) CreateTrack() (*webrtc.TrackLocalStaticSample, error) {
 }
 
 // StartStreaming starts the audio streaming process
-func (ah *AudioHandler) StartStreaming() error {
+func (ah *Handler) StartStreaming() error {
 	if ah.isStreaming {
 		return errors.New("audio streaming already in progress")
 	}
@@ -74,7 +74,7 @@ func (ah *AudioHandler) StartStreaming() error {
 }
 
 // StopStreaming stops the audio streaming process
-func (ah *AudioHandler) StopStreaming() {
+func (ah *Handler) StopStreaming() {
 	if ah.isStreaming {
 		close(ah.stopChan)
 		ah.isStreaming = false
@@ -82,7 +82,7 @@ func (ah *AudioHandler) StopStreaming() {
 }
 
 // streamAudio handles the audio capture and streaming
-func (ah *AudioHandler) streamAudio() error {
+func (ah *Handler) streamAudio() error {
 	// Setup FFmpeg to capture audio from microphone and encode to Opus
 	ffmpeg := exec.Command(
 		"ffmpeg", "-y",
