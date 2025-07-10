@@ -1,7 +1,5 @@
 import { LitElement, html, css } from 'lit';
 
-alert('v1');
-
 class WebRTCConnection extends LitElement {
 
     // lit property
@@ -140,6 +138,12 @@ class WebRTCConnection extends LitElement {
         this.rpiServerUrl = null;
         this.hasVideoStream = false;
         this.videoStream = null;
+        // Track last known connection state to prevent duplicate events
+        this.lastConnectionState = {
+            connected: false,
+            status: 'Disconnected',
+            hasVideo: false
+        };
     }
 
     // lit function
@@ -273,14 +277,11 @@ class WebRTCConnection extends LitElement {
 
                     // If we're already connected, dispatch a connection update to notify about the new video
                     if (this.isConnectedState) {
-                        this.dispatchEvent(new CustomEvent('connection-changed', {
-                            detail: {
-                                connected: true,
-                                status: 'Connected',
-                                hasVideo: true
-                            },
-                            bubbles: true
-                        }));
+                        this.dispatchConnectionChangedEvent({
+                            connected: true,
+                            status: 'Connected',
+                            hasVideo: true
+                        });
                     }
 
                     this.requestUpdate();
@@ -381,14 +382,11 @@ class WebRTCConnection extends LitElement {
             this.requestUpdate();
 
             // Dispatch connection update event with video information
-            this.dispatchEvent(new CustomEvent('connection-changed', {
-                detail: {
-                    connected: true,
-                    status: 'Connected',
-                    hasVideo: this.hasVideoStream
-                },
-                bubbles: true
-            }));
+            this.dispatchConnectionChangedEvent({
+                connected: true,
+                status: 'Connected',
+                hasVideo: this.hasVideoStream
+            });
         };
 
         this.dataChannel.onclose = () => {
@@ -409,10 +407,11 @@ class WebRTCConnection extends LitElement {
                 this.requestUpdate();
 
                 // Dispatch connection update event
-                this.dispatchEvent(new CustomEvent('connection-changed', {
-                    detail: { connected: false, status: 'Disconnected' },
-                    bubbles: true
-                }));
+                this.dispatchConnectionChangedEvent({
+                    connected: false,
+                    status: 'Disconnected',
+                    hasVideo: false
+                });
 
                 // Generate a new offer when data channel closes
                 setTimeout(() => {
@@ -435,10 +434,11 @@ class WebRTCConnection extends LitElement {
             console.error('Data channel error:', error);
             this.updateStatus('Connection Error', false);
             // Dispatch connection update event
-            this.dispatchEvent(new CustomEvent('connection-changed', {
-                detail: { connected: false, status: 'Connection Error' },
-                bubbles: true
-            }));
+            this.dispatchConnectionChangedEvent({
+                connected: false,
+                status: 'Connection Error',
+                hasVideo: false
+            });
         };
     }
 
@@ -452,14 +452,11 @@ class WebRTCConnection extends LitElement {
                 case 'completed':
                     this.updateStatus('Connected', true);
                     // Dispatch connection update event with video state
-                    this.dispatchEvent(new CustomEvent('connection-changed', {
-                        detail: {
-                            connected: true,
-                            status: 'Connected',
-                            hasVideo: this.hasVideoStream
-                        },
-                        bubbles: true
-                    }));
+                    this.dispatchConnectionChangedEvent({
+                        connected: true,
+                        status: 'Connected',
+                        hasVideo: this.hasVideoStream
+                    });
                     break;
                 case 'disconnected':
                     // Reset video stream when connection is lost
@@ -475,10 +472,11 @@ class WebRTCConnection extends LitElement {
                     this.currentStep = 1;
                     this.requestUpdate();
                     // Dispatch connection update event
-                    this.dispatchEvent(new CustomEvent('connection-changed', {
-                        detail: { connected: false, status: 'Disconnected' },
-                        bubbles: true
-                    }));
+                    this.dispatchConnectionChangedEvent({
+                        connected: false,
+                        status: 'Disconnected',
+                        hasVideo: false
+                    });
                     // Generate a new offer when connection is lost
                     setTimeout(() => {
                         this.generateOffer();
@@ -498,10 +496,11 @@ class WebRTCConnection extends LitElement {
                     this.currentStep = 1;
                     this.requestUpdate();
                     // Dispatch connection update event
-                    this.dispatchEvent(new CustomEvent('connection-changed', {
-                        detail: { connected: false, status: 'Connection Failed' },
-                        bubbles: true
-                    }));
+                    this.dispatchConnectionChangedEvent({
+                        connected: false,
+                        status: 'Connection Failed',
+                        hasVideo: false
+                    });
                     // Generate a new offer when connection fails
                     setTimeout(() => {
                         this.generateOffer();
@@ -553,15 +552,38 @@ class WebRTCConnection extends LitElement {
         this.requestUpdate();
 
         // Dispatch connection update event for manual disconnect
-        this.dispatchEvent(new CustomEvent('connection-changed', {
-            detail: { connected: false, status: 'Connection closed manually' },
-            bubbles: true
-        }));
+        this.dispatchConnectionChangedEvent({
+            connected: false,
+            status: 'Connection closed manually',
+            hasVideo: false
+        });
 
         // Generate a new offer when returning to step 1
         setTimeout(() => {
             this.generateOffer();
         }, 100);
+    }
+
+    /** @private */
+    dispatchConnectionChangedEvent(detail) {
+        // Only dispatch if the state is different from the last known state
+        const stateChanged = 
+            this.lastConnectionState.connected !== detail.connected ||
+            this.lastConnectionState.status !== detail.status ||
+            this.lastConnectionState.hasVideo !== detail.hasVideo;
+        
+        if (stateChanged) {
+            // Update last known state
+            this.lastConnectionState = { ...detail };
+            
+            // Dispatch the event
+            this.dispatchEvent(new CustomEvent('connection-changed', {
+                detail,
+                bubbles: true
+            }));
+            
+            console.log('Connection state changed:', detail);
+        }
     }
 }
 
