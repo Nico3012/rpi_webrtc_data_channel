@@ -10,10 +10,7 @@ import (
 
 func main() {
 	// init web connection
-	server := webrtcvideoserver.New("8080", "webrtcvideoserver/public")
-
-	// Enable video streaming
-	server.EnableVideo(true)
+	server := webrtcvideoserver.New("8080", "webrtcvideoserver/public", true)
 
 	// web message callback
 	server.InitReadDataCallback(func(message string) {

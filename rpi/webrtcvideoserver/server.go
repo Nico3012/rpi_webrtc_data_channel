@@ -41,17 +41,19 @@ type SDPResponse struct {
 }
 
 // New creates a new WebRTC server instance and starts it
-func New(port, publicDir string) *Server {
+func New(port, publicDir string, videoEnabled bool) *Server {
 	server := &Server{
 		port:         port,
 		publicDir:    publicDir,
-		videoEnabled: false,
+		videoEnabled: videoEnabled,
 	}
 
 	server.setupWebRTC()
 
-	// Initialize video handler with default camera (device 0)
-	server.videoHandler = NewVideoHandler(0)
+	// Initialize video handler only if video is enabled
+	if server.videoEnabled {
+		server.videoHandler = NewVideoHandler(0)
+	}
 
 	mux := http.NewServeMux()
 
@@ -70,13 +72,6 @@ func New(port, publicDir string) *Server {
 	}()
 
 	return server
-}
-
-// EnableVideo enables video streaming capabilities
-func (s *Server) EnableVideo(enabled bool) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	s.videoEnabled = enabled
 }
 
 // SendData sends data through the WebRTC data channel if it exists
@@ -207,7 +202,7 @@ func (s *Server) processOffer(offerType, offerSDP string) (string, error) {
 	}
 
 	// Add video track if video is enabled
-	if s.videoEnabled {
+	if s.videoEnabled && s.videoHandler != nil {
 		videoTrack, err := s.videoHandler.CreateTrack()
 		if err != nil {
 			return "", fmt.Errorf("failed to create video track: %v", err)
@@ -241,7 +236,7 @@ func (s *Server) processOffer(offerType, offerSDP string) (string, error) {
 			s.stopChan = make(chan bool)
 
 			// Start video streaming if enabled
-			if s.videoEnabled {
+			if s.videoEnabled && s.videoHandler != nil {
 				if err := s.videoHandler.StartStreaming(); err != nil {
 					fmt.Printf("Failed to start video streaming: %v\n", err)
 				} else {
@@ -253,7 +248,7 @@ func (s *Server) processOffer(offerType, offerSDP string) (string, error) {
 		dc.OnClose(func() {
 			fmt.Println("Data channel closed - connection terminated")
 			// Stop video streaming
-			if s.videoEnabled {
+			if s.videoEnabled && s.videoHandler != nil {
 				s.videoHandler.StopStreaming()
 				fmt.Println("Video streaming stopped")
 			}

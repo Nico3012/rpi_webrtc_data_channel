@@ -9,7 +9,8 @@ class WebRTCConnection extends LitElement {
         rpiAddress: { type: String, attribute: 'rpi-address' },
         rpiPort: { type: String, attribute: 'rpi-port' },
         connectionStatus: { type: String },
-        hasVideoStream: { type: Boolean }
+        hasVideoStream: { type: Boolean },
+        requestVideo: { type: Boolean, attribute: 'request-video' }
     };
 
     // lit property
@@ -138,6 +139,7 @@ class WebRTCConnection extends LitElement {
         this.rpiServerUrl = null;
         this.hasVideoStream = false;
         this.videoStream = null;
+        this.requestVideo = false; // Default to false, can be set via attribute
         // Track last known connection state to prevent duplicate events
         this.lastConnectionState = {
             connected: false,
@@ -180,7 +182,8 @@ class WebRTCConnection extends LitElement {
 
     /** @public @returns {MediaStream|null} */
     getVideoStream() {
-        return this.hasVideoStream ? this.videoStream : null;
+        // Only return video stream if we requested video and actually have a valid stream
+        return this.requestVideo && this.hasVideoStream && this.videoStream ? this.videoStream : null;
     }
 
     /** @private */
@@ -288,8 +291,10 @@ class WebRTCConnection extends LitElement {
                 }
             };
 
-            // Add a video transceiver to request video from the server
-            this.peerConnection.addTransceiver('video', { direction: 'recvonly' });
+            // Only add a video transceiver if video is requested
+            if (this.requestVideo) {
+                this.peerConnection.addTransceiver('video', { direction: 'recvonly' });
+            }
 
             // Create data channel
             this.dataChannel = this.peerConnection.createDataChannel('messages', {
