@@ -5,27 +5,35 @@ import (
 	"log"
 	"time"
 
-	"rpi-webrtc/webrtcserver"
+	"rpi-webrtc/webrtcvideoserver"
 )
 
 func main() {
 	// init web connection
-	server := webrtcserver.New("8080", "webrtcserver/public")
+	server := webrtcvideoserver.New("8080", "webrtcvideoserver/public")
+
+	// Enable video streaming
+	server.EnableVideo(true)
 
 	// web message callback
 	server.InitReadDataCallback(func(message string) {
-		log.Printf("Nico msg: %s\n", message)
+		log.Printf("Received message: %s\n", message)
+
+		// You could handle specific commands here
+		// For example, if message == "video:off" { server.EnableVideo(false) }
 	})
 
 	i := 0
 
 	for {
-		err := server.SendData(fmt.Sprintf("%d;%d", i, i*i))
-		if err != nil {
-			log.Println(err)
+		// Send some data to the client periodically
+		if server.IsConnected() {
+			err := server.SendData(fmt.Sprintf("%d;%d", i, i*i))
+			if err != nil {
+				log.Println(err)
+			}
+			i++
 		}
-
-		i++
 
 		time.Sleep(2000 * time.Millisecond)
 	}
