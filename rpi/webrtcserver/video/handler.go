@@ -87,6 +87,8 @@ func (vh *Handler) streamCamera() error {
 		"ffmpeg",
 		"-i", "/dev/video0", // use default webcam
 		"-c:v", "vp8", // set video codec to vp8
+		"-deadline", "realtime", // vp8 encoder settings for fastest calculation
+		"-cpu-used", "8", // vp8 encoder settings for fastest calculation (does not mean cpu cores)
 		"-video_size", "640x480",
 		"-framerate", "30",
 		"-b:v", "2M", // video bitrate 2 megabits per second
