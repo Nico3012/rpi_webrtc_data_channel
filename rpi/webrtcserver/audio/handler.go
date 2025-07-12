@@ -88,9 +88,10 @@ func (ah *Handler) streamAudio() error {
 	ffmpeg := exec.Command(
 		"ffmpeg", "-y",
 		"-f", "alsa", // ALSA input format for Linux
+		"-channels", "1", // mono
 		"-ac", "1", // 1 channel (mono)
 		"-ar", "48000", // sample rate 48 kHz
-		"-i", "default", // default mic
+		"-i", "hw:CARD=U0x46d0x81b,DEV=0", // default mic
 		"-c:a", "libopus", // Opus codec
 		"-application", "lowdelay", // optimize for realtime
 		"-b:a", "128k", // 128 kbps bitrate
