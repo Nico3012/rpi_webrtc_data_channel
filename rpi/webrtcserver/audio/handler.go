@@ -26,7 +26,7 @@ type Handler struct {
 // NewHandler creates a new audio handler
 func NewHandler(audioDevice string) *Handler {
 	if audioDevice == "" {
-		audioDevice = "default" // Use default ALSA device
+		audioDevice = "default" // Use default ALSA/PulseAudio device
 	}
 
 	return &Handler{
@@ -64,6 +64,7 @@ func (ah *Handler) StartStreaming() error {
 	ah.stopChan = make(chan struct{})
 	ah.isStreaming = true
 
+	// Launch streaming goroutine
 	go func() {
 		if err := ah.streamAudio(); err != nil {
 			log.Printf("Audio streaming error: %v", err)
@@ -105,28 +106,33 @@ func (ah *Handler) streamAudio() error {
 		return fmt.Errorf("ffmpeg start error: %w", err)
 	}
 
-	// Setup cleanup to ensure ffmpeg process is terminated
+	// Ensure FFmpeg is cleaned up on stop
 	go func() {
 		<-ah.stopChan
 		fmt.Println("Stopping audio FFmpeg process")
 		ffmpeg.Process.Kill()
 	}()
 
-	// Read encoded frames from FFmpeg using oggreader and send to WebRTC
+	// Read encoded pages from FFmpeg using oggreader
 	ogg, _, err := oggreader.NewWith(stdout)
 	if err != nil {
 		return fmt.Errorf("oggreader error: %w", err)
 	}
 
-	// Keep track of last granule, the difference is the amount of samples in the buffer
+	// Use a fixed ticker for page pacing
+	const oggPageDuration = 20 * time.Millisecond
+	ticker := time.NewTicker(oggPageDuration)
+	defer ticker.Stop()
+
+	// Keep track of last granule to calculate exact sample duration
 	var lastGranule uint64
 
 	for {
 		select {
 		case <-ah.stopChan:
 			return nil
-		default:
-			// Read Ogg page from stream
+		case <-ticker.C:
+			// Parse next Ogg page
 			pageData, pageHeader, err := ogg.ParseNextPage()
 			if err != nil {
 				if errors.Is(err, io.EOF) {
@@ -135,11 +141,12 @@ func (ah *Handler) streamAudio() error {
 				return fmt.Errorf("ogg parse error: %w", err)
 			}
 
-			sampleCount := float64(pageHeader.GranulePosition - lastGranule)
+			// Calculate duration from granule difference
+			sampleCount := pageHeader.GranulePosition - lastGranule
 			lastGranule = pageHeader.GranulePosition
-			sampleDuration := time.Duration((sampleCount/48000)*1000) * time.Millisecond
+			sampleDuration := time.Duration(sampleCount) * time.Second / time.Duration(ah.sampleRate)
 
-			// Send the Ogg page to WebRTC
+			// Send the Ogg page to WebRTC with calculated duration
 			if err := ah.audioTrack.WriteSample(media.Sample{
 				Data:     pageData,
 				Duration: sampleDuration,
