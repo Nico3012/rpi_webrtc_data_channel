@@ -32,7 +32,7 @@ func NewHandler(audioDevice string) *Handler {
 	return &Handler{
 		audioDevice: audioDevice,
 		sampleRate:  48000, // Standard WebRTC sample rate
-		channels:    2,     // Stereo
+		channels:    1,     // Mono
 		stopChan:    make(chan struct{}),
 	}
 }
@@ -88,7 +88,7 @@ func (ah *Handler) streamAudio() error {
 	ffmpeg := exec.Command(
 		"ffmpeg", "-y",
 		"-f", "alsa", // ALSA input format for Linux
-		"-ac", "2", // 2 channels (stereo)
+		"-ac", "1", // 1 channel (mono)
 		"-ar", "48000", // sample rate 48 kHz
 		"-i", "default", // default mic
 		"-c:a", "libopus", // Opus codec
