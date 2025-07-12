@@ -91,6 +91,7 @@ func (ah *Handler) streamAudio() error {
 		"-f", "pulse", "-i", "default", // use linux pulse audio with default device
 		"-c:a", "libopus", // set audio codec to opus
 		"-page_duration", "20000", // reduces page length. Without we cant hear anything somehow. Pages are released not often enough otherwise
+		"-b:a", "32k",
 		"-vn",                 // disable video
 		"-f", "ogg", "pipe:1", // pipe out as ogg
 	)
