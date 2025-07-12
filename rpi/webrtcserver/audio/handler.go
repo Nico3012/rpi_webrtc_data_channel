@@ -86,19 +86,14 @@ func (ah *Handler) StopStreaming() {
 func (ah *Handler) streamAudio() error {
 	// Setup FFmpeg to capture audio from microphone and encode to Opus in Ogg container
 	ffmpeg := exec.Command(
-		"ffmpeg", "-y",
-		"-f", "alsa", // ALSA input format for Linux
-		"-channels", "1", // mono
-		"-ac", "1", // 1 channel (mono)
-		"-ar", "48000", // sample rate 48 kHz
-		"-i", "hw:CARD=U0x46d0x81b,DEV=0", // default mic
-		"-c:a", "libopus", // Opus codec
-		"-application", "lowdelay", // optimize for realtime
-		"-b:a", "128k", // 128 kbps bitrate
-		"-vbr", "on", // enable variable bitrate
-		"-frame_duration", "20", // 20 ms Opus frames (better for real-time)
-		"-f", "ogg", // Ogg container for streaming
-		"pipe:1", // output to stdout
+		"ffmpeg",
+		"-f", "pulse",
+		"-i", "default",
+		"-c:a", "libopus",
+		"-page_duration", "20000",
+		"-vn",
+		"-f", "ogg",
+		"pipe:1",
 	)
 
 	// Get ffmpeg's stdout to read the encoded audio
@@ -125,13 +120,16 @@ func (ah *Handler) streamAudio() error {
 		return fmt.Errorf("oggreader error: %w", err)
 	}
 
+	// Keep track of last granule, the difference is the amount of samples in the buffer
+	var lastGranule uint64
+
 	for {
 		select {
 		case <-ah.stopChan:
 			return nil
 		default:
 			// Read Ogg page from stream
-			pageData, _, err := ogg.ParseNextPage()
+			pageData, pageHeader, err := ogg.ParseNextPage()
 			if err != nil {
 				if errors.Is(err, io.EOF) {
 					return nil
@@ -139,8 +137,9 @@ func (ah *Handler) streamAudio() error {
 				return fmt.Errorf("ogg parse error: %w", err)
 			}
 
-			// Use 20ms duration to match the FFmpeg frame duration
-			sampleDuration := time.Millisecond * 20
+			sampleCount := float64(pageHeader.GranulePosition - lastGranule)
+			lastGranule = pageHeader.GranulePosition
+			sampleDuration := time.Duration((sampleCount/48000)*1000) * time.Millisecond
 
 			// Send the Ogg page to WebRTC
 			if err := ah.audioTrack.WriteSample(media.Sample{
