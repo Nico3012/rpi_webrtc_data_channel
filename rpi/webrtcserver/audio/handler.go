@@ -91,7 +91,7 @@ func (ah *Handler) streamAudio() error {
 		"-f", "pulse", "-i", "default", // use linux pulse audio with default device
 		"-c:a", "libopus", // set audio codec to opus
 		"-page_duration", "20000", // reduces page length. Without we cant hear anything somehow. Pages are released not often enough otherwise
-		"-b:a", "32k",
+		"-b:a", "48k",
 		"-vn",                 // disable video
 		"-f", "ogg", "pipe:1", // pipe out as ogg
 	)
@@ -143,9 +143,9 @@ func (ah *Handler) streamAudio() error {
 			}
 
 			// Calculate duration from granule difference
-			sampleCount := pageHeader.GranulePosition - lastGranule
+			sampleCount := float64(pageHeader.GranulePosition - lastGranule)
 			lastGranule = pageHeader.GranulePosition
-			sampleDuration := time.Duration(sampleCount) * time.Second / time.Duration(ah.sampleRate)
+			sampleDuration := time.Duration((sampleCount/48000)*1000) * time.Millisecond
 
 			// Send the Ogg page to WebRTC with calculated duration
 			if err := ah.audioTrack.WriteSample(media.Sample{
