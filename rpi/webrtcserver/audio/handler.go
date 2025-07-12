@@ -10,6 +10,7 @@ import (
 
 	"github.com/pion/webrtc/v4"
 	"github.com/pion/webrtc/v4/pkg/media"
+	"github.com/pion/webrtc/v4/pkg/media/oggreader"
 )
 
 // Handler manages the audio streaming functionality
@@ -83,20 +84,20 @@ func (ah *Handler) StopStreaming() {
 
 // streamAudio handles the audio capture and streaming
 func (ah *Handler) streamAudio() error {
-	// Setup FFmpeg to capture audio from microphone and encode to Opus
+	// Setup FFmpeg to capture audio from microphone and encode to Opus in Ogg container
 	ffmpeg := exec.Command(
 		"ffmpeg", "-y",
 		"-f", "alsa", // ALSA input format for Linux
-		"-i", ah.audioDevice,
-		"-c:a", "libopus",
-		"-b:a", "64k", // 64 kbps bitrate for good quality
-		"-vbr", "on", // Variable bitrate for better quality
-		"-application", "voip", // Optimize for voice over IP
-		"-frame_duration", "20", // 20ms frame duration (standard for WebRTC)
-		"-ar", fmt.Sprintf("%d", ah.sampleRate), // Sample rate
-		"-ac", fmt.Sprintf("%d", ah.channels), // Number of channels
-		"-f", "opus", // Output raw Opus packets
-		"pipe:1", // Output to stdout
+		"-ac", "2", // 2 channels (stereo)
+		"-ar", "48000", // sample rate 48 kHz
+		"-i", "default", // default mic
+		"-c:a", "libopus", // Opus codec
+		"-application", "lowdelay", // optimize for realtime
+		"-b:a", "128k", // 128 kbps bitrate
+		"-vbr", "on", // enable variable bitrate
+		"-frame_duration", "20", // 20 ms Opus frames (better for real-time)
+		"-f", "ogg", // Ogg container for streaming
+		"pipe:1", // output to stdout
 	)
 
 	// Get ffmpeg's stdout to read the encoded audio
@@ -117,30 +118,35 @@ func (ah *Handler) streamAudio() error {
 		ffmpeg.Process.Kill()
 	}()
 
-	// Read audio frames and send to WebRTC
-	buffer := make([]byte, 4096)
-	frameDuration := time.Millisecond * 20 // 20ms frames
+	// Read encoded frames from FFmpeg using oggreader and send to WebRTC
+	ogg, _, err := oggreader.NewWith(stdout)
+	if err != nil {
+		return fmt.Errorf("oggreader error: %w", err)
+	}
 
 	for {
 		select {
 		case <-ah.stopChan:
 			return nil
 		default:
-			n, err := stdout.Read(buffer)
+			// Read Ogg page from stream
+			pageData, _, err := ogg.ParseNextPage()
 			if err != nil {
 				if errors.Is(err, io.EOF) {
 					return nil
 				}
-				return fmt.Errorf("audio read error: %w", err)
+				return fmt.Errorf("ogg parse error: %w", err)
 			}
 
-			if n > 0 {
-				if err := ah.audioTrack.WriteSample(media.Sample{
-					Data:     buffer[:n],
-					Duration: frameDuration,
-				}); err != nil {
-					return fmt.Errorf("write audio sample error: %w", err)
-				}
+			// Use 20ms duration to match the FFmpeg frame duration
+			sampleDuration := time.Millisecond * 20
+
+			// Send the Ogg page to WebRTC
+			if err := ah.audioTrack.WriteSample(media.Sample{
+				Data:     pageData,
+				Duration: sampleDuration,
+			}); err != nil {
+				return fmt.Errorf("write audio sample error: %w", err)
 			}
 		}
 	}
