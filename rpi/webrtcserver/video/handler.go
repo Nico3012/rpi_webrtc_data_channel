@@ -82,25 +82,16 @@ func (vh *Handler) StopStreaming() {
 
 // streamCamera handles the camera capture and streaming
 func (vh *Handler) streamCamera() error {
-	// Camera device path (e.g., "/dev/video0" for Linux or camera index for other systems)
-	cameraPath := fmt.Sprintf("/dev/video%d", vh.cameraDevice)
-
 	// Setup FFmpeg to capture directly from the camera and encode to VP8
 	ffmpeg := exec.Command(
-		"ffmpeg", "-y",
-		"-f", "v4l2", // Video4Linux2 input format for Linux
-		"-input_format", "yuyv422", // Common format for webcams
-		"-video_size", fmt.Sprintf("%dx%d", vh.width, vh.height),
-		"-framerate", fmt.Sprintf("%d", vh.framerate),
-		"-i", cameraPath,
-		"-c:v", "libvpx",
-		"-deadline", "realtime", // Optimize for realtime encoding
-		"-cpu-used", "7", // Speed up initial encoding
-		"-b:v", "1M", // 1Mbps bitrate
-		"-keyint_min", "15", // Force keyframes more often initially
-		"-g", "15",
-		"-f", "ivf",
-		"pipe:1", // Output to stdout
+		"ffmpeg",
+		"-i", "/dev/video0", // use default webcam
+		"-c:v", "vp8", // set video codec to vp8
+		"-video_size", "640x480",
+		"-framerate", "30",
+		"-b:v", "2M", // video bitrate 2 megabits per second
+		"-an",                 // disable audio
+		"-f", "ivf", "pipe:1", // pipe out as ivf
 	)
 
 	// Get ffmpeg's stdout to read the encoded video

@@ -87,13 +87,11 @@ func (ah *Handler) streamAudio() error {
 	// Setup FFmpeg to capture audio from microphone and encode to Opus in Ogg container
 	ffmpeg := exec.Command(
 		"ffmpeg",
-		"-f", "pulse",
-		"-i", "default",
-		"-c:a", "libopus",
+		"-f", "pulse", "-i", "default", // use linux pulse audio with default device
+		"-c:a", "libopus", // set audio codec to opus
 		"-page_duration", "20000",
-		"-vn",
-		"-f", "ogg",
-		"pipe:1",
+		"-vn",                 // disable video
+		"-f", "ogg", "pipe:1", // pipe out as ogg
 	)
 
 	// Get ffmpeg's stdout to read the encoded audio
