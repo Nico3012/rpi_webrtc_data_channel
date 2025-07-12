@@ -15,23 +15,15 @@ import (
 
 // Handler manages the video streaming functionality
 type Handler struct {
-	videoTrack   *webrtc.TrackLocalStaticSample
-	stopChan     chan struct{}
-	isStreaming  bool
-	cameraDevice int
-	width        int
-	height       int
-	framerate    int
+	videoTrack  *webrtc.TrackLocalStaticSample
+	stopChan    chan struct{}
+	isStreaming bool
 }
 
 // NewHandler creates a new video handler
-func NewHandler(cameraDevice int) *Handler {
+func NewHandler() *Handler {
 	return &Handler{
-		cameraDevice: cameraDevice,
-		width:        640,
-		height:       480,
-		framerate:    30,
-		stopChan:     make(chan struct{}),
+		stopChan: make(chan struct{}),
 	}
 }
 
@@ -135,7 +127,7 @@ func (vh *Handler) streamCamera() error {
 
 			if err := vh.videoTrack.WriteSample(media.Sample{
 				Data:     frame,
-				Duration: time.Second / time.Duration(vh.framerate),
+				Duration: 1000 * time.Millisecond / 30,
 			}); err != nil {
 				return fmt.Errorf("write sample error: %w", err)
 			}

@@ -58,12 +58,12 @@ func New(port, publicDir string, videoEnabled, audioEnabled bool) *Server {
 
 	// Initialize video handler only if video is enabled
 	if server.videoEnabled {
-		server.videoHandler = video.NewHandler(0)
+		server.videoHandler = video.NewHandler()
 	}
 
 	// Initialize audio handler only if audio is enabled
 	if server.audioEnabled {
-		server.audioHandler = audio.NewHandler("default")
+		server.audioHandler = audio.NewHandler()
 	}
 
 	mux := http.NewServeMux()

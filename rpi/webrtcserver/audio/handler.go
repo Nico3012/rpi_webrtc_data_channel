@@ -18,22 +18,12 @@ type Handler struct {
 	audioTrack  *webrtc.TrackLocalStaticSample
 	stopChan    chan struct{}
 	isStreaming bool
-	audioDevice string
-	sampleRate  int
-	channels    int
 }
 
 // NewHandler creates a new audio handler
-func NewHandler(audioDevice string) *Handler {
-	if audioDevice == "" {
-		audioDevice = "default" // Use default ALSA/PulseAudio device
-	}
-
+func NewHandler() *Handler {
 	return &Handler{
-		audioDevice: audioDevice,
-		sampleRate:  48000, // Standard WebRTC sample rate
-		channels:    1,     // Mono
-		stopChan:    make(chan struct{}),
+		stopChan: make(chan struct{}),
 	}
 }
 
@@ -89,6 +79,7 @@ func (ah *Handler) streamAudio() error {
 	ffmpeg := exec.Command(
 		"ffmpeg",
 		"-f", "pulse", "-i", "default", // use linux pulse audio with default device
+		"-ar", "48000", // set sample rate to 48000 Hz
 		"-c:a", "libopus", // set audio codec to opus
 		"-page_duration", "20000", // reduces page length. Without we cant hear anything somehow. Pages are released not often enough otherwise
 		"-b:a", "48k",
