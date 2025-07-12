@@ -8,7 +8,11 @@ class WebRTCConnection extends LitElement {
         isConnectedState: { type: Boolean },
         rpiAddress: { type: String, attribute: 'rpi-address' },
         rpiPort: { type: String, attribute: 'rpi-port' },
-        connectionStatus: { type: String }
+        connectionStatus: { type: String },
+        hasVideoStream: { type: Boolean },
+        requestVideo: { type: Boolean, attribute: 'request-video' },
+        hasAudioStream: { type: Boolean },
+        requestAudio: { type: Boolean, attribute: 'request-audio' }
     };
 
     // lit property
@@ -23,6 +27,13 @@ class WebRTCConnection extends LitElement {
             justify-content: space-between;
             align-items: center;
             margin-bottom: 8px;
+        }
+        
+        video {
+            width: 100%;
+            border-radius: 10px;
+            background-color: #000;
+            margin: 8px 0;
         }
 
         h2 {
@@ -128,6 +139,19 @@ class WebRTCConnection extends LitElement {
         this.peerConnection = null;
         this.dataChannel = null;
         this.rpiServerUrl = null;
+        this.hasVideoStream = false;
+        this.videoStream = null;
+        this.requestVideo = false; // Default to false, can be set via attribute
+        this.hasAudioStream = false;
+        this.audioStream = null;
+        this.requestAudio = false; // Default to false, can be set via attribute
+        // Track last known connection state to prevent duplicate events
+        this.lastConnectionState = {
+            connected: false,
+            status: 'Disconnected',
+            hasVideo: false,
+            hasAudio: false
+        };
     }
 
     // lit function
@@ -155,6 +179,23 @@ class WebRTCConnection extends LitElement {
                 <button @click="${this.closeConnection}" class="btn">Disconnect</button>
             </div>
         `;
+    }
+
+    // lit function
+    firstUpdated() {
+        this.generateOffer();
+    }
+
+    /** @public @returns {MediaStream|null} */
+    getVideoStream() {
+        // Only return video stream if we requested video and actually have a valid stream
+        return this.requestVideo && this.hasVideoStream && this.videoStream ? this.videoStream : null;
+    }
+
+    /** @public @returns {MediaStream|null} */
+    getAudioStream() {
+        // Only return audio stream if we requested audio and actually have a valid stream
+        return this.requestAudio && this.hasAudioStream && this.audioStream ? this.audioStream : null;
     }
 
     /** @private */
@@ -241,6 +282,52 @@ class WebRTCConnection extends LitElement {
                 // No ICE servers needed for local network connections
                 iceServers: []
             });
+
+            // Set up handlers for auto-detecting incoming video and audio tracks
+            this.peerConnection.ontrack = (event) => {
+                console.log("Received remote track:", event.track.kind);
+                if (event.track.kind === 'video') {
+                    this.videoStream = new MediaStream([event.track]);
+                    this.hasVideoStream = true;
+
+                    // If we're already connected, dispatch a connection update to notify about the new video
+                    if (this.isConnectedState) {
+                        this.dispatchConnectionChangedEvent({
+                            connected: true,
+                            status: 'Connected',
+                            hasVideo: true,
+                            hasAudio: this.hasAudioStream
+                        });
+                    }
+
+                    this.requestUpdate();
+                } else if (event.track.kind === 'audio') {
+                    this.audioStream = new MediaStream([event.track]);
+                    this.hasAudioStream = true;
+
+                    // If we're already connected, dispatch a connection update to notify about the new audio
+                    if (this.isConnectedState) {
+                        this.dispatchConnectionChangedEvent({
+                            connected: true,
+                            status: 'Connected',
+                            hasVideo: this.hasVideoStream,
+                            hasAudio: true
+                        });
+                    }
+
+                    this.requestUpdate();
+                }
+            };
+
+            // Only add a video transceiver if video is requested
+            if (this.requestVideo) {
+                this.peerConnection.addTransceiver('video', { direction: 'recvonly' });
+            }
+
+            // Only add an audio transceiver if audio is requested
+            if (this.requestAudio) {
+                this.peerConnection.addTransceiver('audio', { direction: 'recvonly' });
+            }
 
             // Create data channel
             this.dataChannel = this.peerConnection.createDataChannel('messages', {
@@ -332,27 +419,37 @@ class WebRTCConnection extends LitElement {
             this.updateStatus('Connected', true);
             this.requestUpdate();
 
-            // Dispatch connection update event
-            this.dispatchEvent(new CustomEvent('connection-changed', {
-                detail: { connected: true, status: 'Connected' },
-                bubbles: true
-            }));
+            // Dispatch connection update event with video information
+            this.dispatchConnectionChangedEvent({
+                connected: true,
+                status: 'Connected',
+                hasVideo: this.hasVideoStream
+            });
         };
 
         this.dataChannel.onclose = () => {
             console.log('Data channel closed');
             // Only handle if not already handled by peer connection state change
             if (this.isConnectedState) {
+                // Reset video stream
+                if (this.videoStream) {
+                    const tracks = this.videoStream.getTracks();
+                    tracks.forEach(track => track.stop());
+                }
+                this.hasVideoStream = false;
+                this.videoStream = null;
+
                 this.isConnectedState = false;
                 this.updateStatus('Disconnected', false);
                 this.currentStep = 1;
                 this.requestUpdate();
 
                 // Dispatch connection update event
-                this.dispatchEvent(new CustomEvent('connection-changed', {
-                    detail: { connected: false, status: 'Disconnected' },
-                    bubbles: true
-                }));
+                this.dispatchConnectionChangedEvent({
+                    connected: false,
+                    status: 'Disconnected',
+                    hasVideo: false
+                });
 
                 // Generate a new offer when data channel closes
                 setTimeout(() => {
@@ -375,10 +472,11 @@ class WebRTCConnection extends LitElement {
             console.error('Data channel error:', error);
             this.updateStatus('Connection Error', false);
             // Dispatch connection update event
-            this.dispatchEvent(new CustomEvent('connection-changed', {
-                detail: { connected: false, status: 'Connection Error' },
-                bubbles: true
-            }));
+            this.dispatchConnectionChangedEvent({
+                connected: false,
+                status: 'Connection Error',
+                hasVideo: false
+            });
         };
     }
 
@@ -391,37 +489,75 @@ class WebRTCConnection extends LitElement {
                 case 'connected':
                 case 'completed':
                     this.updateStatus('Connected', true);
-                    // Dispatch connection update event
-                    this.dispatchEvent(new CustomEvent('connection-changed', {
-                        detail: { connected: true, status: 'Connected' },
-                        bubbles: true
-                    }));
+                    // Dispatch connection update event with video and audio state
+                    this.dispatchConnectionChangedEvent({
+                        connected: true,
+                        status: 'Connected',
+                        hasVideo: this.hasVideoStream,
+                        hasAudio: this.hasAudioStream
+                    });
                     break;
                 case 'disconnected':
+                    // Reset video stream when connection is lost
+                    if (this.videoStream) {
+                        const tracks = this.videoStream.getTracks();
+                        tracks.forEach(track => track.stop());
+                    }
+                    this.hasVideoStream = false;
+                    this.videoStream = null;
+
+                    // Reset audio stream when connection is lost
+                    if (this.audioStream) {
+                        const tracks = this.audioStream.getTracks();
+                        tracks.forEach(track => track.stop());
+                    }
+                    this.hasAudioStream = false;
+                    this.audioStream = null;
+
                     this.updateStatus('Disconnected', false);
                     this.isConnectedState = false;
                     this.currentStep = 1;
                     this.requestUpdate();
                     // Dispatch connection update event
-                    this.dispatchEvent(new CustomEvent('connection-changed', {
-                        detail: { connected: false, status: 'Disconnected' },
-                        bubbles: true
-                    }));
+                    this.dispatchConnectionChangedEvent({
+                        connected: false,
+                        status: 'Disconnected',
+                        hasVideo: false,
+                        hasAudio: false
+                    });
                     // Generate a new offer when connection is lost
                     setTimeout(() => {
                         this.generateOffer();
                     }, 100);
                     break;
                 case 'failed':
+                    // Reset video stream when connection fails
+                    if (this.videoStream) {
+                        const tracks = this.videoStream.getTracks();
+                        tracks.forEach(track => track.stop());
+                    }
+                    this.hasVideoStream = false;
+                    this.videoStream = null;
+
+                    // Reset audio stream when connection fails
+                    if (this.audioStream) {
+                        const tracks = this.audioStream.getTracks();
+                        tracks.forEach(track => track.stop());
+                    }
+                    this.hasAudioStream = false;
+                    this.audioStream = null;
+
                     this.updateStatus('Connection Failed', false);
                     this.isConnectedState = false;
                     this.currentStep = 1;
                     this.requestUpdate();
                     // Dispatch connection update event
-                    this.dispatchEvent(new CustomEvent('connection-changed', {
-                        detail: { connected: false, status: 'Connection Failed' },
-                        bubbles: true
-                    }));
+                    this.dispatchConnectionChangedEvent({
+                        connected: false,
+                        status: 'Connection Failed',
+                        hasVideo: false,
+                        hasAudio: false
+                    });
                     // Generate a new offer when connection fails
                     setTimeout(() => {
                         this.generateOffer();
@@ -442,10 +578,28 @@ class WebRTCConnection extends LitElement {
 
     /** @private */
     closeConnection() {
+        // Clean up video resources if any
+        if (this.videoStream) {
+            const tracks = this.videoStream.getTracks();
+            tracks.forEach(track => track.stop());
+        }
+        this.hasVideoStream = false;
+        this.videoStream = null;
+
+        // Clean up audio resources if any
+        if (this.audioStream) {
+            const tracks = this.audioStream.getTracks();
+            tracks.forEach(track => track.stop());
+        }
+        this.hasAudioStream = false;
+        this.audioStream = null;
+
+        // Close data channel
         if (this.dataChannel) {
             this.dataChannel.close();
         }
 
+        // Close peer connection
         if (this.peerConnection) {
             this.peerConnection.close();
         }
@@ -463,15 +617,38 @@ class WebRTCConnection extends LitElement {
         this.requestUpdate();
 
         // Dispatch connection update event for manual disconnect
-        this.dispatchEvent(new CustomEvent('connection-changed', {
-            detail: { connected: false, status: 'Connection closed manually' },
-            bubbles: true
-        }));
+        this.dispatchConnectionChangedEvent({
+            connected: false,
+            status: 'Connection closed manually',
+            hasVideo: false
+        });
 
         // Generate a new offer when returning to step 1
         setTimeout(() => {
             this.generateOffer();
         }, 100);
+    }
+
+    /** @private */
+    dispatchConnectionChangedEvent(detail) {
+        // Only dispatch if the state is different from the last known state
+        const stateChanged = 
+            this.lastConnectionState.connected !== detail.connected ||
+            this.lastConnectionState.status !== detail.status ||
+            this.lastConnectionState.hasVideo !== detail.hasVideo;
+        
+        if (stateChanged) {
+            // Update last known state
+            this.lastConnectionState = { ...detail };
+            
+            // Dispatch the event
+            this.dispatchEvent(new CustomEvent('connection-changed', {
+                detail,
+                bubbles: true
+            }));
+            
+            console.log('Connection state changed:', detail);
+        }
     }
 }
 
