@@ -3,6 +3,7 @@ module rpi-webrtc
 go 1.24.4
 
 require (
+	github.com/pion/rtp v1.8.20
 	github.com/pion/webrtc/v4 v4.1.3
 	github.com/stianeikeland/go-rpio/v4 v4.6.0
 	periph.io/x/conn/v3 v3.7.2
@@ -19,7 +20,6 @@ require (
 	github.com/pion/mdns/v2 v2.0.7 // indirect
 	github.com/pion/randutil v0.1.0 // indirect
 	github.com/pion/rtcp v1.2.15 // indirect
-	github.com/pion/rtp v1.8.20 // indirect
 	github.com/pion/sctp v1.8.39 // indirect
 	github.com/pion/sdp/v3 v3.0.14 // indirect
 	github.com/pion/srtp/v3 v3.0.6 // indirect

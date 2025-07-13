@@ -3,14 +3,14 @@ package audio
 import (
 	"errors"
 	"fmt"
-	"io"
 	"log"
+	"net"
 	"os/exec"
 	"time"
 
+	"github.com/pion/rtp"
 	"github.com/pion/webrtc/v4"
 	"github.com/pion/webrtc/v4/pkg/media"
-	"github.com/pion/webrtc/v4/pkg/media/oggreader"
 )
 
 // Handler manages the audio streaming functionality
@@ -54,7 +54,6 @@ func (ah *Handler) StartStreaming() error {
 	ah.stopChan = make(chan struct{})
 	ah.isStreaming = true
 
-	// Launch streaming goroutine
 	go func() {
 		if err := ah.streamAudio(); err != nil {
 			log.Printf("Audio streaming error: %v", err)
@@ -73,77 +72,82 @@ func (ah *Handler) StopStreaming() {
 	}
 }
 
-// streamAudio handles the audio capture and streaming
 func (ah *Handler) streamAudio() error {
-	// Setup FFmpeg to capture audio from microphone and encode to Opus in Ogg container
+	// Use a random available port
+	port := 5004
+	rtpEndpoint := fmt.Sprintf("rtp://127.0.0.1:%d", port)
+
 	ffmpeg := exec.Command(
 		"ffmpeg",
-		"-f", "pulse", "-i", "default", // use linux pulse audio with default device
-		"-ar", "48000", // set sample rate to 48000 Hz
-		"-c:a", "libopus", // set audio codec to opus
-		"-page_duration", "20000", // reduces page length. Without we cant hear anything somehow. Pages are released not often enough otherwise
+		"-f", "pulse",
+		"-i", "default",
+		"-ar", "48000",
+		"-ac", "1", // Mono audio is crucial
+		"-c:a", "libopus",
+		"-frame_duration", "20", // 20ms frames
+		"-application", "voip", // Low-latency mode
 		"-b:a", "48k",
-		"-vn",                 // disable video
-		"-f", "ogg", "pipe:1", // pipe out as ogg
+		"-packet_loss", "10", // Simulate 10% loss for robustness
+		"-f", "rtp", // RTP output format
+		rtpEndpoint, // RTP destination
 	)
 
-	// Get ffmpeg's stdout to read the encoded audio
-	stdout, err := ffmpeg.StdoutPipe()
-	if err != nil {
-		return fmt.Errorf("ffmpeg stdout error: %w", err)
-	}
-
-	// Start the FFmpeg process
+	// Start FFmpeg
 	if err := ffmpeg.Start(); err != nil {
 		return fmt.Errorf("ffmpeg start error: %w", err)
 	}
 
-	// Ensure FFmpeg is cleaned up on stop
+	// Cleanup on stop
 	go func() {
 		<-ah.stopChan
-		fmt.Println("Stopping audio FFmpeg process")
 		ffmpeg.Process.Kill()
 	}()
 
-	// Read encoded pages from FFmpeg using oggreader
-	ogg, _, err := oggreader.NewWith(stdout)
+	// Set up UDP listener for RTP packets
+	conn, err := net.ListenUDP("udp", &net.UDPAddr{
+		IP:   net.IPv4(127, 0, 0, 1),
+		Port: port,
+	})
 	if err != nil {
-		return fmt.Errorf("oggreader error: %w", err)
+		return fmt.Errorf("UDP listen error: %w", err)
 	}
+	defer conn.Close()
 
-	// Use a fixed ticker for page pacing
-	const oggPageDuration = 20 * time.Millisecond
-	ticker := time.NewTicker(oggPageDuration)
-	defer ticker.Stop()
+	// Set read buffer size to handle bursts
+	conn.SetReadBuffer(1024 * 1024) // 1MB buffer
 
-	// Keep track of last granule to calculate exact sample duration
-	var lastGranule uint64
+	// Buffer for incoming packets
+	buffer := make([]byte, 1500) // Ethernet MTU size
 
 	for {
 		select {
 		case <-ah.stopChan:
 			return nil
-		case <-ticker.C:
-			// Parse next Ogg page
-			pageData, pageHeader, err := ogg.ParseNextPage()
+		default:
+			// Set read deadline to prevent blocking forever
+			conn.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+
+			n, _, err := conn.ReadFromUDP(buffer)
 			if err != nil {
-				if errors.Is(err, io.EOF) {
-					return nil
+				if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+					continue
 				}
-				return fmt.Errorf("ogg parse error: %w", err)
+				return fmt.Errorf("UDP read error: %w", err)
 			}
 
-			// Calculate duration from granule difference
-			sampleCount := float64(pageHeader.GranulePosition - lastGranule)
-			lastGranule = pageHeader.GranulePosition
-			sampleDuration := time.Duration((sampleCount/48000)*1000) * time.Millisecond
+			// Parse RTP packet
+			packet := &rtp.Packet{}
+			if err := packet.Unmarshal(buffer[:n]); err != nil {
+				log.Printf("RTP parse error: %v", err)
+				continue
+			}
 
-			// Send the Ogg page to WebRTC with calculated duration
+			// Send payload directly to WebRTC
 			if err := ah.audioTrack.WriteSample(media.Sample{
-				Data:     pageData,
-				Duration: sampleDuration,
+				Data:     packet.Payload,
+				Duration: 20 * time.Millisecond, // Always 20ms frames
 			}); err != nil {
-				return fmt.Errorf("write audio sample error: %w", err)
+				return fmt.Errorf("write sample error: %w", err)
 			}
 		}
 	}
