@@ -1,1 +1,2 @@
-v0.9.0 - video and audio first working implementation (full featured)
+v0.9.0  - video and audio first working implementation (full featured)
+v0.10.0 - video and audio changed to ffmpeg -> rdp to improve quality and efficiency by a lot
