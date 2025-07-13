@@ -85,7 +85,7 @@ func (ah *Handler) streamAudio() error {
 
 	ffmpeg := exec.Command(
 		"ffmpeg",
-		"-f", "pulse", "-i", "default", // input device
+		"-f", "alsa", "-i", "plughw:3,0", // input device
 		"-c:a", "libopus", // use opus codec
 		"-frame_duration", "20", // 20ms frames
 		"-application", "voip", // Low-latency mode
