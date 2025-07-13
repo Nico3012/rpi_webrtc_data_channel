@@ -268,7 +268,7 @@ class WebRTCConnection extends LitElement {
                 }
 
                 this.requestUpdate();
-                
+
                 if (this.isConnectedState) {
                     this.dispatchConnectionChangedEvent({
                         connected: true,
@@ -452,22 +452,22 @@ class WebRTCConnection extends LitElement {
                 case 'disconnected':
                 case 'failed':
                     this.cleanupMediaResources();
-                    const status = this.peerConnection.iceConnectionState === 'disconnected' 
-                        ? 'Disconnected' 
+                    const status = this.peerConnection.iceConnectionState === 'disconnected'
+                        ? 'Disconnected'
                         : 'Connection Failed';
-                    
+
                     this.updateStatus(status, false);
                     this.isConnectedState = false;
                     this.currentStep = 1;
                     this.requestUpdate();
-                    
+
                     this.dispatchConnectionChangedEvent({
                         connected: false,
                         status: status,
                         hasVideo: false,
                         hasAudio: false
                     });
-                    
+
                     setTimeout(() => {
                         this.generateOffer();
                     }, 100);
