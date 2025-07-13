@@ -3,19 +3,17 @@ package video
 import (
 	"errors"
 	"fmt"
-	"io"
 	"log"
+	"net"
 	"os/exec"
 	"time"
 
 	"github.com/pion/webrtc/v4"
-	"github.com/pion/webrtc/v4/pkg/media"
-	"github.com/pion/webrtc/v4/pkg/media/ivfreader"
 )
 
 // Handler manages the video streaming functionality
 type Handler struct {
-	videoTrack  *webrtc.TrackLocalStaticSample
+	videoTrack  *webrtc.TrackLocalStaticRTP
 	stopChan    chan struct{}
 	isStreaming bool
 }
@@ -28,8 +26,8 @@ func NewHandler() *Handler {
 }
 
 // CreateTrack creates a video track for WebRTC
-func (vh *Handler) CreateTrack() (*webrtc.TrackLocalStaticSample, error) {
-	videoTrack, err := webrtc.NewTrackLocalStaticSample(
+func (vh *Handler) CreateTrack() (*webrtc.TrackLocalStaticRTP, error) {
+	videoTrack, err := webrtc.NewTrackLocalStaticRTP(
 		webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeVP8},
 		"video",
 		"camera",
@@ -74,25 +72,32 @@ func (vh *Handler) StopStreaming() {
 
 // streamCamera handles the camera capture and streaming
 func (vh *Handler) streamCamera() error {
-	// Setup FFmpeg to capture directly from the camera and encode to VP8
+	const udpPort = 5004
+	localAddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("127.0.0.1:%d", udpPort))
+	if err != nil {
+		return fmt.Errorf("failed to resolve UDP address: %w", err)
+	}
+
+	udpConn, err := net.ListenUDP("udp", localAddr)
+	if err != nil {
+		return fmt.Errorf("failed to listen on UDP port %d: %w", udpPort, err)
+	}
+	defer udpConn.Close()
+
+	// Setup FFmpeg to capture directly from the camera and stream as RTP
 	ffmpeg := exec.Command(
 		"ffmpeg",
 		"-i", "/dev/video0", // use default webcam
-		"-c:v", "vp8", // set video codec to vp8
-		"-deadline", "realtime", // vp8 encoder settings for fastest calculation
-		"-cpu-used", "8", // vp8 encoder settings for fastest calculation (does not mean cpu cores)
-		"-video_size", "640x480",
-		"-framerate", "30",
-		"-b:v", "2M", // video bitrate 2 megabits per second
-		"-an",                 // disable audio
-		"-f", "ivf", "pipe:1", // pipe out as ivf
+		"-c:v", "libvpx", // use VP8 codec
+		"-deadline", "realtime", // fastest encoding preset
+		"-cpu-used", "8", // minimal CPU usage
+		"-video_size", "640x480", // video resolution
+		"-framerate", "30", // frame rate
+		"-b:v", "2M", // video bitrate
+		"-an",       // disable audio
+		"-f", "rtp", // output format (RTP)
+		fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
 	)
-
-	// Get ffmpeg's stdout to read the encoded video
-	stdout, err := ffmpeg.StdoutPipe()
-	if err != nil {
-		return fmt.Errorf("ffmpeg stdout error: %w", err)
-	}
 
 	// Start the FFmpeg process
 	if err := ffmpeg.Start(); err != nil {
@@ -102,34 +107,36 @@ func (vh *Handler) streamCamera() error {
 	// Setup cleanup to ensure ffmpeg process is terminated
 	go func() {
 		<-vh.stopChan
-		fmt.Println("Stopping FFmpeg process")
-		ffmpeg.Process.Kill()
+		log.Println("Stopping FFmpeg process and UDP listener")
+		udpConn.Close()
+		if err := ffmpeg.Process.Kill(); err != nil {
+			log.Printf("Error killing FFmpeg process: %v", err)
+		}
 	}()
 
-	// Read encoded frames from FFmpeg and send to WebRTC
-	ivf, _, err := ivfreader.NewWith(stdout)
-	if err != nil {
-		return fmt.Errorf("ivfreader error: %w", err)
-	}
+	// Buffer for reading RTP packets (1500 bytes is typical MTU size)
+	buffer := make([]byte, 1500)
 
+	// Read RTP packets from UDP and forward to WebRTC
 	for {
 		select {
 		case <-vh.stopChan:
 			return nil
 		default:
-			frame, _, err := ivf.ParseNextFrame()
-			if errors.Is(err, io.EOF) {
-				break
-			}
+			// Set read deadline to allow periodic stop checks
+			udpConn.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+
+			n, _, err := udpConn.ReadFrom(buffer)
 			if err != nil {
-				return fmt.Errorf("ivf parse error: %w", err)
+				if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+					continue
+				}
+				return fmt.Errorf("UDP read error: %w", err)
 			}
 
-			if err := vh.videoTrack.WriteSample(media.Sample{
-				Data:     frame,
-				Duration: 1000 * time.Millisecond / 30,
-			}); err != nil {
-				return fmt.Errorf("write sample error: %w", err)
+			// Write raw RTP packet to WebRTC track
+			if _, err := vh.videoTrack.Write(buffer[:n]); err != nil {
+				return fmt.Errorf("RTP write error: %w", err)
 			}
 		}
 	}
