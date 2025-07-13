@@ -16,6 +16,7 @@
     </script>
     <script type="module" src="components/cache-controller.js"></script>
     <script type="module" src="components/webrtc-component.js"></script>
+    <script type="module" src="components/digital-joystick.js"></script>
     <script type="module" src="script.js"></script>
     <title>Device Controller</title>
 </head>
@@ -28,6 +29,9 @@
             <div class="category">
                 <!-- <webrtc-connection id="webrtcConnection" rpi-address="127.0.0.1" rpi-port="8080" request-video request-audio></webrtc-connection> -->
                 <webrtc-connection id="webrtcConnection" rpi-address="10.3.141.1" rpi-port="8080" request-video request-audio></webrtc-connection>
+            </div>
+            <div class="category">
+                <digital-joystick id="digitalJoystick"></digital-joystick>
             </div>
             <div class="title">Video:</div>
             <div class="category">
