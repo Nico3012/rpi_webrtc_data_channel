@@ -87,15 +87,15 @@ func (vh *Handler) streamCamera() error {
 	// Setup FFmpeg to capture directly from the camera and stream as RTP
 	ffmpeg := exec.Command(
 		"ffmpeg",
-		"-i", "/dev/video0", // use default webcam
+		"-i", "/dev/video0", // input device
 		"-c:v", "libvpx", // use VP8 codec
 		"-deadline", "realtime", // fastest encoding preset
 		"-cpu-used", "8", // minimal CPU usage
 		"-video_size", "640x480", // video resolution
 		"-framerate", "30", // frame rate
-		"-b:v", "2M", // video bitrate
-		"-an",       // disable audio
-		"-f", "rtp", // output format (RTP)
+		"-b:v", "2M", // Bitrate
+		"-an",       // Disable audio
+		"-f", "rtp", // RTP output format
 		fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
 	)
 
