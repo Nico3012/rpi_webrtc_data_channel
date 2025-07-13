@@ -74,7 +74,7 @@ func (ah *Handler) StopStreaming() {
 
 func (ah *Handler) streamAudio() error {
 	// Use a random available port
-	port := 5004
+	port := 5006
 	rtpEndpoint := fmt.Sprintf("rtp://127.0.0.1:%d", port)
 
 	ffmpeg := exec.Command(
@@ -87,6 +87,7 @@ func (ah *Handler) streamAudio() error {
 		"-frame_duration", "20", // 20ms frames
 		"-application", "voip", // Low-latency mode
 		"-b:a", "48k",
+		"-vn",
 		"-packet_loss", "10", // Simulate 10% loss for robustness
 		"-f", "rtp", // RTP output format
 		rtpEndpoint, // RTP destination
