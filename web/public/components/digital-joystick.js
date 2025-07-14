@@ -80,11 +80,21 @@ class DigitalJoystick extends LitElement {
         // initial sizing and default position
         this.updateContainerAndStickSize();
         window.addEventListener('resize', this.handleResize);
+
+        // add touch event handler
+        this.container.addEventListener('touchstart', this.preventTouchEvent, { passive: false });
+        this.container.addEventListener('touchmove', this.preventTouchEvent, { passive: false });
+        this.container.addEventListener('touchend', this.preventTouchEvent, { passive: false });
     }
 
     disconnectedCallback() {
         super.disconnectedCallback();
         window.removeEventListener('resize', this.handleResize);
+
+        // remove touch event handler
+        this.container.removeEventListener('touchstart', this.preventTouchEvent);
+        this.container.removeEventListener('touchmove', this.preventTouchEvent);
+        this.container.removeEventListener('touchend', this.preventTouchEvent);
     }
 
     handleResize() {
@@ -115,6 +125,10 @@ class DigitalJoystick extends LitElement {
 
         // reposition stick at default offset
         this.updateStickVisual();
+    }
+
+    preventTouchEvent(e) {
+        e.preventDefault();
     }
 
     handlePointerDown(e) {
