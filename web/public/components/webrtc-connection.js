@@ -17,6 +17,10 @@ class WebRTCConnection extends LitElement {
 
     // lit property
     static styles = css`
+        :host {
+            display: block;
+        }
+
         .step-container {
             display: flex;
             flex-direction: column;
