@@ -1,42 +1,15 @@
-const webrtcComponent = document.getElementById('webrtcConnection');
-const digitalJoysticks = document.querySelectorAll('digital-joystick');
-const servoInput = document.getElementById('servo-input');
-const pitchDiv = document.getElementById('pitch');
-const rollDiv = document.getElementById('roll');
-const videoElement = document.getElementById('external-video');
-const audioElement = document.getElementById('external-audio');
+const webrtcConnection = document.querySelector('webrtc-connection');
+const cameraElement = document.getElementById('camera');
+const microphoneElement = document.getElementById('microphone');
 
-// Handle connection changes (includes video and audio stream status)
-webrtcComponent.addEventListener('connection-changed', () => {
+webrtcConnection.addEventListener('connection-changed', () => {
     // Update video element with current stream (or null when disconnected)
-    const videoStream = webrtcComponent.getVideoStream();
-    videoElement.srcObject = videoStream;
+    const videoStream = webrtcConnection.getVideoStream();
+    cameraElement.srcObject = videoStream;
 
     // Update audio element with current stream (or null when disconnected)
-    const audioStream = webrtcComponent.getAudioStream();
-    audioElement.srcObject = audioStream;
-
-    // Send initial servo value when connected
-    if (webrtcComponent.isConnected()) {
-        webrtcComponent.sendData(servoInput.value);
-    }
+    const audioStream = webrtcConnection.getAudioStream();
+    microphoneElement.srcObject = audioStream;
 });
 
-webrtcComponent.addEventListener('message-received', (event) => {
-    const [pitch, roll] = event.detail.message.split(';').map(str => parseFloat(str));
-
-    pitchDiv.textContent = pitch.toString();
-    rollDiv.textContent = roll.toString();
-});
-
-digitalJoysticks.forEach(digitalJoystick => {
-    digitalJoystick.addEventListener('stick-move', (event) => {
-        console.log('Stick moved:', event.detail.x, event.detail.y);
-    });
-});
-
-servoInput.addEventListener('input', () => {
-    if (webrtcComponent.isConnected()) {
-        webrtcComponent.sendData(servoInput.value);
-    }
-});
+export { };

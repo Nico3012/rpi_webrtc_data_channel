@@ -15,66 +15,36 @@
         }
     </script>
     <script type="module" src="components/cache-controller.js"></script>
-    <script type="module" src="components/webrtc-component.js"></script>
+    <script type="module" src="components/webrtc-connection.js"></script>
     <script type="module" src="components/digital-joystick.js"></script>
     <script type="module" src="script.js"></script>
     <title>Device Controller</title>
 </head>
 
 <body>
-    <div class="container">
-        <div class="content">
+    <div class="content">
+        <details class="browser" open>
+            <summary>App status</summary>
+            <div class="line"></div>
             <cache-controller></cache-controller>
-            <div class="title">Verbindung:</div>
-            <div class="category">
-                <!-- <webrtc-connection id="webrtcConnection" rpi-address="127.0.0.1" rpi-port="8080" request-video request-audio></webrtc-connection> -->
-                <webrtc-connection id="webrtcConnection" rpi-address="10.3.141.1" rpi-port="8080" request-video request-audio></webrtc-connection>
+        </details>
+        <div class="line"></div>
+        <details name="controls" open>
+            <summary>Connection status</summary>
+            <div class="line"></div>
+            <webrtc-connection rpi-address="192.168.2.113" rpi-port="8080" request-video request-audio></webrtc-connection>
+        </details>
+        <div class="line"></div>
+        <details name="controls">
+            <summary>Controller</summary>
+            <div class="line"></div>
+            <div class="controller">
+                <digital-joystick id="left-joystick" precise stick-y default-y="-1"></digital-joystick>
+                <video id="camera" autoplay playsinline></video>
+                <audio id="microphone" autoplay></audio>
+                <digital-joystick id="right-joystick" precise></digital-joystick>
             </div>
-            <div class="category">
-                Normal<digital-joystick style="height: 256px;" default-x="-0.5"></digital-joystick><br>
-                Precise<digital-joystick style="width: 100%; height: 256px;" precise default-x="-0.8" default-y="0.2"></digital-joystick><br>
-                Stick Y<digital-joystick style="width: 256px; height: 256px;" stick-y></digital-joystick><br>
-                Stick Y Precise<digital-joystick style="width: 256px; height: 256px;" precise stick-y default-y="-1"></digital-joystick><br>
-                Stick XY<digital-joystick style="width: 256px; height: 256px;" stick-x stick-y default-x="-0.8" default-y="0.2"></digital-joystick><br>
-                Stick XY Precise<digital-joystick style="width: 256px; height: 256px;" precise stick-x stick-y></digital-joystick><br>
-            </div>
-            <div class="title">Video:</div>
-            <div class="category">
-                <video id="external-video" autoplay playsinline style="width: 100%; border-radius: 10px;"></video>
-                <audio id="external-audio" autoplay style="width: 100%; border-radius: 10px;"></audio>
-            </div>
-            <div class="title">Regler:</div>
-            <div class="category">
-                <div>
-                    <b style="margin-bottom: 0;">P Value:</b>
-                    <input type="number" id="p-value" min="0" step="0.01" value="0">
-                </div>
-                <div>
-                    <b style="margin-bottom: 0;">I Value:</b>
-                    <input type="number" id="i-value" min="0" step="0.01" value="0">
-                </div>
-                <div>
-                    <b style="margin-bottom: 0;">D Value:</b>
-                    <input type="number" id="d-value" min="0" step="0.01" value="0">
-                </div>
-                <button type="button">Submit</button>
-            </div>
-            <div class="title">Servo Test:</div>
-            <div class="category">
-                <input id="servo-input" type="range" min="0" max="1" step="0.01" value="0.5">
-            </div>
-            <div class="title">Sensor Messwerte:</div>
-            <div class="category">
-                <div>
-                    <b>Pitch:</b>
-                    <span id="pitch" class="pitch"></span>
-                </div>
-                <div>
-                    <b>Roll:</b>
-                    <span id="roll" class="roll"></span>
-                </div>
-            </div>
-        </div>
+        </details>
     </div>
 </body>
 

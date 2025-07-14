@@ -2,6 +2,10 @@ import { LitElement, html, css } from 'lit';
 
 class CacheController extends LitElement {
     static styles = css`
+        :host {
+            display: block;
+        }
+
         .container {
             display: flex;
             flex-direction: column;
