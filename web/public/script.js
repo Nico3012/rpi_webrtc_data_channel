@@ -1,5 +1,5 @@
 const webrtcComponent = document.getElementById('webrtcConnection');
-const digitalJoystick = document.getElementById('digitalJoystick');
+const digitalJoysticks = document.querySelectorAll('digital-joystick');
 const servoInput = document.getElementById('servo-input');
 const pitchDiv = document.getElementById('pitch');
 const rollDiv = document.getElementById('roll');
@@ -29,8 +29,10 @@ webrtcComponent.addEventListener('message-received', (event) => {
     rollDiv.textContent = roll.toString();
 });
 
-digitalJoystick.addEventListener('stick-move', (event) => {
-    console.log('Stick moved:', event.detail.x, event.detail.y);
+digitalJoysticks.forEach(digitalJoystick => {
+    digitalJoystick.addEventListener('stick-move', (event) => {
+        console.log('Stick moved:', event.detail.x, event.detail.y);
+    });
 });
 
 servoInput.addEventListener('input', () => {
