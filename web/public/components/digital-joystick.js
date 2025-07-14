@@ -5,27 +5,36 @@ class DigitalJoystick extends LitElement {
         return {
             precise: { type: Boolean, reflect: true },
             stickX: { type: Boolean, reflect: true, attribute: 'stick-x' },
-            stickY: { type: Boolean, reflect: true, attribute: 'stick-y' }
+            stickY: { type: Boolean, reflect: true, attribute: 'stick-y' },
+            // allow custom stick size ratio (0 < ratio < 1)
+            stickRatio: { type: Number }
         };
     }
 
     static get styles() {
         return css`
-            .container {
-                position: relative;
+            :host {
+                display: block;
                 width: 150px;
                 height: 150px;
-                border-radius: 50%;
+            }
+            .wrapper {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            .container {
+                position: relative;
                 background-color: #f0f0f0;
+                border-radius: 50%;
                 overflow: hidden;
                 touch-action: none;
                 cursor: pointer;
             }
-
             .stick {
                 position: absolute;
-                width: 50px;
-                height: 50px;
                 background-color: black;
                 border-radius: 50%;
                 top: 50%;
@@ -42,64 +51,81 @@ class DigitalJoystick extends LitElement {
         this.stickPositionX = 0;
         this.stickPositionY = 0;
         this.isDragging = false;
-        this.containerRect = null;
-        this.stickSize = 50;
         this.maxDistance = 0;
-        this.activePointerId = null;
-        this.initialPointerX = 0;
-        this.initialPointerY = 0;
-        this.initialStickX = 0;
-        this.initialStickY = 0;
-
+        this.currentStickSize = 0;
         this.precise = false;
         this.stickX = false;
         this.stickY = false;
-
-        // Track last dispatched normalized stick position
         this._lastDispatchedNormX = 0;
         this._lastDispatchedNormY = 0;
+        this.stickRatio = 0.3; // default stick occupies 30% of container
 
         this.handlePointerDown = this.handlePointerDown.bind(this);
         this.handlePointerMove = this.handlePointerMove.bind(this);
         this.handlePointerUp = this.handlePointerUp.bind(this);
+        this.handleResize = this.handleResize.bind(this);
     }
 
     firstUpdated() {
-        const container = this.shadowRoot.querySelector('.container');
-        this.containerRect = container.getBoundingClientRect();
-        this.maxDistance = (this.containerRect.width - this.stickSize) / 2;
+        this.wrapper = this.shadowRoot.querySelector('.wrapper');
+        this.container = this.shadowRoot.querySelector('.container');
+        this.stick = this.shadowRoot.querySelector('.stick');
+        // initial sizing
+        this.updateContainerAndStickSize();
+        window.addEventListener('resize', this.handleResize);
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        window.removeEventListener('resize', this.handleResize);
+    }
+
+    handleResize() {
+        this.updateContainerAndStickSize();
+    }
+
+    updateContainerAndStickSize() {
+        // compute wrapper dimensions
+        const wrapperRect = this.wrapper.getBoundingClientRect();
+        const size = Math.min(wrapperRect.width, wrapperRect.height);
+        // compute stick size first
+        this.currentStickSize = size * this.stickRatio;
+        // then apply to container
+        this.container.style.width = `${size}px`;
+        this.container.style.height = `${size}px`;
+        // compute maxDistance based on current stick size
+        this.maxDistance = (size - this.currentStickSize) / 2;
+        // apply stick dimensions
+        this.stick.style.width = `${this.currentStickSize}px`;
+        this.stick.style.height = `${this.currentStickSize}px`;
+        // update containerRect for pointer math
+        this.containerRect = this.container.getBoundingClientRect();
+        // reposition stick at current offset
+        this.updateStickVisual();
     }
 
     handlePointerDown(e) {
         if (!this.isDragging) {
             this.isDragging = true;
             this.activePointerId = e.pointerId;
-            const container = this.shadowRoot.querySelector('.container');
-            container.setPointerCapture(e.pointerId);
-
-            // Update container position
-            this.containerRect = container.getBoundingClientRect();
+            this.container.setPointerCapture(e.pointerId);
+            this.containerRect = this.container.getBoundingClientRect();
             const pointerX = e.clientX - this.containerRect.left;
             const pointerY = e.clientY - this.containerRect.top;
-            const containerCenterX = this.containerRect.width / 2;
-            const containerCenterY = this.containerRect.height / 2;
-
             if (this.precise) {
-                // Record initial positions for precise mode
                 this.initialPointerX = pointerX;
                 this.initialPointerY = pointerY;
                 this.initialStickX = this.stickPositionX;
                 this.initialStickY = this.stickPositionY;
             } else {
-                // Standard behavior: move stick to touch point
-                this.updateStickPosition(e, true);
+                this.updateStickPosition(e);
             }
         }
     }
 
     handlePointerMove(e) {
         if (this.isDragging && e.pointerId === this.activePointerId) {
-            this.updateStickPosition(e, false);
+            this.updateStickPosition(e);
         }
     }
 
@@ -111,92 +137,51 @@ class DigitalJoystick extends LitElement {
         }
     }
 
-    updateStickPosition(e, isInitialMove) {
-        // Update container position
-        const container = this.shadowRoot.querySelector('.container');
-        this.containerRect = container.getBoundingClientRect();
+    updateStickPosition(e) {
+        this.containerRect = this.container.getBoundingClientRect();
         const pointerX = e.clientX - this.containerRect.left;
         const pointerY = e.clientY - this.containerRect.top;
-        const containerCenterX = this.containerRect.width / 2;
-        const containerCenterY = this.containerRect.height / 2;
+        const center = this.containerRect.width / 2;
+        let relX = pointerX - center;
+        let relY = pointerY - center;
 
-        if (this.precise && this.isDragging) {
-            // Precise mode: maintain initial offset
+        if (this.precise) {
             const deltaX = pointerX - this.initialPointerX;
             const deltaY = pointerY - this.initialPointerY;
-
-            let newX = this.initialStickX + deltaX;
-            let newY = this.initialStickY + deltaY;
-
-            // Apply circular constraint
-            const distance = Math.sqrt(newX * newX + newY * newY);
-            if (distance > this.maxDistance) {
-                const angle = Math.atan2(newY, newX);
-                newX = Math.cos(angle) * this.maxDistance;
-                newY = Math.sin(angle) * this.maxDistance;
-            }
-
-            this.stickPositionX = newX;
-            this.stickPositionY = newY;
-        } else {
-            // Standard behavior
-            let relX = pointerX - containerCenterX;
-            let relY = pointerY - containerCenterY;
-
-            // Apply circular constraint
-            const distance = Math.min(
-                Math.sqrt(relX * relX + relY * relY),
-                this.maxDistance
-            );
-
-            if (distance > 0) {
-                const angle = Math.atan2(relY, relX);
-                relX = Math.cos(angle) * distance;
-                relY = Math.sin(angle) * distance;
-            }
-
-            this.stickPositionX = relX;
-            this.stickPositionY = relY;
+            relX = this.initialStickX + deltaX;
+            relY = this.initialStickY + deltaY;
         }
-
-        // Update visual position
+        const dist = Math.sqrt(relX * relX + relY * relY);
+        const limitedDist = Math.min(dist, this.maxDistance);
+        if (dist > 0) {
+            const angle = Math.atan2(relY, relX);
+            relX = Math.cos(angle) * limitedDist;
+            relY = Math.sin(angle) * limitedDist;
+        }
+        this.stickPositionX = relX;
+        this.stickPositionY = relY;
         this.updateStickVisual();
-
-        // Normalize coordinates (-1 to 1)
-        const normX = this.stickPositionX / this.maxDistance;
-        const normY = -this.stickPositionY / this.maxDistance;  // Invert Y
-
-        // Emit custom event only if changed
+        const normX = relX / this.maxDistance;
+        const normY = -relY / this.maxDistance;
         if (normX !== this._lastDispatchedNormX || normY !== this._lastDispatchedNormY) {
-            this.dispatchEvent(new CustomEvent('stick-move', {
-                detail: { x: normX, y: normY }
-            }));
+            this.dispatchEvent(new CustomEvent('stick-move', { detail: { x: normX, y: normY }}));
             this._lastDispatchedNormX = normX;
             this._lastDispatchedNormY = normY;
         }
     }
 
     updateStickVisual() {
-        const stick = this.shadowRoot.querySelector('.stick');
-        if (stick) {
-            stick.style.transform = `translate(-50%, -50%) translate(${this.stickPositionX}px, ${this.stickPositionY}px)`;
-        }
+        this.stick.style.transform = `translate(-50%, -50%) translate(${this.stickPositionX}px, ${this.stickPositionY}px)`;
     }
 
     resetStick() {
-        // Only reset axes that aren't sticky
         if (!this.stickX) this.stickPositionX = 0;
         if (!this.stickY) this.stickPositionY = 0;
-
         this.updateStickVisual();
-
-        // Emit event only if stick position changed compared to last event
         const normX = this.stickPositionX / this.maxDistance;
         const normY = -this.stickPositionY / this.maxDistance;
         if (normX !== this._lastDispatchedNormX || normY !== this._lastDispatchedNormY) {
-            this.dispatchEvent(new CustomEvent('stick-move', {
-                detail: { x: normX, y: normY }
-            }));
+            this.dispatchEvent(new CustomEvent('stick-move', { detail: { x: normX, y: normY }}));
             this._lastDispatchedNormX = normX;
             this._lastDispatchedNormY = normY;
         }
@@ -204,13 +189,15 @@ class DigitalJoystick extends LitElement {
 
     render() {
         return html`
-            <div class="container"
-                @pointerdown="${this.handlePointerDown}"
-                @pointermove="${this.handlePointerMove}"
-                @pointerup="${this.handlePointerUp}"
-                @pointercancel="${this.handlePointerUp}"
-                @pointerleave="${this.handlePointerUp}">
-                <div class="stick"></div>
+            <div class="wrapper">
+                <div class="container"
+                    @pointerdown="${this.handlePointerDown}"
+                    @pointermove="${this.handlePointerMove}"
+                    @pointerup="${this.handlePointerUp}"
+                    @pointercancel="${this.handlePointerUp}"
+                    @pointerleave="${this.handlePointerUp}">
+                    <div class="stick"></div>
+                </div>
             </div>
         `;
     }
