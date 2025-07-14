@@ -50,7 +50,7 @@ class DigitalJoystick extends LitElement {
         this.initialPointerY = 0;
         this.initialStickX = 0;
         this.initialStickY = 0;
-        
+
         this.precise = false;
         this.stickX = false;
         this.stickY = false;
@@ -124,10 +124,10 @@ class DigitalJoystick extends LitElement {
             // Precise mode: maintain initial offset
             const deltaX = pointerX - this.initialPointerX;
             const deltaY = pointerY - this.initialPointerY;
-            
+
             let newX = this.initialStickX + deltaX;
             let newY = this.initialStickY + deltaY;
-            
+
             // Apply circular constraint
             const distance = Math.sqrt(newX * newX + newY * newY);
             if (distance > this.maxDistance) {
@@ -135,37 +135,37 @@ class DigitalJoystick extends LitElement {
                 newX = Math.cos(angle) * this.maxDistance;
                 newY = Math.sin(angle) * this.maxDistance;
             }
-            
+
             this.stickPositionX = newX;
             this.stickPositionY = newY;
         } else {
             // Standard behavior
             let relX = pointerX - containerCenterX;
             let relY = pointerY - containerCenterY;
-            
+
             // Apply circular constraint
             const distance = Math.min(
                 Math.sqrt(relX * relX + relY * relY),
                 this.maxDistance
             );
-            
+
             if (distance > 0) {
                 const angle = Math.atan2(relY, relX);
                 relX = Math.cos(angle) * distance;
                 relY = Math.sin(angle) * distance;
             }
-            
+
             this.stickPositionX = relX;
             this.stickPositionY = relY;
         }
-        
+
         // Update visual position
         this.updateStickVisual();
-        
+
         // Normalize coordinates (-1 to 1)
         const normX = this.stickPositionX / this.maxDistance;
         const normY = -this.stickPositionY / this.maxDistance;  // Invert Y
-        
+
         // Emit custom event only if changed
         if (normX !== this._lastDispatchedNormX || normY !== this._lastDispatchedNormY) {
             this.dispatchEvent(new CustomEvent('stick-move', {
