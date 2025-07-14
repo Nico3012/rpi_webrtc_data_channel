@@ -105,6 +105,8 @@ class DigitalJoystick extends LitElement {
     }
 
     handlePointerDown(e) {
+        e.preventDefault();
+
         if (!this.isDragging) {
             this.isDragging = true;
             this.activePointerId = e.pointerId;
@@ -124,12 +126,16 @@ class DigitalJoystick extends LitElement {
     }
 
     handlePointerMove(e) {
+        e.preventDefault();
+
         if (this.isDragging && e.pointerId === this.activePointerId) {
             this.updateStickPosition(e);
         }
     }
 
     handlePointerUp(e) {
+        e.preventDefault();
+
         if (this.isDragging && e.pointerId === this.activePointerId) {
             this.isDragging = false;
             this.activePointerId = null;
