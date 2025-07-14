@@ -55,6 +55,10 @@ class DigitalJoystick extends LitElement {
         this.stickX = false;
         this.stickY = false;
 
+        // Track last dispatched normalized stick position
+        this._lastDispatchedNormX = 0;
+        this._lastDispatchedNormY = 0;
+
         this.handlePointerDown = this.handlePointerDown.bind(this);
         this.handlePointerMove = this.handlePointerMove.bind(this);
         this.handlePointerUp = this.handlePointerUp.bind(this);
@@ -162,10 +166,14 @@ class DigitalJoystick extends LitElement {
         const normX = this.stickPositionX / this.maxDistance;
         const normY = -this.stickPositionY / this.maxDistance;  // Invert Y
         
-        // Emit custom event
-        this.dispatchEvent(new CustomEvent('stick-move', {
-            detail: { x: normX, y: normY }
-        }));
+        // Emit custom event only if changed
+        if (normX !== this._lastDispatchedNormX || normY !== this._lastDispatchedNormY) {
+            this.dispatchEvent(new CustomEvent('stick-move', {
+                detail: { x: normX, y: normY }
+            }));
+            this._lastDispatchedNormX = normX;
+            this._lastDispatchedNormY = normY;
+        }
     }
 
     updateStickVisual() {
@@ -179,15 +187,19 @@ class DigitalJoystick extends LitElement {
         // Only reset axes that aren't sticky
         if (!this.stickX) this.stickPositionX = 0;
         if (!this.stickY) this.stickPositionY = 0;
-        
+
         this.updateStickVisual();
-        
-        // Emit event with current position (may not be 0,0 if sticky)
+
+        // Emit event only if stick position changed compared to last event
         const normX = this.stickPositionX / this.maxDistance;
         const normY = -this.stickPositionY / this.maxDistance;
-        this.dispatchEvent(new CustomEvent('stick-move', {
-            detail: { x: normX, y: normY }
-        }));
+        if (normX !== this._lastDispatchedNormX || normY !== this._lastDispatchedNormY) {
+            this.dispatchEvent(new CustomEvent('stick-move', {
+                detail: { x: normX, y: normY }
+            }));
+            this._lastDispatchedNormX = normX;
+            this._lastDispatchedNormY = normY;
+        }
     }
 
     render() {
