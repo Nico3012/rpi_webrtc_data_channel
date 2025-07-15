@@ -1,0 +1,8 @@
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/go/bin/go run .
+WorkingDirectory=/app
+Restart=always
+[Install]
+WantedBy=multi-user.target
