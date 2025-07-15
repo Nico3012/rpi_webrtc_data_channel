@@ -20,8 +20,10 @@ func main() {
 
 		log.Println(err)
 		time.Sleep(2 * time.Second)
-		log.Println("Try initialization again...")
+		log.Println("Try serial initialization again...")
 	}
+
+	defer port.Close()
 
 	server.InitReadDataCallback(func(data string) {
 		err := port.SendData(data)
@@ -31,9 +33,11 @@ func main() {
 	})
 
 	port.InitDataCallback(func(data string) {
-		err := server.SendData(data)
-		if err != nil {
-			log.Println(err)
+		if server.IsConnected() {
+			err := server.SendData(data)
+			if err != nil {
+				log.Println(err)
+			}
 		}
 	})
 
