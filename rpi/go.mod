@@ -4,12 +4,11 @@ go 1.24.4
 
 require (
 	github.com/pion/webrtc/v4 v4.1.3
-	github.com/stianeikeland/go-rpio/v4 v4.6.0
-	periph.io/x/conn/v3 v3.7.2
-	periph.io/x/host/v3 v3.8.5
+	go.bug.st/serial v1.6.4
 )
 
 require (
+	github.com/creack/goselect v0.1.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/pion/datachannel v1.5.10 // indirect
 	github.com/pion/dtls/v3 v3.0.6 // indirect
