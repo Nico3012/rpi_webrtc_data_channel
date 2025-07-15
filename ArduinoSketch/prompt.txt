@@ -1,0 +1,32 @@
+I have a library for communication with my app. Take a look at the sample code for usage of my api:
+
+
+// Arduino sketch: main.ino
+#include <SerialComm.h>
+
+SerialComm comm;
+int counter = 0;
+
+void setup() {
+    comm.Begin(9600);
+}
+
+void loop() {
+    // 1) send the counter value to the PC
+    comm.SendData(String(counter));
+    counter++;
+
+    // 2) wait briefly
+    delay(1000);
+
+    // 3) read all messages received from PC
+    std::vector<String> msgs = comm.ReadMessages();
+    for (String &line : msgs) {
+        line.trim();
+        long v = line.toInt();
+        // respond with square
+        comm.SendData(String(v * v));
+    }
+}
+
+Now i want to create a new script, that uses Stepper.h and Servo.h to control my stepper motor and servo motor. Always when the app sends a new message, the values of the message count for 500ms. If no new value was received, the steper motor stops rotation and the servo moves back to middle position. Messages always have the format "STEPERSPEED;SERVOPOSITION" with STEPPERSPEED as float from -1 to 1 and SERVOPOSITION also from -1 to 1. 0 in both floats matches the default value (Stepper stands still and servo in middle position). My Stepper is a ULN2003 Steper Motor Driver Module from Elegoo and my servo is also a default SG90 from elegoo. Create variables on top of the script, that initialize the servo min and max pwm position. -1 corresponds to min pwm position e.g. 500ms and 1 to max pwm position e.g. 2500ms. For the stepper i also want to control a min and max rotation speed e.g. in rpm and also there corresponds -1 to max reverse rpm and 1 to max forward rpm. Interpolate linear for all values between -1 and 1.
