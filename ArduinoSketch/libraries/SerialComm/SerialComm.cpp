@@ -2,20 +2,26 @@
 
 SerialComm* SerialComm::instance = nullptr;
 
-SerialComm::SerialComm(unsigned long baud)
+SerialComm::SerialComm()
     : dataCallback(nullptr) {
-    Serial.begin(baud);
     instance = this;
 }
 
+void SerialComm::Begin(unsigned long baud) {
+    Serial.begin(baud);
+}
+
 void SerialComm::SendData(const String &data) {
-    // Send complete message terminated with '\n'
     Serial.print(data);
     Serial.write('\n');
 }
 
 void SerialComm::InitDataCallback(void (*callback)(String)) {
     dataCallback = callback;
+}
+
+void SerialComm::Poll() {
+    readLoop();                // trigger the same logic as serialEvent()
 }
 
 void SerialComm::Close() {

@@ -1,28 +1,28 @@
 #include <SerialComm.h>
 
-SerialComm comm(9600);
+SerialComm comm;
 int counter = 0;
 
 void setup() {
-  // Register a callback to handle incoming lines
-  comm.InitDataCallback(onDataReceived);
+    comm.Begin(9600);
+    comm.InitDataCallback(onDataReceived);
 }
 
 void loop() {
-  // Send the current counter value
-  comm.SendData(String(counter));
-  counter++;
+    // send our counter
+    comm.SendData(String(counter));
+    counter++;
 
-  // Wait one second before next send
-  delay(1000);
+    // give Arduino time to receive from PC and process it
+    delay(1000);
+
+    // explicitly poll for incoming data
+    comm.Poll();
 }
 
-// This function is called whenever a full line ending in '\n' arrives
 void onDataReceived(String line) {
-  line.trim();                    // remove any trailing CR/LF or spaces
-  long value = line.toInt();      // parse to integer (returns 0 on failure)
-  long squared = value * value;   // compute the square
-
-  // Send the squared result back
-  comm.SendData(String(squared));
+    line.trim();
+    long value = line.toInt();
+    long squared = value * value;
+    comm.SendData(String(squared));
 }
