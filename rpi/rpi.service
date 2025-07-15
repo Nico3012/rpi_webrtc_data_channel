@@ -3,6 +3,6 @@ Type=simple
 User=root
 ExecStart=/usr/local/go/bin/go run .
 WorkingDirectory=/app
-Restart=always
+Restart=on-failture
 [Install]
 WantedBy=multi-user.target

@@ -62,3 +62,16 @@ Copy this directory `rpi` into a `/app` directory
 Copy the `rpi.service` file to `/etc/systemd/system/rpi.service`
 Run `systemctl enable rpi.service`
 Run `systemctl start rpi.service`
+
+Commands:
+
+sudo cp -r . /app/
+sudo cp ./rpi.service /etc/systemd/system/rpi.service
+sudo systemctl enable rpi.service
+sudo systemctl start rpi.service
+
+sudo systemctl status rpi.service
+sudo systemctl restart rpi.service
+
+sudo systemctl stop rpi.service
+sudo systemctl disable rpi.service
