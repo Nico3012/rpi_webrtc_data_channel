@@ -1,9 +1,10 @@
+
+// SerialComm.cpp
 #include "SerialComm.h"
 
 SerialComm* SerialComm::instance = nullptr;
 
-SerialComm::SerialComm()
-    : dataCallback(nullptr) {
+SerialComm::SerialComm() {
     instance = this;
 }
 
@@ -16,12 +17,14 @@ void SerialComm::SendData(const String &data) {
     Serial.write('\n');
 }
 
-void SerialComm::InitDataCallback(void (*callback)(String)) {
-    dataCallback = callback;
-}
+std::vector<String> SerialComm::ReadMessages() {
+    // bring any pending bytes into our buffer
+    readLoop();
 
-void SerialComm::Poll() {
-    readLoop();                // trigger the same logic as serialEvent()
+    // swap out stored messages
+    std::vector<String> out;
+    out.swap(buffer);
+    return out;
 }
 
 void SerialComm::Close() {
@@ -32,9 +35,7 @@ void SerialComm::Close() {
 void SerialComm::readLoop() {
     while (Serial.available()) {
         String line = Serial.readStringUntil('\n');
-        if (dataCallback) {
-            dataCallback(line);
-        }
+        buffer.push_back(line);
     }
 }
 
@@ -43,3 +44,4 @@ void serialEvent() {
         SerialComm::instance->readLoop();
     }
 }
+

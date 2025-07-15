@@ -1,36 +1,50 @@
+// SerialComm.h
 #ifndef SERIALCOMM_H
 #define SERIALCOMM_H
 
 #include <Arduino.h>
+#include <vector>
 
 class SerialComm {
 public:
-    friend void ::serialEvent();
-
+    /**
+     * Default constructor. Call Begin() in setup().
+     */
     SerialComm();
 
-    /** Initialize Serial at the given baud rate. Must be called in setup(). */
+    /**
+     * Initialize Serial at the given baud rate. Must be called in setup().
+     */
     void Begin(unsigned long baud);
 
-    /** Send a string over Serial, appending a newline. */
+    /**
+     * Send a string over Serial, appending a newline.
+     */
     void SendData(const String &data);
 
-    /** Register a callback to be invoked when a full line is received (ending with '\n'). */
-    void InitDataCallback(void (*callback)(String));
+    /**
+     * Poll for any newly received whole-line messages.
+     * Returns a vector of all lines received since the last call.
+     * The returned vector's size() is the number of new messages;
+     * after returning them, the internal buffer is cleared.
+     * This also internally reads any pending bytes.
+     */
+    std::vector<String> ReadMessages();
 
-    /** Poll for incoming data (call this regularly in loop()). */
-    void Poll();                // ← NEW
-
-    /** Close the serial communication. */
+    /**
+     * Close the serial communication.
+     */
     void Close();
 
-private:
+    // expose for serialEvent
+    static SerialComm* instance;
     void readLoop();
 
-    static SerialComm* instance;
-    void (*dataCallback)(String);
+private:
+    std::vector<String> buffer;  // stores incoming lines until ReadMessages() is called
 };
 
-void serialEvent();
+void serialEvent();  // for the Arduino core to dispatch incoming data
 
 #endif // SERIALCOMM_H
+

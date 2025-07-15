@@ -1,3 +1,5 @@
+
+// Arduino sketch: main.ino
 #include <SerialComm.h>
 
 SerialComm comm;
@@ -5,24 +7,22 @@ int counter = 0;
 
 void setup() {
     comm.Begin(9600);
-    comm.InitDataCallback(onDataReceived);
 }
 
 void loop() {
-    // send our counter
+    // 1) send the counter value to the PC
     comm.SendData(String(counter));
     counter++;
 
-    // give Arduino time to receive from PC and process it
+    // 2) wait briefly
     delay(1000);
 
-    // explicitly poll for incoming data
-    comm.Poll();
-}
-
-void onDataReceived(String line) {
-    line.trim();
-    long value = line.toInt();
-    long squared = value * value;
-    comm.SendData(String(squared));
+    // 3) read all messages received from PC
+    std::vector<String> msgs = comm.ReadMessages();
+    for (String &line : msgs) {
+        line.trim();
+        long v = line.toInt();
+        // respond with square
+        comm.SendData(String(v * v));
+    }
 }
