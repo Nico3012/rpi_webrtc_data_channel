@@ -4,6 +4,9 @@
 #include <Arduino.h>
 
 class SerialComm {
+    // allow serialEvent to access private members
+    friend void ::serialEvent();
+
 public:
     /**
      * Initialize Serial at the given baud rate.
@@ -33,8 +36,10 @@ private:
     void (*dataCallback)(String);
 };
 
-// Called by the Arduino core when data is available.
-// Dispatches to the library's readLoop.
+/**
+ * Called by the Arduino core when data is available.
+ * Dispatches to the library's readLoop.
+ */
 void serialEvent();
 
 #endif // SERIALCOMM_H
