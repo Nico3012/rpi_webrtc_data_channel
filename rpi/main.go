@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"rpi-webrtc/serial"
+	"rpi-webrtc/serialcomm"
 	"time"
 )
 
@@ -34,7 +34,7 @@ func main() {
 	// 	time.Sleep(2000 * time.Millisecond)
 	// }
 
-	port, err := serial.NewAuto(9600)
+	port, err := serialcomm.NewAuto(9600)
 	if err != nil {
 		log.Fatal(err)
 	}

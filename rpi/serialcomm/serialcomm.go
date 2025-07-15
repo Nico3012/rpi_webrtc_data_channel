@@ -1,5 +1,5 @@
 // Package serialcomm provides minimal serial communication with an Arduino device.
-package serial
+package serialcomm
 
 import (
 	"bufio"
