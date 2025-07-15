@@ -17,8 +17,8 @@ const int SERVO_MIN_US    =  500;
 const int SERVO_MID_US    = 1500;
 const int SERVO_MAX_US    = 2500;
 
-const float STEPPER_MAX_RPM =  15.0;
-const float STEPPER_MIN_RPM = -15.0;
+const float STEPPER_MAX_RPM =  8.0;
+const float STEPPER_MIN_RPM = -8.0;
 
 const unsigned long COMMAND_TIMEOUT = 500;
 
