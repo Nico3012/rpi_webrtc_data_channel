@@ -44,14 +44,16 @@ func NewAuto(baud int) (*Port, error) {
 	return New(ports[0], baud)
 }
 
-// SendData writes a string to the serial port.
+// SendData writes a string plus a single '\n' to the serial port.
 func (p *Port) SendData(data string) error {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	if p.port == nil {
 		return fmt.Errorf("serial port not initialized")
 	}
-	_, err := p.port.Write([]byte(data))
+	// always append exactly '\n'
+	msg := data + "\n"
+	_, err := p.port.Write([]byte(msg))
 	return err
 }
 

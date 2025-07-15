@@ -4,17 +4,17 @@
 #include <Arduino.h>
 
 class SerialComm {
+public:
     // allow serialEvent to access private members
     friend void ::serialEvent();
 
-public:
     /**
      * Initialize Serial at the given baud rate.
      */
     SerialComm(unsigned long baud);
 
     /**
-     * Send a string over Serial. Does not append newline.
+     * Send a string over Serial, appending a newline.
      */
     void SendData(const String &data);
 

@@ -9,7 +9,9 @@ SerialComm::SerialComm(unsigned long baud)
 }
 
 void SerialComm::SendData(const String &data) {
+    // Send complete message terminated with '\n'
     Serial.print(data);
+    Serial.write('\n');
 }
 
 void SerialComm::InitDataCallback(void (*callback)(String)) {
