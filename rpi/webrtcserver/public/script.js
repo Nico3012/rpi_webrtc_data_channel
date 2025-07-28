@@ -1,4 +1,7 @@
-async function generateAnswer() {
+/** @param {SubmitEvent} e */
+async function generateAnswer(e) {
+    e.preventDefault();
+
     const offerInput = document.getElementById('offerInput');
     const offerText = offerInput.value.trim();
 
@@ -98,7 +101,7 @@ function showStep(stepNumber) {
 
 // Set up event listeners
 window.addEventListener('load', () => {
-    document.getElementById('generateAnswerBtn').addEventListener('click', generateAnswer);
+    document.getElementById('step1').addEventListener('submit', generateAnswer);
     document.getElementById('copyAnswerBtn').addEventListener('click', copyAnswer);
     document.getElementById('closePageBtn').addEventListener('click', closePage);
     showStep(1); // Start with step 1

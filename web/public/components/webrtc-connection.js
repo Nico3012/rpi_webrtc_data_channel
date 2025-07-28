@@ -209,15 +209,15 @@ class WebRTCConnection extends LitElement {
                 </a>
             </div>
 
-            <div class="step-container ${this.currentStep !== 2 ? 'hidden' : ''}">
+            <form class="step-container ${this.currentStep !== 2 ? 'hidden' : ''}" @submit="${this.setAnswer}">
                 <div class="step-header">
                     <h2>Step 2: Paste device Response Code</h2>
                     <div class="step-indicator">2 / 4</div>
                 </div>
                 <p>Paste the device Response Code you copied from the setup page:</p>
                 <input type="text" id="answerSdp" placeholder="Paste device Response Code here...">
-                <button @click="${this.setAnswer}" class="btn">Connect</button>
-            </div>
+                <button type="submit" class="btn">Connect</button>
+            </form>
 
             <div class="step-container ${this.currentStep !== 3 ? 'hidden' : ''}">
                 <div class="step-header">
@@ -339,8 +339,10 @@ class WebRTCConnection extends LitElement {
         }
     }
 
-    /** @private */
-    async setAnswer() {
+    /** @private @param {SubmitEvent} e */
+    async setAnswer(e) {
+        e.preventDefault();
+
         try {
             const answerInput = this.shadowRoot.querySelector('#answerSdp');
             if (!answerInput || !answerInput.value.trim()) {
