@@ -86,7 +86,7 @@ func (vh *Handler) streamCamera() error {
 
 	// Setup FFmpeg to capture directly from the camera and stream as RTP
 	ffmpeg := exec.Command(
-		// WINDOWS (LIST ALL DEVICES: `ffmpeg -list_devices true -f dshow -i dummy`):
+		// WINDOWS:
 
 		// "ffmpeg",
 		// "-f", "dshow", // input mode
