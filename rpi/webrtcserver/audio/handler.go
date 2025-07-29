@@ -84,6 +84,8 @@ func (ah *Handler) streamAudio() error {
 	defer udpConn.Close()
 
 	ffmpeg := exec.Command(
+		// LINUX:
+
 		"ffmpeg",
 		"-f", "alsa", "-i", "plughw:3,0", // input device
 		"-c:a", "libopus", // use opus codec
@@ -94,6 +96,10 @@ func (ah *Handler) streamAudio() error {
 		"-f", "rtp", // RTP output format
 		fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
 	)
+
+	// Capture FFmpeg's stdout and stderr
+	ffmpeg.Stdout = log.Writer()
+	ffmpeg.Stderr = log.Writer()
 
 	// Start the FFmpeg process
 	if err := ffmpeg.Start(); err != nil {

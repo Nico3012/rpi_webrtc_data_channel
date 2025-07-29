@@ -86,6 +86,23 @@ func (vh *Handler) streamCamera() error {
 
 	// Setup FFmpeg to capture directly from the camera and stream as RTP
 	ffmpeg := exec.Command(
+		// WINDOWS (LIST ALL DEVICES: `ffmpeg -list_devices true -f dshow -i dummy`):
+
+		// "ffmpeg",
+		// "-f", "dshow", // input mode
+		// "-i", "video=HP HD Camera", // input device
+		// "-c:v", "libvpx", // use VP8 codec
+		// "-deadline", "realtime", // fastest encoding preset
+		// "-cpu-used", "8", // minimal CPU usage
+		// "-video_size", "640x480", // video resolution
+		// "-framerate", "30", // frame rate
+		// "-b:v", "2M", // Bitrate
+		// "-an",       // Disable audio
+		// "-f", "rtp", // RTP output format
+		// fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
+
+		// LINUX:
+
 		"ffmpeg",
 		"-i", "/dev/video0", // input device
 		"-c:v", "libvpx", // use VP8 codec
@@ -98,6 +115,10 @@ func (vh *Handler) streamCamera() error {
 		"-f", "rtp", // RTP output format
 		fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
 	)
+
+	// Capture FFmpeg's stdout and stderr
+	ffmpeg.Stdout = log.Writer()
+	ffmpeg.Stderr = log.Writer()
 
 	// Start the FFmpeg process
 	if err := ffmpeg.Start(); err != nil {
