@@ -37,6 +37,10 @@ div.line {
     background-color: black;
 }
 
+.position {
+    text-align: center;
+}
+
 @media (display-mode: standalone) {
     .browser {
         display: none;

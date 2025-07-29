@@ -24,8 +24,8 @@ setInterval(() => {
         const y = cameraPose[13];
         const z = cameraPose[14];
 
-        console.log(x, y, z);
+        document.querySelector('.position').textContent = `x: ${x.toFixed(2)}; y: ${y.toFixed(2)}; z: ${z.toFixed(2)}`;
     } else {
-        console.log(null);
+        document.querySelector('.position').textContent = `x: Unknown; y: Unknown; z: Unknown`;
     }
 }, 1000/30);
