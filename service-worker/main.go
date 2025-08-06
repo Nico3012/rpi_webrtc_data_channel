@@ -81,6 +81,17 @@ func main() {
 		}
 		pathnames := strings.Join(quotedPaths, ",\n    ")
 
+		// Read update.html from disk
+		updateHtmlBytes, err := os.ReadFile("update.html")
+		updateHtml := ""
+		if err == nil {
+			updateHtml = string(updateHtmlBytes)
+			// Escape backticks for JS template literal safety
+			updateHtml = strings.ReplaceAll(updateHtml, "`", "\\u0060")
+		} else {
+			updateHtml = "<!DOCTYPE html><html><body><h1>Update page not found</h1></body></html>"
+		}
+
 		tmpl, err := template.New("sw.js").Delims("[[", "]]").Parse(string(tmplContent))
 		if err != nil {
 			http.Error(w, "Template parse error", http.StatusInternalServerError)
@@ -88,7 +99,10 @@ func main() {
 		}
 
 		var buf bytes.Buffer
-		err = tmpl.Execute(&buf, map[string]string{"Pathnames": pathnames})
+		err = tmpl.Execute(&buf, map[string]string{
+			"Pathnames":  pathnames,
+			"UpdateHTML": updateHtml,
+		})
 		if err != nil {
 			http.Error(w, "Template exec error", http.StatusInternalServerError)
 			return

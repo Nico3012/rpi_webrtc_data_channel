@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Update Service Worker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        async function unregisterServiceWorkersAndClearCache() {
+            // Unregister all service workers
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (const registration of registrations) {
+                    await registration.unregister();
+                }
+            }
+
+            // Delete all caches
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                for (const name of cacheNames) {
+                    await caches.delete(name);
+                }
+            }
+
+            // Redirect to home after a short delay
+            setTimeout(() => {
+                window.location.replace('/');
+            }, 500);
+        }
+
+        window.addEventListener('DOMContentLoaded', unregisterServiceWorkersAndClearCache);
+    </script>
+</head>
+<body>
+    <h1>Updating...</h1>
+    <p>Please wait while the service worker and cache are cleared.</p>
+</body>
+</html>
