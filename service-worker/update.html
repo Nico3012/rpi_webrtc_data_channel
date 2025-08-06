@@ -2,37 +2,41 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Update Service Worker</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>
-        async function unregisterServiceWorkersAndClearCache() {
-            // Unregister all service workers
-            if ('serviceWorker' in navigator) {
-                const registrations = await navigator.serviceWorker.getRegistrations();
-                for (const registration of registrations) {
-                    await registration.unregister();
-                }
-            }
+    <title>Uninstalling...</title>
+    <script type="module">
+        window.addEventListener('load', async () => {
+            // delete service workers
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registrations.map(reg => reg.unregister()));
 
-            // Delete all caches
-            if ('caches' in window) {
-                const cacheNames = await caches.keys();
-                for (const name of cacheNames) {
-                    await caches.delete(name);
-                }
-            }
+            // delete caches
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
 
-            // Redirect to home after a short delay
-            setTimeout(() => {
-                window.location.replace('/');
-            }, 500);
+            // redirect after removing everything to reinstall
+            location.href = '/';
+        });
+    </script>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
 
-        window.addEventListener('DOMContentLoaded', unregisterServiceWorkersAndClearCache);
-    </script>
+        p {
+            font-family: monospace;
+            margin: 8%;
+        }
+    </style>
 </head>
 <body>
-    <h1>Updating...</h1>
-    <p>Please wait while the service worker and cache are cleared.</p>
+    <!-- This page must embed everything into this file, because it is served outside of a static file server -->
+    <p>Uninstalling the service worker...</p>
 </body>
 </html>

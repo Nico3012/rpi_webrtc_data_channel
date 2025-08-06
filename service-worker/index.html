@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Service Worker</title>
+    <title>Installing...</title>
     <script type="module">
         window.addEventListener('load', async () => {
             const registration = await navigator.serviceWorker.register('/api/files/sw.js', { scope: '/' });
@@ -19,8 +19,25 @@
             });
         });
     </script>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        p {
+            font-family: monospace;
+            margin: 8%;
+        }
+    </style>
 </head>
 <body>
-    <h1>Service Worker installing...</h1>
+    <!-- This page must embed everything into this file, because it is served outside of a static file server -->
+    <p>Installing the service worker...</p>
 </body>
 </html>

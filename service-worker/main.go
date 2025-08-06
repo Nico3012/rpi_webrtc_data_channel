@@ -155,5 +155,10 @@ func main() {
 		io.Copy(w, f)
 	})
 
+	// Serve 403 for all other /api/ routes
+	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+	})
+
 	http.ListenAndServe(":8080", mux)
 }
