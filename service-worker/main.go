@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"io"
 	"io/fs"
-	"log"
 	"mime"
 	"net/http"
 	"os"
@@ -41,15 +40,16 @@ func getPublicFiles(root string) ([]string, error) {
 }
 
 func main() {
-	paths, err := getPublicFiles("public")
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	mux := http.NewServeMux()
 
 	// Serve sw.js as a template with PATHNAMES replaced
 	mux.HandleFunc("/sw.js", func(w http.ResponseWriter, r *http.Request) {
+		paths, err := getPublicFiles("public")
+		if err != nil {
+			http.Error(w, "Failed to list public files", http.StatusInternalServerError)
+			return
+		}
+
 		tmplPath := "sw.js"
 		tmplContent, err := os.ReadFile(tmplPath)
 		if err != nil {
