@@ -18,9 +18,13 @@ self.addEventListener('install', async (event) => {
 
         // cache all assets
         for (const pathname of PATHNAMES) {
+            console.log(`Fetching: ${pathname}`);
             const response = await fetch('/api/cache' + pathname);
+            console.log(`Cacheing: ${pathname}`);
             cache.put(pathname, response);
         }
+
+        console.log('Completed cacheing');
     })());
 });
 
@@ -55,8 +59,34 @@ self.addEventListener('fetch', (event) => {
                     await cache.match(url.pathname);
 
                 if (response) {
-                    // needs seperation into with range header or not
-                    return response;
+
+                    // Handle Range requests
+                    const rangeHeader = request.headers.get('Range');
+                    if (rangeHeader && rangeHeader.startsWith('bytes=')) {
+                        // Only support single range for simplicity
+                        const size = parseInt(response.headers.get('Content-Length')) || (await response.clone().arrayBuffer()).byteLength;
+                        const m = rangeHeader.match(/bytes=(\d*)-(\d*)/);
+                        let start = m[1] ? parseInt(m[1]) : 0;
+                        let end = m[2] ? parseInt(m[2]) : size - 1;
+                        if (isNaN(start) || start < 0) start = 0;
+                        if (isNaN(end) || end >= size) end = size - 1;
+                        if (end < start) end = size - 1;
+                        const chunkSize = end - start + 1;
+                        const fullBuffer = await response.clone().arrayBuffer();
+                        const partialBuffer = fullBuffer.slice(start, end + 1);
+                        const headers = new Headers(response.headers);
+                        headers.set('Content-Range', `bytes ${start}-${end}/${size}`);
+                        headers.set('Content-Length', chunkSize);
+                        headers.set('Accept-Ranges', 'bytes');
+                        return new Response(partialBuffer, {
+                            status: 206,
+                            statusText: 'Partial Content',
+                            headers
+                        });
+                    } else {
+                        return response;
+                    }
+
                 } else {
                     return new Response('404 Not found', { status: 404 });
                 }
