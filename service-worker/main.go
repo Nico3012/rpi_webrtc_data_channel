@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"io/fs"
+	"log"
 	"mime"
 	"net/http"
 	"os"
@@ -160,5 +161,5 @@ func main() {
 		http.Error(w, "Forbidden", http.StatusForbidden)
 	})
 
-	http.ListenAndServe(":8080", mux)
+	log.Fatalln(http.ListenAndServeTLS(":8443", "cert.pem", "cert_key.pem", mux))
 }
