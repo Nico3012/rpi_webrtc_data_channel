@@ -46,8 +46,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Println(paths)
-
 	mux := http.NewServeMux()
 
 	// Serve sw.js as a template with PATHNAMES replaced
@@ -83,6 +81,7 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		w.Write(buf.Bytes())
 	})
+
 	// Use a catch-all path variable to allow slashes in pathname
 	mux.HandleFunc("/api/cache/{pathname...}", func(w http.ResponseWriter, r *http.Request) {
 		pathname := r.PathValue("pathname")
