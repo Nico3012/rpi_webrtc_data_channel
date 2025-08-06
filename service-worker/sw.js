@@ -1,10 +1,8 @@
 const CACHE_NAME = 'cache-v1';
 
-// dynamically generate this list
+// PATHNAMES will be replaced by Go template
 const PATHNAMES = [
-    '/index.html',
-    '/src/style.css',
-    '/src/script.js',
+    [[.Pathnames]]
 ];
 
 const DIR_PATHS = extractDirectories(PATHNAMES);
