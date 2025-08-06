@@ -61,7 +61,7 @@ func main() {
 	})
 
 	// Serve sw.js as a template with PATHNAMES replaced
-	mux.HandleFunc("/sw.js", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/files/sw.js", func(w http.ResponseWriter, r *http.Request) {
 		paths, err := getPublicFiles("public")
 		if err != nil {
 			http.Error(w, "Failed to list public files", http.StatusInternalServerError)
@@ -109,6 +109,7 @@ func main() {
 		}
 
 		w.Header().Set("Content-Type", "application/javascript")
+		w.Header().Set("Service-Worker-Allowed", "/") // because we register it at "/" level but the endpoint isnt the root scope
 		w.WriteHeader(http.StatusOK)
 		w.Write(buf.Bytes())
 	})

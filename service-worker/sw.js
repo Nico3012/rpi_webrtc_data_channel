@@ -68,7 +68,7 @@ self.addEventListener('fetch', (event) => {
             // service worker api endpoints
             if (url.pathname.startsWith('/api/cache/')) {
                 return new Response('Trigger an update to reload resources', { status: 500 });
-            } else if (url.pathname === '/api/update/') {
+            } else if (url.pathname === '/api/files/update.html') {
 
                 return new Response(UPDATE_HTML, { headers: new Headers([
                     ['Content-Type', 'text/html; charset=utf-8'],
