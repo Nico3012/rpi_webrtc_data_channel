@@ -7,19 +7,28 @@ const PATHNAMES = [
 
 const DIR_PATHS = extractDirectories(PATHNAMES);
 
-// UPDATE_HTML will be replaced by Go template
-const UPDATE_HTML = `[[.UpdateHTML]]`;
-
 self.addEventListener('install', async (event) => {
     event.waitUntil((async () => {
         await self.skipWaiting();
 
         const cache = await caches.open(CACHE_NAME);
 
+        // cache /api/files/script.js
+        console.log('Fetching: /api/files/script.js');
+        const scriptResponse = await fetch('/api/files/script.js');
+        console.log('Cacheing: /api/files/script.js');
+        cache.put('/api/files/script.js', scriptResponse);
+
+        // cache /api/files/sw.js
+        console.log('Fetching: /api/files/sw.js');
+        const swResponse = await fetch('/api/files/sw.js');
+        console.log('Cacheing: /api/files/sw.js');
+        cache.put('/api/files/sw.js', swResponse);
+
         // cache all assets
         for (const pathname of PATHNAMES) {
             console.log(`Fetching: ${pathname}`);
-            const response = await fetch('/api/cache' + pathname);
+            const response = await fetch(pathname);
             console.log(`Cacheing: ${pathname}`);
             cache.put(pathname, response);
         }
@@ -54,16 +63,13 @@ self.addEventListener('fetch', (event) => {
 
             } else {
 
-                const response = url.pathname.endsWith('/') ?
-                    await cache.match(url.pathname + 'index.html') :
-                    await cache.match(url.pathname);
+                const response = await cache.match(url.pathname);
 
                 if (response) {
 
                     // Handle Range requests
                     const rangeHeader = request.headers.get('Range');
                     if (rangeHeader && rangeHeader.startsWith('bytes=')) {
-                        // Only support single range for simplicity
                         const fullBuffer = await response.arrayBuffer();
                         const size = parseInt(response.headers.get('Content-Length')) || fullBuffer.byteLength;
                         const m = rangeHeader.match(/bytes=(\d*)-(\d*)/);
@@ -96,13 +102,23 @@ self.addEventListener('fetch', (event) => {
         } else {
 
             // service worker api endpoints
-            if (url.pathname.startsWith('/api/cache/')) {
-                return new Response('Trigger an update to reload resources', { status: 500 });
-            } else if (url.pathname === '/api/files/update.html') {
+            if (url.pathname === '/api/files/script.js') {
+                const response = await cache.match(url.pathname);
 
-                return new Response(UPDATE_HTML, { headers: new Headers([
-                    ['Content-Type', 'text/html; charset=utf-8'],
-                ]) });
+                if (response) {
+                    return response;
+                } else {
+                    return new Response('Unexpected Error: script not found!', { status: 500 });
+                }
+
+            } else if (url.pathname === '/api/files/sw.js') {
+                const response = await cache.match(url.pathname);
+
+                if (response) {
+                    return response;
+                } else {
+                    return new Response('Unexpected Error: sw not found!', { status: 500 });
+                }
 
             } else {
                 return new Response('API Endpoint');

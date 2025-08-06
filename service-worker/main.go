@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/fs"
 	"log"
-	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -43,20 +42,23 @@ func getPublicFiles(root string) ([]string, error) {
 func main() {
 	mux := http.NewServeMux()
 
-	// Serve public/index.html at any path
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		f, err := os.Open("index.html")
+	// replace this with own implementation similar to service worker (maybe)
+	mux.Handle("/", http.FileServer(http.Dir("public")))
+
+	// Serve 403 for all other /api/ routes
+	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+	})
+
+	// Serve script.js at /api/files/script.js
+	mux.HandleFunc("/api/files/script.js", func(w http.ResponseWriter, r *http.Request) {
+		f, err := os.Open("script.js")
 		if err != nil {
 			http.NotFound(w, r)
 			return
 		}
 		defer f.Close()
-		stat, err := f.Stat()
-		if err != nil || stat.IsDir() {
-			http.NotFound(w, r)
-			return
-		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Content-Type", "application/javascript")
 		w.WriteHeader(http.StatusOK)
 		io.Copy(w, f)
 	})
@@ -78,6 +80,10 @@ func main() {
 		// Prepare the list of public files for the template
 		var quotedPaths []string
 		for _, p := range paths {
+			// If the path ends with "/index.html", replace it with "/"
+			if strings.HasSuffix(p, "/index.html") {
+				p = strings.TrimSuffix(p, "index.html")
+			}
 			quotedPaths = append(quotedPaths, "'"+p+"'")
 		}
 		pathnames := strings.Join(quotedPaths, ",\n    ")
@@ -113,52 +119,6 @@ func main() {
 		w.Header().Set("Service-Worker-Allowed", "/") // because we register it at "/" level but the endpoint isnt the root scope
 		w.WriteHeader(http.StatusOK)
 		w.Write(buf.Bytes())
-	})
-
-	// Use a catch-all path variable to allow slashes in pathname
-	mux.HandleFunc("/api/cache/{pathname...}", func(w http.ResponseWriter, r *http.Request) {
-		pathname := r.PathValue("pathname")
-		if pathname == "" {
-			http.Error(w, "Missing file path", http.StatusBadRequest)
-			return
-		}
-		// Prevent directory traversal
-		if strings.Contains(pathname, "..") {
-			http.Error(w, "Invalid path", http.StatusBadRequest)
-			return
-		}
-		// Build the file path
-		filePath := filepath.Join("public", filepath.FromSlash(pathname))
-		// Open the file
-		f, err := os.Open(filePath)
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-		defer f.Close()
-		// Check if it's a directory
-		stat, err := f.Stat()
-		if err != nil || stat.IsDir() {
-			http.NotFound(w, r)
-			return
-		}
-		// Detect mime type
-		mimeType := mime.TypeByExtension(filepath.Ext(filePath))
-		if mimeType == "" {
-			// Fallback: try to sniff from content
-			buf := make([]byte, 512)
-			n, _ := f.Read(buf)
-			mimeType = http.DetectContentType(buf[:n])
-			f.Seek(0, io.SeekStart)
-		}
-		w.Header().Set("Content-Type", mimeType)
-		w.WriteHeader(http.StatusOK)
-		io.Copy(w, f)
-	})
-
-	// Serve 403 for all other /api/ routes
-	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "Forbidden", http.StatusForbidden)
 	})
 
 	log.Fatalln(http.ListenAndServeTLS(":8443", "cert.pem", "cert_key.pem", mux))
