@@ -42,7 +42,7 @@ func getPublicFiles(root string) ([]string, error) {
 func main() {
 	mux := http.NewServeMux()
 
-	// Serve public/index.html at the root path
+	// Serve public/index.html at any path
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		indexPath := filepath.Join("index.html")
 		f, err := os.Open(indexPath)
