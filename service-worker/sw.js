@@ -43,6 +43,7 @@ self.addEventListener('fetch', (event) => {
                 return Response.redirect(url.pathname + '/' + url.search, 307);
 
             } else if (url.pathname.endsWith('/index.html')) {
+
                 // remove index.html to cleanup pathname (like go FileServer does)
                 return Response.redirect(url.pathname.substring(0, url.pathname.length - 11) + url.search, 307);
 
