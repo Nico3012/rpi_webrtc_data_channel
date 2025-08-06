@@ -1,3 +1,5 @@
+const CACHE_NAME = 'cache-v1';
+
 // dynamically generate this list
 const PATHNAMES = [
     '/index.html',
@@ -5,7 +7,7 @@ const PATHNAMES = [
     '/src/script.js',
 ];
 
-const CACHE_NAME = 'cache-v1';
+const DIR_PATHS = extractDirectories(PATHNAMES);
 
 self.addEventListener('install', async (event) => {
     event.waitUntil((async () => {
@@ -26,26 +28,68 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-    event.waitUntil((async () => {
+    event.respondWith((async () => {
         const cache = await caches.open(CACHE_NAME);
 
         const request = event.request;
         const url = new URL(request.url);
 
         if (!url.pathname.startsWith('/api/')) {
-            const response = await cache.match(url.pathname);
 
-            if (response) {
-                //
+            // static routing server
+            if (DIR_PATHS.includes(url.pathname)) {
+
+                // add / to pathname and redirect
+                return Response.redirect(url.pathname + '/' + url.search, 307);
+
+            } else if (url.pathname.endsWith('/index.html')) {
+                // remove index.html to cleanup pathname (like go FileServer does)
+                return Response.redirect(url.pathname.substring(0, url.pathname.length - 11) + url.search, 307);
+
             } else {
-                event.respondWith(new Response('404 Not found', { status: 404 }));
+
+                const response = url.pathname.endsWith('/') ?
+                    await cache.match(url.pathname + 'index.html') :
+                    await cache.match(url.pathname);
+
+                if (response) {
+                    // needs seperation into with range header or not
+                    return response;
+                } else {
+                    return new Response('404 Not found', { status: 404 });
+                }
+
             }
+
         } else {
+
+            // service worker api endpoints
             if (url.pathname.startsWith('/api/cache/')) {
-                event.respondWith(new Response('Trigger an update to reload resources', { status: 500 }));
+                return new Response('Trigger an update to reload resources', { status: 500 });
             } else {
-                event.respondWith(new Response('API Endpoint'));
+                return new Response('API Endpoint');
             }
+
         }
     })());
 });
+
+// helper functions:
+
+/** @returns {string[]} */
+function extractDirectories(paths) {
+    const dirSet = new Set();
+
+    paths.forEach(path => {
+        const parts = path.split('/');
+        parts.pop();
+
+        let currentPath = '';
+        for (let i = 1; i < parts.length; i++) {
+            currentPath += '/' + parts[i];
+            dirSet.add(currentPath);
+        }
+    });
+
+    return Array.from(dirSet);
+}
