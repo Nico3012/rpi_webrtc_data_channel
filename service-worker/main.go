@@ -12,6 +12,14 @@ import (
 	"text/template"
 )
 
+// addCacheControlNoCache is a middleware that adds Cache-Control: no-cache header to every response
+func addCacheControlNoCache(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		next.ServeHTTP(w, r)
+	})
+}
+
 // getPublicFiles walks the given root directory and returns
 // a slice of URL‐style paths ("/foo/bar.js") for all files it finds.
 func getPublicFiles(root string) ([]string, error) {
@@ -43,7 +51,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	// replace this with own implementation similar to service worker (maybe)
-	mux.Handle("/", http.FileServer(http.Dir("public")))
+	mux.Handle("/", addCacheControlNoCache(http.FileServer(http.Dir("public"))))
 
 	// Serve 403 for all other /api/ routes
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
