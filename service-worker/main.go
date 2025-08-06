@@ -44,8 +44,7 @@ func main() {
 
 	// Serve public/index.html at any path
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		indexPath := filepath.Join("index.html")
-		f, err := os.Open(indexPath)
+		f, err := os.Open("index.html")
 		if err != nil {
 			http.NotFound(w, r)
 			return
@@ -69,8 +68,7 @@ func main() {
 			return
 		}
 
-		tmplPath := "sw.js"
-		tmplContent, err := os.ReadFile(tmplPath)
+		tmplContent, err := os.ReadFile("sw.js")
 		if err != nil {
 			http.Error(w, "Service worker not found", http.StatusNotFound)
 			return
