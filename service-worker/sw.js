@@ -64,7 +64,8 @@ self.addEventListener('fetch', (event) => {
                     const rangeHeader = request.headers.get('Range');
                     if (rangeHeader && rangeHeader.startsWith('bytes=')) {
                         // Only support single range for simplicity
-                        const size = parseInt(response.headers.get('Content-Length')) || (await response.clone().arrayBuffer()).byteLength;
+                        const fullBuffer = await response.arrayBuffer();
+                        const size = parseInt(response.headers.get('Content-Length')) || fullBuffer.byteLength;
                         const m = rangeHeader.match(/bytes=(\d*)-(\d*)/);
                         let start = m[1] ? parseInt(m[1]) : 0;
                         let end = m[2] ? parseInt(m[2]) : size - 1;
@@ -72,7 +73,6 @@ self.addEventListener('fetch', (event) => {
                         if (isNaN(end) || end >= size) end = size - 1;
                         if (end < start) end = size - 1;
                         const chunkSize = end - start + 1;
-                        const fullBuffer = await response.clone().arrayBuffer();
                         const partialBuffer = fullBuffer.slice(start, end + 1);
                         const headers = new Headers(response.headers);
                         headers.set('Content-Range', `bytes ${start}-${end}/${size}`);
