@@ -15,6 +15,10 @@ export const installSW = async () => {
 };
 
 export const uninstallSW = async () => {
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        throw new Error('Cannot uninstall service worker in standalone mode.');
+    }
+
     // delete service workers
     const registrations = await navigator.serviceWorker.getRegistrations();
     await Promise.all(registrations.map(reg => reg.unregister()));
