@@ -42,6 +42,25 @@ func getPublicFiles(root string) ([]string, error) {
 func main() {
 	mux := http.NewServeMux()
 
+	// Serve public/index.html at the root path
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		indexPath := filepath.Join("index.html")
+		f, err := os.Open(indexPath)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		defer f.Close()
+		stat, err := f.Stat()
+		if err != nil || stat.IsDir() {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		io.Copy(w, f)
+	})
+
 	// Serve sw.js as a template with PATHNAMES replaced
 	mux.HandleFunc("/sw.js", func(w http.ResponseWriter, r *http.Request) {
 		paths, err := getPublicFiles("public")
