@@ -2,7 +2,7 @@ import { installSW, uninstallSW, isInstalled } from '/api/files/script.js';
 
 if (!isInstalled()) {
     await installSW();
-    alert('installed');
+    // alert('installed');
 }
 
 const button = document.querySelector('button');
