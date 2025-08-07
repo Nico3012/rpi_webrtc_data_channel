@@ -2,7 +2,9 @@ const CACHE_NAME = 'cache-v1';
 
 // PATHNAMES will be replaced by Go template
 const PATHNAMES = [
-    [[.Pathnames]]
+    [[.Pathnames]],
+    '/api/files/script.js',
+    '/api/files/sw.js',
 ];
 
 const DIR_PATHS = extractDirectories(PATHNAMES);
@@ -12,18 +14,6 @@ self.addEventListener('install', async (event) => {
         await self.skipWaiting();
 
         const cache = await caches.open(CACHE_NAME);
-
-        // cache /api/files/script.js
-        console.log('Fetching: /api/files/script.js');
-        const scriptResponse = await fetch('/api/files/script.js');
-        console.log('Cacheing: /api/files/script.js');
-        cache.put('/api/files/script.js', scriptResponse);
-
-        // cache /api/files/sw.js
-        console.log('Fetching: /api/files/sw.js');
-        const swResponse = await fetch('/api/files/sw.js');
-        console.log('Cacheing: /api/files/sw.js');
-        cache.put('/api/files/sw.js', swResponse);
 
         // cache all assets
         for (const pathname of PATHNAMES) {
