@@ -8,6 +8,8 @@ if (!isInstalled()) {
 const button = document.querySelector('button');
 button.addEventListener('click', async () => {
     await uninstallSW();
-    alert('uninstalled, reloading now.');
-    location.reload();
+    setTimeout(() => {
+        alert('uninstalled, reloading now.');
+        location.reload();
+    }, 1000);
 });
