@@ -21,10 +21,6 @@ self.addEventListener('install', async (event) => {
     })());
 });
 
-// fetch (Golang similar implementation):
-// if request ends with /index.html, return Response.redirect(PATH, 301) [Golang http.FileServer also does this no matter, if the directory exists and also only knows the entry point index.html]
-// split between range and not range requests
-
 self.addEventListener('fetch', (event) => {
     event.respondWith((async () => {
         const cache = await caches.open(CACHE_NAME);
