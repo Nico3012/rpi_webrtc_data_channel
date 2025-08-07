@@ -1,4 +1,4 @@
-import { installSW, uninstallSW, isInstalled } from '/api/files/script.js';
+import { installSW, uninstallSW, isInstalled } from '/api/script.js';
 
 if (!isInstalled()) {
     await installSW();

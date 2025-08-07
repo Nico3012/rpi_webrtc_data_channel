@@ -4,10 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"os"
-	"path/filepath"
 	"service-worker/routing"
-	"time"
 )
 
 func main() {
@@ -25,9 +22,12 @@ func main() {
 		w.Header().Set("Cache-Control", "no-store")
 		switch r.URL.Path {
 		case "/api/sw.js":
-			serveFile(w, "sw.js", "application/javascript")
+			w.Header().Set("Content-Type", "application/javascript")
+			w.Header().Set("Service-Worker-Allowed", "/")
+			http.ServeFile(w, r, "sw.js")
 		case "/api/script.js":
-			serveFile(w, "script.js", "application/javascript")
+			w.Header().Set("Content-Type", "application/javascript")
+			http.ServeFile(w, r, "script.js")
 		case "/api/pathnames.json":
 			servePathnamesJSON(w)
 		default:
@@ -40,22 +40,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func serveFile(w http.ResponseWriter, path string, contentType string) {
-	f, err := os.Open(path)
-	if err != nil {
-		http.NotFound(w, nil)
-		return
-	}
-	defer f.Close()
-	info, err := f.Stat()
-	var modTime time.Time
-	if err == nil {
-		modTime = info.ModTime()
-	}
-	w.Header().Set("Content-Type", contentType)
-	http.ServeContent(w, nil, filepath.Base(path), modTime, f)
 }
 
 func servePathnamesJSON(w http.ResponseWriter) {
