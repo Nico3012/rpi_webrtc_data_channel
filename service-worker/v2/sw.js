@@ -45,21 +45,61 @@ self.addEventListener('fetch', (event) => {
                     // Handle Range requests
                     const rangeHeader = request.headers.get('Range');
                     if (rangeHeader && rangeHeader.startsWith('bytes=')) {
-                        const fullBuffer = await response.arrayBuffer();
-                        const size = parseInt(response.headers.get('Content-Length')) || fullBuffer.byteLength;
                         const m = rangeHeader.match(/bytes=(\d*)-(\d*)/);
+                        const size = parseInt(response.headers.get('Content-Length')) || 0;
                         let start = m[1] ? parseInt(m[1]) : 0;
-                        let end = m[2] ? parseInt(m[2]) : size - 1;
+                        let end = m[2] ? parseInt(m[2]) : (size ? size - 1 : 0);
+
                         if (isNaN(start) || start < 0) start = 0;
                         if (isNaN(end) || end >= size) end = size - 1;
                         if (end < start) end = size - 1;
+
                         const chunkSize = end - start + 1;
-                        const partialBuffer = fullBuffer.slice(start, end + 1);
                         const headers = new Headers(response.headers);
                         headers.set('Content-Range', `bytes ${start}-${end}/${size}`);
                         headers.set('Content-Length', chunkSize);
                         headers.set('Accept-Ranges', 'bytes');
-                        return new Response(partialBuffer, {
+
+                        const stream = new ReadableStream({
+                            async start(controller) {
+                                const reader = response.body.getReader();
+                                let bytesSkipped = 0;
+                                let bytesSent = 0;
+
+                                while (true) {
+                                    const { value, done } = await reader.read();
+                                    if (done) break;
+
+                                    const chunk = value;
+                                    const chunkLength = chunk.byteLength;
+
+                                    if (bytesSkipped + chunkLength <= start) {
+                                        // skip entire chunk
+                                        bytesSkipped += chunkLength;
+                                        continue;
+                                    }
+
+                                    let sliceStart = 0;
+                                    if (bytesSkipped < start) {
+                                        sliceStart = start - bytesSkipped;
+                                    }
+
+                                    const available = chunkLength - sliceStart;
+                                    const bytesRemaining = chunkSize - bytesSent;
+                                    const bytesToSend = Math.min(available, bytesRemaining);
+
+                                    controller.enqueue(chunk.slice(sliceStart, sliceStart + bytesToSend));
+                                    bytesSent += bytesToSend;
+                                    bytesSkipped += chunkLength;
+
+                                    if (bytesSent >= chunkSize) break;
+                                }
+
+                                controller.close();
+                            }
+                        });
+
+                        return new Response(stream, {
                             status: 206,
                             statusText: 'Partial Content',
                             headers
