@@ -72,7 +72,7 @@ self.addEventListener('fetch', (event) => {
 
         } else {
 
-            if (url.pathname === '/api/script.js' || url.pathname === '/api/sw.js') {
+            if (url.pathname === '/api/pathnames.json' || url.pathname === '/api/script.js' || url.pathname === '/api/sw.js') {
                 const response = await cache.match(url.pathname);
 
                 if (response) {
