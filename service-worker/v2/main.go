@@ -13,11 +13,16 @@ import (
 func main() {
 	mux := http.NewServeMux()
 
-	// Serve static files from "public" at root
-	mux.Handle("/", http.FileServer(http.Dir("public")))
+	// Serve static files from "public" at root with Cache-Control: no-store
+	fileServer := http.FileServer(http.Dir("public"))
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		fileServer.ServeHTTP(w, r)
+	})
 
 	// Custom 404 for /api/ (except specific endpoints)
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
 		switch r.URL.Path {
 		case "/api/sw.js":
 			serveFile(w, "sw.js", "application/javascript")
