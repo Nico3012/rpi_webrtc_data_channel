@@ -1,19 +1,22 @@
 const CACHE_NAME = 'cache-v1';
 const INDEX_HTML_HANDLER = true;
 
-const PATHNAMES = [
-    '/dir',
-    '/dir/',
-    '/dir/file.ext',
-];
-
 self.addEventListener('install', async (event) => {
     event.waitUntil((async () => {
         const cache = await caches.open(CACHE_NAME);
 
-        for (const PATH of PATHNAMES) {
-            const response = await fetch(PATH);
-            cache.put(PATH, response);
+        // load pathnames
+        const response = await fetch('/api/pathnames.json');
+        if (!response.ok) throw new Error(response.statusText);
+        cache.put('/api/pathnames.json', response.clone());
+        /** @type {string[]} */
+        const pathnames = await response.json();
+
+        pathnames.push('/api/script.js', '/api/sw.js');
+
+        for (const pathname of pathnames) {
+            const response = await fetch(pathname);
+            cache.put(pathname, response);
         }
     })());
 });
@@ -73,7 +76,7 @@ self.addEventListener('fetch', (event) => {
 
         } else {
 
-            if (url.pathname === '/api/files/api.js' || url.pathname === '/api/files/sw.js') {
+            if (url.pathname === '/api/script.js' || url.pathname === '/api/sw.js') {
                 const response = await cache.match(url.pathname);
 
                 if (response) {
