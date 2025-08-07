@@ -1,0 +1,90 @@
+const CACHE_NAME = 'cache-v1';
+const INDEX_HTML_HANDLER = true;
+
+const PATHNAMES = [
+    '/dir',
+    '/dir/',
+    '/dir/file.ext',
+];
+
+self.addEventListener('install', async (event) => {
+    event.waitUntil((async () => {
+        const cache = await caches.open(CACHE_NAME);
+
+        for (const PATH of PATHNAMES) {
+            const response = await fetch(PATH);
+            cache.put(PATH, response);
+        }
+    })());
+});
+
+// fetch (Golang similar implementation):
+// if request ends with /index.html, return Response.redirect(PATH, 301) [Golang http.FileServer also does this no matter, if the directory exists and also only knows the entry point index.html]
+// split between range and not range requests
+
+self.addEventListener('fetch', (event) => {
+    event.respondWith((async () => {
+        const cache = await caches.open(CACHE_NAME);
+
+        const request = event.request;
+        const url = new URL(request.url);
+
+        // static routing server (Go http.FileServer compatible)
+        if (!url.pathname.startsWith('/api/')) {
+
+            if (!INDEX_HTML_HANDLER || !url.pathname.endsWith('/index.html')) {
+                const response = await cache.match(url.pathname);
+
+                if (response) {
+
+                    // Handle Range requests
+                    const rangeHeader = request.headers.get('Range');
+                    if (rangeHeader && rangeHeader.startsWith('bytes=')) {
+                        const fullBuffer = await response.arrayBuffer();
+                        const size = parseInt(response.headers.get('Content-Length')) || fullBuffer.byteLength;
+                        const m = rangeHeader.match(/bytes=(\d*)-(\d*)/);
+                        let start = m[1] ? parseInt(m[1]) : 0;
+                        let end = m[2] ? parseInt(m[2]) : size - 1;
+                        if (isNaN(start) || start < 0) start = 0;
+                        if (isNaN(end) || end >= size) end = size - 1;
+                        if (end < start) end = size - 1;
+                        const chunkSize = end - start + 1;
+                        const partialBuffer = fullBuffer.slice(start, end + 1);
+                        const headers = new Headers(response.headers);
+                        headers.set('Content-Range', `bytes ${start}-${end}/${size}`);
+                        headers.set('Content-Length', chunkSize);
+                        headers.set('Accept-Ranges', 'bytes');
+                        return new Response(partialBuffer, {
+                            status: 206,
+                            statusText: 'Partial Content',
+                            headers
+                        });
+                    } else {
+                        return response;
+                    }
+
+                } else {
+                    return new Response('404 page not found', { status: 404 });
+                }
+            } else {
+                // always remove index.html to cleanup pathname (like go http.FileServer does)
+                return Response.redirect(url.pathname.slice(0, -10) + url.search, 301);
+            }
+
+        } else {
+
+            if (url.pathname === '/api/files/api.js' || url.pathname === '/api/files/sw.js') {
+                const response = await cache.match(url.pathname);
+
+                if (response) {
+                    return response;
+                } else {
+                    return new Response('500 file not found', { status: 500 });
+                }
+            } else {
+                return new Response('404 page not found', { status: 404 });
+            }
+
+        }
+    })());
+});
