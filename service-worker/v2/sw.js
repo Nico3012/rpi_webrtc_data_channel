@@ -2,6 +2,8 @@ const CACHE_NAME = 'cache-v1';
 const INDEX_HTML_HANDLER = true;
 
 self.addEventListener('install', async (event) => {
+    self.skipWaiting();
+
     event.waitUntil((async () => {
         const cache = await caches.open(CACHE_NAME);
 
@@ -19,6 +21,10 @@ self.addEventListener('install', async (event) => {
             cache.put(pathname, response);
         }
     })());
+});
+
+self.addEventListener('activate', (event) => {
+    event.waitUntil(clients.claim());
 });
 
 self.addEventListener('fetch', (event) => {
