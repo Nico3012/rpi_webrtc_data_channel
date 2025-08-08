@@ -28,7 +28,7 @@ export const initUninstall = async () => {
     if (!isInstalled()) throw new Error('Not installed.');
 
     if (window.matchMedia('(display-mode: standalone)').matches)
-        throw new Error('Cannot uninstall in standalone mode.');
+        throw new Error('Cannot uninstall in standalone mode. Uninstall the PWA first!');
 
     // unregister all service workers
     const registrations = await navigator.serviceWorker.getRegistrations();
