@@ -18,15 +18,27 @@ class InstallManager extends LitElement {
         }
 
         summary {
-            
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 8px;
+            font-family: sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
         }
 
         summary::marker {
-            content: '+ ';
-            font-family: monospace;
+            content: '';
         }
 
-        details[open] summary::marker {
+        summary::after {
+            content: '+ ';
+            font-family: monospace;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        details[open] summary::after {
             content: '- ';
             font-family: monospace;
         }
