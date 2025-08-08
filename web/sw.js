@@ -10,7 +10,7 @@ self.addEventListener('install', async (event) => {
         // load pathnames
         const response = await fetch('/api/pathnames.json');
         if (!response.ok) throw new Error(response.statusText);
-        cache.put('/api/pathnames.json', response.clone());
+        await cache.put('/api/pathnames.json', response.clone());
         /** @type {string[]} */
         const pathnames = await response.json();
 
