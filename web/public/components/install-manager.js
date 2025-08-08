@@ -90,7 +90,7 @@ class InstallManager extends LitElement {
     async connectedCallback() {
         super.connectedCallback();
 
-        if (await isInstalled()) {
+        if (isInstalled()) {
             this.state = 'installed';
             this.collapsed = true;
 
