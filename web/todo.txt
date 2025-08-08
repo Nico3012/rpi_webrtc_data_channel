@@ -1,1 +1,0 @@
-install kann sich aufhängen. Für diesen Fall benötigen wir einen Fallback, der irgendwie uninstall ausführt oder eine ähnliche Funktion für cleanup
