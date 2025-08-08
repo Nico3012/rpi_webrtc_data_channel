@@ -1,3 +1,3 @@
-module web-server
+module service-worker
 
-go 1.24rc1
+go 1.24.5

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="/assets/favicon.png" type="image/png">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <script type="importmap">
+        {
+            "imports": {
+                "lit": "/lit@3.2.1/lit-core.min.js"
+            }
+        }
+    </script>
+    <script type="module" src="components/install-manager.js"></script>
+    <script type="module" src="components/webrtc-connection.js"></script>
+    <script type="module" src="components/digital-joystick.js"></script>
+    <script type="module" src="script.js"></script>
+    <script type="module" src="position.js"></script>
+    <title>Device Controller</title>
+</head>
+
+<body>
+    <div class="content">
+        <install-manager></install-manager>
+        <details open>
+            <summary class="browser">App status</summary>
+            <div class="line browser"></div>
+        </details>
+        <div class="line browser"></div>
+        <details name="controls" open>
+            <summary>Connection status</summary>
+            <div class="line"></div>
+            <webrtc-connection rpi-address="10.3.141.1" rpi-port="8080" request-video request-audio></webrtc-connection>
+        </details>
+        <div class="line"></div>
+        <details name="controls">
+            <summary>Controller</summary>
+            <div class="line"></div>
+            <div class="position"></div>
+            <div class="controller">
+                <digital-joystick id="left-joystick" precise stick-y default-y="-1"></digital-joystick>
+                <video id="camera" autoplay playsinline></video>
+                <audio id="microphone" autoplay></audio>
+                <digital-joystick id="right-joystick" precise></digital-joystick>
+            </div>
+        </details>
+    </div>
+</body>
+
+</html>
