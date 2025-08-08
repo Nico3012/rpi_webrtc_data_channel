@@ -18,8 +18,10 @@ self.addEventListener('install', async (event) => {
 
         for (const pathname of pathnames) {
             const response = await fetch(pathname, { redirect: 'manual' });
-            cache.put(pathname, response);
+            await cache.put(pathname, response);
         }
+
+        console.log('Everything cached.');
     })());
 });
 
