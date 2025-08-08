@@ -1,4 +1,4 @@
-import { installSW, uninstallSW, isInstalled } from '/api/script.js';
+import { installSW, uninstallSW, isInstalled, checkForUpdate } from '/api/script.js';
 
 if (!isInstalled()) {
     await installSW();
@@ -13,3 +13,7 @@ button.addEventListener('click', async () => {
         location.reload();
     }, 1000);
 });
+
+if (await checkForUpdate()) {
+    alert('Update available. Click Uninstall to update');
+}

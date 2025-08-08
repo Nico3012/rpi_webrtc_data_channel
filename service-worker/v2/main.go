@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"service-worker/routing"
@@ -30,6 +31,10 @@ func main() {
 			http.ServeFile(w, r, "script.js")
 		case "/api/pathnames.json":
 			servePathnamesJSON(w)
+		case "/api/hash/current.json":
+			serveHashJSON(w)
+		case "/api/hash/latest.json":
+			serveHashJSON(w)
 		default:
 			http.NotFound(w, r)
 		}
@@ -46,4 +51,14 @@ func servePathnamesJSON(w http.ResponseWriter) {
 	arr, _ := routing.ListRoutes("public", false)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(arr)
+}
+
+func serveHashJSON(w http.ResponseWriter) {
+	hash, err := routing.HashDirectory("public")
+	w.Header().Set("Content-Type", "application/json")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(fmt.Sprintf("%d", hash))
 }

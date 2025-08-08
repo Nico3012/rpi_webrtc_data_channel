@@ -31,3 +31,13 @@ export const uninstallSW = async () => {
 export const isInstalled = () => {
     return !!navigator.serviceWorker.controller;
 };
+
+export const checkForUpdate = async () => {
+    const currentResponse = await fetch('/api/hash/current.json');
+    const latestResponse = await fetch('/api/hash/latest.json');
+
+    const currentHash = await currentResponse.json();
+    const latestHash = await latestResponse.json();
+
+    return currentHash !== latestHash;
+};

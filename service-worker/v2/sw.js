@@ -14,7 +14,7 @@ self.addEventListener('install', async (event) => {
         /** @type {string[]} */
         const pathnames = await response.json();
 
-        pathnames.push('/api/script.js', '/api/sw.js');
+        pathnames.push('/api/script.js', '/api/sw.js', '/api/hash/current.json');
 
         for (const pathname of pathnames) {
             const response = await fetch(pathname);
@@ -118,13 +118,22 @@ self.addEventListener('fetch', (event) => {
 
         } else {
 
-            if (url.pathname === '/api/pathnames.json' || url.pathname === '/api/script.js' || url.pathname === '/api/sw.js') {
+            if (url.pathname === '/api/pathnames.json' || url.pathname === '/api/script.js' || url.pathname === '/api/sw.js' || url.pathname === '/api/hash/current.json') {
                 const response = await cache.match(url.pathname);
 
                 if (response) {
                     return response;
                 } else {
-                    return new Response('500 file not found', { status: 500 });
+                    return new Response('500 page not found', { status: 500 });
+                }
+            } else if (url.pathname === '/api/hash/latest.json') {
+                const response = await fetch('/api/hash/latest.json'); // network first attempt
+
+                if (response.ok) {
+                    return response;
+                } else {
+                    // fallback with current hash, if server is not reachable
+                    return await cache.match('/api/hash/current.json') || new Response('500 page not found', { status: 500 });
                 }
             } else {
                 return new Response('404 page not found', { status: 404 });
