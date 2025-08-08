@@ -91,12 +91,12 @@ class InstallManager extends LitElement {
         super.connectedCallback();
 
         if (await isInstalled()) {
+            this.state = 'installed';
+            this.collapsed = true;
+
             if (await updateAvailable()) {
                 this.state = 'update';
                 this.collapsed = false;
-            } else {
-                this.state = 'installed';
-                this.collapsed = true;
             }
         } else {
             try {
