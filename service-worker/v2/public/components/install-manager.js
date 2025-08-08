@@ -8,45 +8,60 @@ class InstallManager extends LitElement {
     };
 
     static styles = css`
-        .pill-btn {
-            display: inline-block;
-            padding: 1em 2em;
+        :host {
+            display: block;
+        }
+        .collapsible {
+            display: flex;
+            flex-direction: column;
+            margin: 8px 0;
+            background: none;
             border: none;
-            border-radius: 999px;
+            border-radius: 0;
+            box-shadow: none;
+            overflow: visible;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: none;
+            padding: 0.7em 0.5em;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: serif;
+            font-size: 24px;
+            color: black;
+            user-select: none;
+        }
+        .content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 0.5em 0.5em 1em 0.5em;
+            animation: fadeIn 0.3s;
+        }
+        .pill-btn {
+            display: block;
+            width: 100%;
+            padding: 12px 0;
+            border: none;
+            border-radius: 20px;
             background: black;
             color: white;
-            font-size: 1.2em;
+            font-size: 16px;
+            font-family: sans-serif;
+            font-weight: normal;
+            line-height: 1.5;
             cursor: pointer;
-            margin: 1em 0;
+            margin: 0;
             transition: background 0.2s;
+            text-align: center;
         }
-
         .pill-btn.red {
             background: #d32f2f;
             color: white;
         }
-
-        .collapsible {
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            margin: 1em 0;
-            overflow: hidden;
-        }
-
-        .header {
-            background: #f5f5f5;
-            padding: 0.7em 1em;
-            cursor: pointer;
-            font-weight: bold;
-            user-select: none;
-        }
-
-        .content {
-            padding: 1em;
-            display: block;
-            animation: fadeIn 0.3s;
-        }
-
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
