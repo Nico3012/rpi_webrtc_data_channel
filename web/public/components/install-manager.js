@@ -66,6 +66,12 @@ class InstallManager extends LitElement {
             text-align: center;
         }
 
+        span.status {
+            display: block;
+            margin: 8px;
+            text-align: center;
+        }
+
         @media (display-mode: standalone) {
             button.browser {
                 background-color: red;
@@ -129,7 +135,7 @@ class InstallManager extends LitElement {
             case 'uninstalling':
                 return html`<button class="pill" @click="${this.handleReload}">Reload Page</button>`;
             default:
-                return null;
+                return html`<span class="status">Loading ...</span>`;
         }
     }
 
