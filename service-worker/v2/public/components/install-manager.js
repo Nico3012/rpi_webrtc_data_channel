@@ -3,7 +3,7 @@ import { isInstalled, install, initUninstall, updateAvailable } from '/api/scrip
 
 class InstallManager extends LitElement {
     static properties = {
-        state: { type: String }, // 'uninstalled', 'installed', 'uninstalling', 'update'
+        state: { type: String }, // 'initializing', 'installed', 'uninstalling', 'update'
         collapsed: { type: Boolean },
     };
 
@@ -91,22 +91,13 @@ class InstallManager extends LitElement {
                 this.collapsed = true;
             }
         } else {
-            this.state = 'uninstalled';
-            this.collapsed = false;
-        }
-
-        this.requestUpdate();
-    }
-
-    /** @private */
-    async handleInstall() {
-        try {
-            await install();
-            this.state = 'installed';
-            this.collapsed = true;
-            this.requestUpdate();
-        } catch (e) {
-            alert(e.message);
+            try {
+                await install();
+                this.state = 'installed';
+                this.collapsed = true;
+            } catch (e) {
+                alert(e.message);
+            }
         }
     }
 
@@ -116,7 +107,6 @@ class InstallManager extends LitElement {
             await initUninstall();
             this.state = 'uninstalling';
             this.collapsed = false;
-            this.requestUpdate();
         } catch (e) {
             alert(e.message);
         }
@@ -130,14 +120,12 @@ class InstallManager extends LitElement {
     /** @private */
     renderButton() {
         switch (this.state) {
-            case 'uninstalled':
-                return html`<button class="pill" @click="${this.handleInstall}">Install App</button>`;
             case 'installed':
                 return html`<button class="pill" @click="${this.handleUninstall}">Uninstall App</button>`;
-            case 'uninstalling':
-                return html`<button class="pill" @click="${this.handleReload}">Reload Page</button>`;
             case 'update':
                 return html`<button class="pill highlight" @click="${this.handleUninstall}">Uninstall (Update Available)</button>`;
+            case 'uninstalling':
+                return html`<button class="pill" @click="${this.handleReload}">Reload Page</button>`;
             default:
                 return null;
         }
