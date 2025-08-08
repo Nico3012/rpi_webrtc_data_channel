@@ -66,9 +66,11 @@ class InstallManager extends LitElement {
             text-align: center;
         }
 
-        button.highlight {
-            background-color: #2f97d3;
-            color: white;
+        @media (display-mode: standalone) {
+            button.browser {
+                background-color: red;
+                color: white;
+            }
         }
     `;
 
@@ -121,9 +123,9 @@ class InstallManager extends LitElement {
     renderButton() {
         switch (this.state) {
             case 'installed':
-                return html`<button class="pill" @click="${this.handleUninstall}">Uninstall App</button>`;
+                return html`<button class="pill browser" @click="${this.handleUninstall}">Uninstall App</button>`;
             case 'update':
-                return html`<button class="pill highlight" @click="${this.handleUninstall}">Uninstall (Update Available)</button>`;
+                return html`<button class="pill browser" @click="${this.handleUninstall}">Uninstall (Update Available)</button>`;
             case 'uninstalling':
                 return html`<button class="pill" @click="${this.handleReload}">Reload Page</button>`;
             default:
