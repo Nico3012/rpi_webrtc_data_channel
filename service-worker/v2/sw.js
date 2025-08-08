@@ -17,7 +17,7 @@ self.addEventListener('install', async (event) => {
         pathnames.push('/api/script.js', '/api/sw.js', '/api/hash/current.json');
 
         for (const pathname of pathnames) {
-            const response = await fetch(pathname);
+            const response = await fetch(pathname, { redirect: 'manual' });
             cache.put(pathname, response);
         }
     })());
