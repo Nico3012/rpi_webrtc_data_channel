@@ -1,25 +1,32 @@
-export const installSW = async () => {
-    return await new Promise(async (resolve) => {
-        const registration = await navigator.serviceWorker.register('/api/sw.js', { scope: '/' });
+/** @returns {boolean} */
+export const isInstalled = () => !!navigator.serviceWorker.controller; // A ServiceWorker object if its state is activating or activated, or null if there is no active worker.
 
-        registration.addEventListener('updatefound', () => {
-            const sw = registration.installing;
+/** @returns {Promise<void>} */
+export const install = () => new Promise(async (resolve) => {
+    const registration = await navigator.serviceWorker.register('/api/sw.js', { scope: '/' });
 
-            sw.addEventListener('statechange', () => {
-                if (sw.state === 'activated') {
-                    resolve();
-                }
-            });
+    registration.addEventListener('updatefound', () => {
+        const sw = registration.installing;
+
+        sw.addEventListener('statechange', () => {
+            if (sw.state === 'activated') {
+                resolve();
+            }
         });
     });
-};
+});
 
-export const uninstallSW = async () => {
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-        throw new Error('Cannot uninstall service worker in standalone mode.');
-    }
+/**
+ * The active service worker will only be released after a reload.
+ * Therefore this function only initializes the uninstall process.
+ * isInstalled stays true after this function call
+ * @returns {Promise<void>}
+ */
+export const initUninstall = async () => {
+    if (window.matchMedia('(display-mode: standalone)').matches)
+        throw new Error('Cannot uninstall in standalone mode.');
 
-    // delete service workers
+    // unregister all service workers
     const registrations = await navigator.serviceWorker.getRegistrations();
     await Promise.all(registrations.map(reg => reg.unregister()));
 
@@ -28,13 +35,13 @@ export const uninstallSW = async () => {
     await Promise.all(cacheNames.map(name => caches.delete(name)));
 };
 
-export const isInstalled = () => {
-    return !!navigator.serviceWorker.controller;
-};
-
-export const checkForUpdate = async () => {
+/** @returns {Promise<boolean>} */
+export const updateAvailable = async () => {
     const currentResponse = await fetch('/api/hash/current.json');
     const latestResponse = await fetch('/api/hash/latest.json');
+
+    if (!currentResponse.ok) throw new Error(currentResponse.statusText);
+    if (!latestResponse.ok) throw new Error(latestResponse.statusText);
 
     const currentHash = await currentResponse.json();
     const latestHash = await latestResponse.json();

@@ -1,21 +1,25 @@
-import { installSW, uninstallSW, isInstalled, checkForUpdate } from '/api/script.js';
+import { install, initUninstall, isInstalled, updateAvailable } from '/api/script.js';
 
-if (!isInstalled()) {
-    await installSW();
-    // alert('installed');
-}
+console.log('Initial install state:', isInstalled());
 
-const button = document.querySelector('button');
-button.addEventListener('click', async () => {
-    await uninstallSW();
-    setTimeout(() => {
-        alert('uninstalled, reloading now.');
-        location.reload();
-    }, 1000);
+document.getElementById('install').addEventListener('click', async () => {
+    console.log('Before install state:', isInstalled());
+    await install();
+    console.log('After install state:', isInstalled());
 });
 
-if (await checkForUpdate()) {
-    alert('Update available. Click Uninstall to update');
+document.getElementById('uninstall').addEventListener('click', async () => {
+    console.log('Before uninstall state:', isInstalled());
+    await initUninstall();
+    console.log('After uninstall state:', isInstalled());
+});
+
+document.getElementById('isinstalled').addEventListener('click', async () => {
+    console.log('Current state:', isInstalled());
+});
+
+if (await updateAvailable()) {
+    console.log('Update available');
 } else {
-    console.log('Already latest');
+    console.log('Already latest update');
 }
