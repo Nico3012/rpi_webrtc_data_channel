@@ -54,7 +54,7 @@ func servePathnamesJSON(w http.ResponseWriter) {
 }
 
 func serveHashJSON(w http.ResponseWriter) {
-	hash, err := routing.HashDirectory("public")
+	hash, err := routing.HashDirectory(".")
 	w.Header().Set("Content-Type", "application/json")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
