@@ -16,4 +16,6 @@ button.addEventListener('click', async () => {
 
 if (await checkForUpdate()) {
     alert('Update available. Click Uninstall to update');
+} else {
+    console.log('Already latest');
 }
