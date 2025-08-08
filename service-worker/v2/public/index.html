@@ -7,11 +7,20 @@
     <link rel="shortcut icon" href="/assets/favicon.png" type="image/png">
     <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="style.css">
+    <script type="importmap">
+        {
+            "imports": {
+                "lit": "/lit@3.2.1/lit-core.min.js"
+            }
+        }
+    </script>
+    <script type="module" src="components/install-manager.js"></script>
     <script type="module" src="script.js"></script>
     <title>Device Controller</title>
 </head>
 
 <body>
+    <install-manager></install-manager>
     <h1>Hallo Welt!</h1>
     <p>Update 3,1415926</p>
     <a href="/assets/long-video.mp4">Video</a>
