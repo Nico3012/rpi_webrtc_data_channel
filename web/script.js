@@ -1,3 +1,5 @@
+const CACHE_NAME = 'cache-v1';
+
 /** @returns {boolean} */
 export const isInstalled = () => !!navigator.serviceWorker.controller; // A ServiceWorker object if its state is activating or activated, or null if there is no active worker.
 
@@ -5,17 +7,37 @@ export const isInstalled = () => !!navigator.serviceWorker.controller; // A Serv
 export const install = () => new Promise(async (resolve) => {
     if (isInstalled()) throw new Error('Already installed.');
 
-    const registration = await navigator.serviceWorker.register('/api/sw.js', { scope: '/' });
+    { // cache:
+        const cache = await caches.open(CACHE_NAME);
 
-    registration.addEventListener('updatefound', () => {
-        const sw = registration.installing;
+        // load pathnames
+        const response = await fetch('/api/pathnames.json');
+        await cache.put('/api/pathnames.json', response.clone());
 
-        sw.addEventListener('statechange', () => {
-            if (sw.state === 'activated') {
-                resolve();
-            }
+        /** @type {string[]} */
+        const pathnames = await response.json();
+
+        pathnames.push('/api/script.js', '/api/sw.js', '/api/hash/current.json');
+
+        for (const pathname of pathnames) {
+            const response = await fetch(pathname, { redirect: 'manual' });
+            await cache.put(pathname, response);
+        }
+    }
+
+    { // service worker:
+        const registration = await navigator.serviceWorker.register('/api/sw.js', { scope: '/' });
+
+        registration.addEventListener('updatefound', () => {
+            const sw = registration.installing;
+
+            sw.addEventListener('statechange', () => {
+                if (sw.state === 'activated') {
+                    resolve();
+                }
+            });
         });
-    });
+    }
 });
 
 /**

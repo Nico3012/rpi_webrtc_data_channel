@@ -3,26 +3,6 @@ const INDEX_HTML_HANDLER = true;
 
 self.addEventListener('install', async (event) => {
     self.skipWaiting();
-
-    event.waitUntil((async () => {
-        const cache = await caches.open(CACHE_NAME);
-
-        // load pathnames
-        const response = await fetch('/api/pathnames.json');
-        if (!response.ok) throw new Error(response.statusText);
-        await cache.put('/api/pathnames.json', response.clone());
-        /** @type {string[]} */
-        const pathnames = await response.json();
-
-        pathnames.push('/api/script.js', '/api/sw.js', '/api/hash/current.json');
-
-        for (const pathname of pathnames) {
-            const response = await fetch(pathname, { redirect: 'manual' });
-            await cache.put(pathname, response);
-        }
-
-        console.log('Everything cached.');
-    })());
 });
 
 self.addEventListener('activate', (event) => {
