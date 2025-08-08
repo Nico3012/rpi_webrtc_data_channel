@@ -8,45 +8,50 @@ class InstallManager extends LitElement {
     };
 
     static styles = css`
-    .pill-btn {
-      display: inline-block;
-      padding: 1em 2em;
-      border: none;
-      border-radius: 999px;
-      background: black;
-      color: white;
-      font-size: 1.2em;
-      cursor: pointer;
-      margin: 1em 0;
-      transition: background 0.2s;
-    }
-    .pill-btn.red {
-      background: #d32f2f;
-      color: white;
-    }
-    .collapsible {
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      margin: 1em 0;
-      overflow: hidden;
-    }
-    .header {
-      background: #f5f5f5;
-      padding: 0.7em 1em;
-      cursor: pointer;
-      font-weight: bold;
-      user-select: none;
-    }
-    .content {
-      padding: 1em;
-      display: block;
-      animation: fadeIn 0.3s;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-  `;
+        .pill-btn {
+            display: inline-block;
+            padding: 1em 2em;
+            border: none;
+            border-radius: 999px;
+            background: black;
+            color: white;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin: 1em 0;
+            transition: background 0.2s;
+        }
+
+        .pill-btn.red {
+            background: #d32f2f;
+            color: white;
+        }
+
+        .collapsible {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            margin: 1em 0;
+            overflow: hidden;
+        }
+
+        .header {
+            background: #f5f5f5;
+            padding: 0.7em 1em;
+            cursor: pointer;
+            font-weight: bold;
+            user-select: none;
+        }
+
+        .content {
+            padding: 1em;
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    `;
 
     constructor() {
         super();
@@ -120,18 +125,18 @@ class InstallManager extends LitElement {
 
     render() {
         return html`
-      <div class="collapsible">
-        <div class="header" @click="${this.toggleCollapse}">
-          Service Worker Manager
-          <span style="float:right;">${this.collapsed ? '+' : '-'}</span>
-        </div>
-        ${!this.collapsed ? html`
-          <div class="content">
-            ${this.renderButton()}
-          </div>
-        ` : ''}
-      </div>
-    `;
+            <div class="collapsible">
+                <div class="header" @click="${this.toggleCollapse}">
+                Install Manager
+                <span style="float:right;">${this.collapsed ? '+' : '-'}</span>
+                </div>
+                ${!this.collapsed ? html`
+                <div class="content">
+                    ${this.renderButton()}
+                </div>
+                ` : ''}
+            </div>
+        `;
     }
 }
 
