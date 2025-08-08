@@ -112,9 +112,16 @@ class InstallManager extends LitElement {
     /** @private */
     async handleUninstall() {
         try {
-            await initUninstall();
-            this.state = 'uninstalling';
-            this.collapsed = false;
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                alert('Cannot uninstall in standalone mode. Uninstall the PWA first!');
+                return;
+            }
+
+            if (confirm('Make sure to uninstall the PWA before! No PWA installed?')) {
+                await initUninstall();
+                this.state = 'uninstalling';
+                this.collapsed = false;
+            }
         } catch (e) {
             alert(e.message);
         }
