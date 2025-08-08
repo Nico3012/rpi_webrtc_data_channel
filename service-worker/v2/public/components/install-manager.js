@@ -11,7 +11,8 @@ class InstallManager extends LitElement {
         :host {
             display: block;
         }
-        .collapsible {
+
+        details {
             display: flex;
             flex-direction: column;
             margin: 8px 0;
@@ -21,7 +22,8 @@ class InstallManager extends LitElement {
             box-shadow: none;
             overflow: visible;
         }
-        .header {
+
+        summary {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -34,6 +36,7 @@ class InstallManager extends LitElement {
             color: black;
             user-select: none;
         }
+
         .content {
             display: flex;
             flex-direction: column;
@@ -70,8 +73,8 @@ class InstallManager extends LitElement {
 
     constructor() {
         super();
-        this.state = 'uninstalled';
-        this.collapsed = false;
+        this.state = 'initializing';
+        this.collapsed = true;
     }
 
     async connectedCallback() {
@@ -140,17 +143,14 @@ class InstallManager extends LitElement {
 
     render() {
         return html`
-            <div class="collapsible">
-                <div class="header" @click="${this.toggleCollapse}">
-                Install Manager
-                <span style="float:right;">${this.collapsed ? '+' : '-'}</span>
-                </div>
-                ${!this.collapsed ? html`
+            <details ?open="${!this.collapsed}">
+                <summary>
+                    Install Manager
+                </summary>
                 <div class="content">
                     ${this.renderButton()}
                 </div>
-                ` : ''}
-            </div>
+            </details>
         `;
     }
 }
