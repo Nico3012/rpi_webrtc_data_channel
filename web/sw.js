@@ -1,7 +1,7 @@
 const CACHE_NAME = 'cache-v1';
 const INDEX_HTML_HANDLER = true;
 
-self.addEventListener('install', async (event) => {
+self.addEventListener('install', async () => {
     self.skipWaiting();
 });
 
