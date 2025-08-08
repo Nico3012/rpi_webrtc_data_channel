@@ -42,9 +42,9 @@ class InstallManager extends LitElement {
             flex-direction: column;
             gap: 12px;
             padding: 0.5em 0.5em 1em 0.5em;
-            animation: fadeIn 0.3s;
         }
-        .pill-btn {
+
+        .pill {
             display: block;
             width: 100%;
             padding: 12px 0;
@@ -58,31 +58,25 @@ class InstallManager extends LitElement {
             line-height: 1.5;
             cursor: pointer;
             margin: 0;
-            transition: background 0.2s;
             text-align: center;
         }
-        .pill-btn.red {
+
+        .red {
             background: #d32f2f;
             color: white;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
         }
     `;
 
     constructor() {
         super();
+
         this.state = 'initializing';
         this.collapsed = true;
     }
 
     async connectedCallback() {
         super.connectedCallback();
-        await this.checkState();
-    }
 
-    async checkState() {
         if (await isInstalled()) {
             if (await updateAvailable()) {
                 this.state = 'update';
@@ -95,18 +89,23 @@ class InstallManager extends LitElement {
             this.state = 'uninstalled';
             this.collapsed = false;
         }
+
         this.requestUpdate();
     }
 
+    /** @private */
     async handleInstall() {
         try {
             await install();
-            await this.checkState();
+            this.state = 'installed';
+            this.collapsed = true;
+            this.requestUpdate();
         } catch (e) {
             alert(e.message);
         }
     }
 
+    /** @private */
     async handleUninstall() {
         try {
             await initUninstall();
@@ -118,24 +117,22 @@ class InstallManager extends LitElement {
         }
     }
 
+    /** @private */
     handleReload() {
         window.location.reload();
     }
 
-    toggleCollapse() {
-        this.collapsed = !this.collapsed;
-    }
-
+    /** @private */
     renderButton() {
         switch (this.state) {
             case 'uninstalled':
-                return html`<button class="pill-btn" @click="${this.handleInstall}">Install App</button>`;
+                return html`<button class="pill" @click="${this.handleInstall}">Install App</button>`;
             case 'installed':
-                return html`<button class="pill-btn" @click="${this.handleUninstall}">Uninstall App</button>`;
+                return html`<button class="pill" @click="${this.handleUninstall}">Uninstall App</button>`;
             case 'uninstalling':
-                return html`<button class="pill-btn" @click="${this.handleReload}">Reload Page</button>`;
+                return html`<button class="pill" @click="${this.handleReload}">Reload Page</button>`;
             case 'update':
-                return html`<button class="pill-btn red" @click="${this.handleUninstall}">Uninstall (Update Available)</button>`;
+                return html`<button class="pill red" @click="${this.handleUninstall}">Uninstall (Update Available)</button>`;
             default:
                 return null;
         }
