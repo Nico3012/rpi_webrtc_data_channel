@@ -1,0 +1,23 @@
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+.controller {
+    display: flex;
+    margin: 8px;
+    align-items: center;
+}
+
+#left-joystick,
+#right-joystick {
+    width: 15vw;
+    height: 15vw;
+}
+
+#camera {
+    flex-grow: 1;
+    background-color: black;
+    aspect-ratio: 4/3;
+    width: 0;
+}
