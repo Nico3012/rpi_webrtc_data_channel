@@ -15,54 +15,47 @@ class InstallManager extends LitElement {
         details {
             display: flex;
             flex-direction: column;
-            margin: 8px 0;
-            background: none;
-            border: none;
-            border-radius: 0;
-            box-shadow: none;
-            overflow: visible;
         }
 
         summary {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: none;
-            padding: 0.7em 0.5em;
-            cursor: pointer;
-            font-weight: bold;
-            font-family: serif;
-            font-size: 24px;
-            color: black;
-            user-select: none;
+            
+        }
+
+        summary::marker {
+            content: '+ ';
+            font-family: monospace;
+        }
+
+        details[open] summary::marker {
+            content: '- ';
+            font-family: monospace;
         }
 
         .content {
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            padding: 0.5em 0.5em 1em 0.5em;
         }
 
-        .pill {
+        button.pill {
             display: block;
-            width: 100%;
-            padding: 12px 0;
-            border: none;
+            appearance: none;
+            margin: 8px;
+            padding: 8px;
             border-radius: 20px;
-            background: black;
+            border: none;
+            outline: none;
+            background-color: black;
             color: white;
-            font-size: 16px;
+            text-decoration: none;
             font-family: sans-serif;
+            font-size: 16px;
             font-weight: normal;
             line-height: 1.5;
-            cursor: pointer;
-            margin: 0;
             text-align: center;
         }
 
-        .red {
-            background: #d32f2f;
+        button.highlight {
+            background-color: #2f97d3;
             color: white;
         }
     `;
@@ -132,7 +125,7 @@ class InstallManager extends LitElement {
             case 'uninstalling':
                 return html`<button class="pill" @click="${this.handleReload}">Reload Page</button>`;
             case 'update':
-                return html`<button class="pill red" @click="${this.handleUninstall}">Uninstall (Update Available)</button>`;
+                return html`<button class="pill highlight" @click="${this.handleUninstall}">Uninstall (Update Available)</button>`;
             default:
                 return null;
         }
