@@ -3,6 +3,8 @@ export const isInstalled = () => !!navigator.serviceWorker.controller; // A Serv
 
 /** @returns {Promise<void>} */
 export const install = () => new Promise(async (resolve) => {
+    if (isInstalled()) throw new Error('Already installed.');
+
     const registration = await navigator.serviceWorker.register('/api/sw.js', { scope: '/' });
 
     registration.addEventListener('updatefound', () => {
@@ -23,6 +25,8 @@ export const install = () => new Promise(async (resolve) => {
  * @returns {Promise<void>}
  */
 export const initUninstall = async () => {
+    if (!isInstalled()) throw new Error('Not installed.');
+
     if (window.matchMedia('(display-mode: standalone)').matches)
         throw new Error('Cannot uninstall in standalone mode.');
 
