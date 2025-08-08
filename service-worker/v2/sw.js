@@ -127,11 +127,9 @@ self.addEventListener('fetch', (event) => {
                     return new Response('500 page not found', { status: 500 });
                 }
             } else if (url.pathname === '/api/hash/latest.json') {
-                const response = await fetch('/api/hash/latest.json'); // network first attempt
-
-                if (response.ok) {
-                    return response;
-                } else {
+                try {
+                    return await fetch('/api/hash/latest.json');
+                } catch {
                     // fallback with current hash, if server is not reachable
                     return await cache.match('/api/hash/current.json') || new Response('500 page not found', { status: 500 });
                 }
