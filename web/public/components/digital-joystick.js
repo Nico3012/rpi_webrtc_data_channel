@@ -30,7 +30,7 @@ class DigitalJoystick extends LitElement {
             }
             .container {
                 position: relative;
-                background-color: #f0f0f0;
+                /* background-color: #f0f0f0; */
                 border-radius: 50%;
                 overflow: hidden;
                 touch-action: none;
