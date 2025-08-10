@@ -106,8 +106,8 @@ func (vh *Handler) streamCamera() error {
 		"ffmpeg",
 		"-i", "/dev/video0", // input device
 		"-c:v", "libvpx", // use VP8 codec
-		"-deadline", "realtime", // fastest encoding preset
-		"-cpu-used", "5", // moderate CPU usage for better quality (up to 8 for best performance)
+		"-deadline", "good", // good quality encoding preset (use 'realtime' for better performance or 'best' for better quality)
+		"-cpu-used", "6", // moderate CPU usage for better quality (up to 8 for best performance)
 		"-video_size", "640x480", // video resolution
 		"-framerate", "60", // frame rate
 		"-b:v", "1.5M", // Bitrate
