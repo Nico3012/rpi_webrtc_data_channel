@@ -2,3 +2,4 @@ v0.9.0  - video and audio first working implementation (full featured)
 v0.10.0 - video and audio changed to ffmpeg -> rdp to improve quality and efficiency by a lot
 v0.11.0 - refactor webrtc-component and add api description
 v0.12.0 - add arduino communication api with raspberry pi
+v1.0.0 - update app to new framework and add cache control in many places
