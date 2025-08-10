@@ -109,7 +109,7 @@ func (vh *Handler) streamCamera() error {
 		"-deadline", "realtime", // fastest encoding preset
 		"-cpu-used", "8", // minimal CPU usage
 		"-video_size", "640x480", // video resolution
-		"-framerate", "30", // frame rate
+		"-framerate", "60", // frame rate
 		"-b:v", "2M", // Bitrate
 		"-an",       // Disable audio
 		"-f", "rtp", // RTP output format
