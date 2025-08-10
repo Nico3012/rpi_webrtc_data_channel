@@ -32,14 +32,14 @@ class InstallManager extends LitElement {
         }
 
         summary::after {
-            content: '+ ';
+            content: '+';
             font-family: monospace;
             font-size: 16px;
             line-height: 1;
         }
 
         details[open] summary::after {
-            content: '- ';
+            content: '-';
             font-family: monospace;
         }
 

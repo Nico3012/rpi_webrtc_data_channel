@@ -18,21 +18,31 @@
     <script type="module" src="components/digital-joystick.js"></script>
     <script type="module" src="script.js"></script>
     <script type="module" src="position.js"></script>
+    <script type="module" src="style.js"></script>
     <title>Device Controller</title>
 </head>
 <body>
-    <install-manager></install-manager>
-    <webrtc-connection rpi-address="10.3.141.1" rpi-port="8080" request-video request-audio></webrtc-connection>
-    <div class="position">
-        <span id="position"></span>
-        <button id="start-position">Start</button>
-        <button id="stop-position">Stop</button>
-    </div>
-    <div class="controller">
-        <digital-joystick id="left-joystick" precise stick-y default-y="-1"></digital-joystick>
-        <video id="camera" autoplay playsinline></video>
-        <audio id="microphone" autoplay></audio>
-        <digital-joystick id="right-joystick" precise></digital-joystick>
+    <div class="container">
+        <install-manager></install-manager>
+        <details>
+            <summary>Connection</summary>
+            <webrtc-connection rpi-address="10.3.141.1" rpi-port="8080" request-video request-audio></webrtc-connection>
+        </details>
+        <div class="position">
+            <span id="position"></span>
+            <button id="start-position">Start</button>
+            <button id="stop-position">Stop</button>
+        </div>
+        <div class="controller">
+            <digital-joystick id="left-joystick" precise stick-y default-y="-1"></digital-joystick>
+            <div class="media">
+                <div class="m2">
+                    <video id="camera" autoplay playsinline muted src="assets/video.mp4"></video>
+                </div>
+                <audio id="microphone" autoplay></audio>
+            </div>
+            <digital-joystick id="right-joystick" precise></digital-joystick>
+        </div>
     </div>
 </body>
 </html>
