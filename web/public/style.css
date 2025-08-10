@@ -1,9 +1,10 @@
 .container {
     position: absolute;
+    padding: 8px;
+    width: calc(100% - 16px);
+    height: calc(100% - 16px);
     left: 0;
     top: 0;
-    width: 100%;
-    height: 100%;
     display: flex;
     flex-direction: column;
 }
@@ -47,31 +48,31 @@ details[open] summary::after {
 .controller {
     flex-grow: 1;
     display: flex;
-    margin: 8px;
-    align-items: flex-end;
+    align-items: center;
 }
 
 #left-joystick,
 #right-joystick {
     width: 15vw;
     height: 15vw;
-    border: 4px solid gray;
+    border: 2px solid black;
     border-radius: 50%;
-    background-color: red;
+    margin: 8px;
 }
 
 .media {
+    margin: 8px;
+    height: calc(100% - 16px);
     width: 0;
-    height: 100%;
     flex-grow: 1;
-    background-color: brown;
     overflow: hidden;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-.m2 {
+/* purpose of this element is, that the video does not take over control on the media element height and scrollbars appear */
+.video {
     width: 0;
     height: 0;
     overflow: visible;
@@ -79,10 +80,11 @@ details[open] summary::after {
 
 #camera {
     position: relative;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 4 / 3; /* also change this in style.js */
     transform: translate(-50%, -50%);
     width: 0;
     height: 0;
     left: 50%;
     top: 50%;
+    background-color: black;
 }

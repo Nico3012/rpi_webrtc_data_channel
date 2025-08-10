@@ -1,8 +1,8 @@
-const mediaDiv = document.querySelector('div.media');
-const video = document.querySelector('video#camera');
+const mediaDiv = document.querySelector('.media');
+const video = document.querySelector('#camera');
 
 // Set initial aspect ratio
-const aspectRatio = 16 / 9;
+const aspectRatio = 4 / 3; // also change this in style.css
 
 function resizeVideo() {
     const parentWidth = mediaDiv.clientWidth;
