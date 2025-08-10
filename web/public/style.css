@@ -42,7 +42,10 @@ details[open] summary::after {
 
 .position {
     margin: 8px;
-    display: none;
+    text-align: center;
+    font-size: 16px;
+    font-family: monospace;
+    line-height: 1.5;
 }
 
 .controller {

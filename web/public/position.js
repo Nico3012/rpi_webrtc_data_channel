@@ -7,6 +7,7 @@ const stopButton = document.getElementById('stop-position');
 
 const width = 640;
 const height = 480;
+const fps = 60;
 
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
@@ -35,7 +36,7 @@ startButton.addEventListener('click', async () => {
             } else {
                 positionElement.textContent = `x: Unknown; y: Unknown; z: Unknown`;
             }
-        }, 1000 / 30);
+        }, 1000 / fps);
     }
 });
 
