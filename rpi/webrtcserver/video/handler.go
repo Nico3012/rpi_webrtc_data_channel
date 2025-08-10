@@ -107,10 +107,10 @@ func (vh *Handler) streamCamera() error {
 		"-i", "/dev/video0", // input device
 		"-c:v", "libvpx", // use VP8 codec
 		"-deadline", "realtime", // fastest encoding preset
-		"-cpu-used", "8", // minimal CPU usage
+		"-cpu-used", "5", // moderate CPU usage for better quality (up to 8 for best performance)
 		"-video_size", "640x480", // video resolution
 		"-framerate", "60", // frame rate
-		"-b:v", "2M", // Bitrate
+		"-b:v", "1.5M", // Bitrate
 		"-an",       // Disable audio
 		"-f", "rtp", // RTP output format
 		fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
