@@ -69,7 +69,11 @@ func New(port, publicDir string, videoEnabled, audioEnabled bool) *Server {
 	mux := http.NewServeMux()
 
 	// Serve static files from public directory
-	mux.Handle("/", http.FileServer(http.Dir(server.publicDir)))
+	fileServer := http.FileServer(http.Dir(server.publicDir))
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		fileServer.ServeHTTP(w, r)
+	})
 
 	// API routes
 	mux.HandleFunc("/api/offer", server.handleOffer)
