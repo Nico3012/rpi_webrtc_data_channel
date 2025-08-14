@@ -4,3 +4,4 @@ v0.11.0 - refactor webrtc-component and add api description
 v0.12.0 - add arduino communication api with raspberry pi
 v1.0.0 - update app to new framework and add cache control in many places
 v1.0.1 - add missing tag description
+v1.0.2 - disable https and add dockerfile for pusblishment in liquipay cluster

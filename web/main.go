@@ -40,8 +40,10 @@ func main() {
 		}
 	})
 
-	log.Println("Serving on :8443")
-	err := http.ListenAndServeTLS(":8443", "cert.pem", "cert_key.pem", mux)
+	log.Println("Serving on :8080")
+	// log.Println("Serving on :8443")
+	err := http.ListenAndServe(":8080", mux)
+	// err := http.ListenAndServeTLS(":8443", "cert.pem", "cert_key.pem", mux)
 	if err != nil {
 		log.Fatal(err)
 	}
