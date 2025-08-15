@@ -101,7 +101,9 @@ class InstallManager extends LitElement {
     constructor() {
         super();
 
+        /** @private */
         this.state = 'initializing';
+        /** @private */
         this.collapsed = true;
     }
 
