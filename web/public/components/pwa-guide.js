@@ -244,10 +244,10 @@ export class PwaGuide extends LitElement {
                             <h2>App installieren</h2>
                             <button class="primary" @click=${this.installPWA} ?hidden=${this.state !== 'installable'}>Installieren</button>
                             <div class="status" ?hidden=${this.state !== 'installing'}>
-                                Installiert... ⏳
+                                Warten auf Bestätigung... ⏳
                             </div>
                             <div class="status" ?hidden=${this.state !== 'installed'}>
-                                Installiert 🎉
+                                Installiert... Deine App erscheint auf dem Homebildschirm 🎉
                             </div>
                             <div class="guide-content" ?hidden=${this.state !== 'guide'}>
                                 <div class="guide-selector">
