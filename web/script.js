@@ -63,6 +63,8 @@ export const initUninstall = async () => {
 
 /** @returns {Promise<boolean>} */
 export const updateAvailable = async () => {
+    if (!isInstalled()) return false; // cant be true, if app is not installed
+
     const currentResponse = await fetch('/api/hash/current.json');
     const latestResponse = await fetch('/api/hash/latest.json');
 
