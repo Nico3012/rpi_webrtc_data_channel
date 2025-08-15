@@ -3,11 +3,66 @@ import { LitElement, html, css } from 'lit';
 export class PwaGuide extends LitElement {
     static properties = {
         closed: { type: Boolean, attribute: false }, // if the guide is closed by the user (including localstorage)
+        info: { type: Boolean, attribute: false }, // Display info or not
         guide: { type: String, attribute: false }, // the name of the guide, that is shown e.g. ios
         state: { type: String, attribute: false }, // 'guide' | 'installable' | 'installing' | 'installed'
     };
 
     static styles = css`
+        div.notification {
+            position: fixed;
+            right: 16px;
+            top: 16px;
+            display: flex;
+            align-items: center;
+            background-color: white;
+            color: black;
+            box-shadow: 4px 4px 16px rgba(0, 0, 0, 0.3);
+            border-radius: 26px;
+            z-index: 999;
+            padding-right: 14px;
+        }
+
+        div.info {
+            padding: 8px;
+            font-family: monospace;
+            font-size: 24px;
+            line-height: 1.5;
+            background-color: black;
+            color: white;
+            width: 36px;
+            text-align: center;
+            border-radius: 26px;
+        }
+
+        div.notification span {
+            font-family: sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            margin: 8px;
+        }
+
+        button.close {
+            display: block;
+            appearance: none;
+            padding: 3px;
+            border-radius: 0;
+            border: none;
+            outline: none;
+            background-color: black;
+            color: white;
+            text-decoration: none;
+            font-family: monospace;
+            font-size: 12px;
+            font-weight: normal;
+            line-height: 1.5;
+            text-align: center;
+            cursor: pointer;
+            width: 18px;
+            box-sizing: content-box;
+            border-radius: 12px;
+        }
+
         div.wrapper {
             position: fixed;
             left: 0;
@@ -168,6 +223,7 @@ export class PwaGuide extends LitElement {
         }
 
         @media (display-mode: standalone) {
+            div.notification,
             div.wrapper {
                 display: none;
             }
@@ -179,6 +235,7 @@ export class PwaGuide extends LitElement {
 
         /** @private @type {boolean} */
         this.closed = JSON.parse(localStorage.getItem('pwa-guide-close-immediately') || 'false');
+        this.info = this.closed;
 
         /** @private @type {string} */
         this.guide = 'ios'; // set to ios, because we expect android to fire a beforeinstallprompt event
@@ -233,10 +290,34 @@ export class PwaGuide extends LitElement {
         this.closed = true;
     }
 
+    /** @private */
+    notificationClick() {
+        localStorage.removeItem('pwa-guide-close-immediately');
+        this.closed = false;
+        this.info = false;
+    }
+
+    /** @private */
+    notificationClose(e) {
+        e.stopPropagation();
+        this.info = false;
+    }
+
     render() {
         switch (this.closed) {
             case true:
-                return null;
+                switch (this.info) {
+                    case true:
+                        return html`
+                            <div class="notification" @click=${this.notificationClick}>
+                                <div class="info">i</div>
+                                <span>App installieren</span>
+                                <button class="close" @click=${this.notificationClose}>x</button>
+                            </div>
+                        `;
+                    default:
+                        return null
+                }
             default:
                 return html`
                     <div class="wrapper" @click=${this.closeGuide}>
@@ -275,7 +356,7 @@ export class PwaGuide extends LitElement {
                                     </ol>
                                 </div>
                             </div>
-                            <label class="close-hint"><input type="checkbox" class="close-immediately"><span>Nicht mehr anzeigen.</span></label>
+                            <label class="close-hint"><input type="checkbox" class="close-immediately" checked><span>Nicht mehr anzeigen.</span></label>
                             <button class="secondary" @click=${this.closeGuide}>Schließen</button>
                         </div>
                     </div>
