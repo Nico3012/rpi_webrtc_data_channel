@@ -228,8 +228,6 @@ export class PwaGuide extends LitElement {
 
         if (checkbox.checked) {
             localStorage.setItem('pwa-guide-close-immediately', 'true');
-        } else {
-            localStorage.setItem('pwa-guide-close-immediately', 'false');
         }
 
         this.closed = true;
@@ -241,8 +239,8 @@ export class PwaGuide extends LitElement {
                 return null;
             default:
                 return html`
-                    <div class="wrapper">
-                        <div class="container">
+                    <div class="wrapper" @click=${this.closeGuide}>
+                        <div class="container" @click=${(e) => e.stopPropagation()}>
                             <h2>App installieren</h2>
                             <button class="primary" @click=${this.installPWA} ?hidden=${this.state !== 'installable'}>Installieren</button>
                             <div class="status" ?hidden=${this.state !== 'installing'}>
