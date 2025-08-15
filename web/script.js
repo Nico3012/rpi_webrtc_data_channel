@@ -63,7 +63,10 @@ export const initUninstall = async () => {
     await Promise.all(cacheNames.map(name => caches.delete(name)));
 };
 
-/** @returns {Promise<boolean>} */
+/**
+ * This function should not be called after initUninstall was called, because then the cache is gone but the service worker stays active until the page reloads
+ * @returns {Promise<boolean>}
+ */
 export const updateAvailable = async () => {
     if (!isInstalled()) return false; // cant be true, if app is not installed
 

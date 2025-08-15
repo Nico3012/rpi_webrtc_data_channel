@@ -1,6 +1,8 @@
 import { LitElement, html, css } from 'lit';
 import { isInstalled, install, initUninstall, updateAvailable } from '/api/script.js';
 
+const UPDATE_INTERVAL = 8000;
+
 class CacheManager extends LitElement {
     static properties = {
         state: { type: String, attribute: false }, // 'initializing', 'installed', 'uninstalling', 'update'
@@ -105,6 +107,9 @@ class CacheManager extends LitElement {
         this.state = 'initializing';
         /** @private */
         this.collapsed = true;
+
+        /** @private @type {number | undefined} */
+        this.updateInterval = undefined;
     }
 
     async connectedCallback() {
@@ -114,18 +119,40 @@ class CacheManager extends LitElement {
             this.state = 'installed';
             this.collapsed = true;
 
-            if (await updateAvailable()) {
-                this.state = 'update';
-                this.collapsed = false;
-            }
+            // register update handler, to check, if update is available
+            this.updateInterval = setInterval(() => this.checkForUpdate(), UPDATE_INTERVAL);
+        
+            // check for update immediately
+            this.checkForUpdate();
         } else {
             try {
                 await install();
                 this.state = 'installed';
                 this.collapsed = true;
+
+                // register update handler, to check, if update is available
+                this.updateInterval = setInterval(() => this.checkForUpdate(), UPDATE_INTERVAL);
             } catch (e) {
                 alert(e.message);
             }
+        }
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+
+        // clear update interval
+        clearInterval(this.updateInterval);
+    }
+
+    /** @private */
+    async checkForUpdate() {
+        if (await updateAvailable()) {
+            this.state = 'update';
+            this.collapsed = false;
+        } else {
+            this.state = 'installed';
+            this.collapsed = true;
         }
     }
 
@@ -138,6 +165,7 @@ class CacheManager extends LitElement {
             }
 
             if (confirm('Make sure to uninstall the app before! No PWA installed?')) {
+                clearInterval(this.updateInterval);
                 await initUninstall();
                 this.state = 'uninstalling';
                 this.collapsed = false;
