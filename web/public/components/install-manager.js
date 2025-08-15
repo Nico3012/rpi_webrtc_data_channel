@@ -3,13 +3,37 @@ import { isInstalled, install, initUninstall, updateAvailable } from '/api/scrip
 
 class InstallManager extends LitElement {
     static properties = {
-        state: { type: String }, // 'initializing', 'installed', 'uninstalling', 'update'
-        collapsed: { type: Boolean },
+        state: { type: String, attribute: false }, // 'initializing', 'installed', 'uninstalling', 'update'
+        collapsed: { type: Boolean, attribute: false },
     };
 
     static styles = css`
         :host {
             display: block;
+        }
+
+        div.blocker {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: black;
+            color: white;
+            z-index: 9999;
+        }
+
+        span.status {
+            display: block;
+            margin: 16px;
+            color: white;
+            font-family: monospace;
+            font-size: 16px;
+            line-height: 1.5;
         }
 
         details {
@@ -63,12 +87,6 @@ class InstallManager extends LitElement {
             font-size: 16px;
             font-weight: normal;
             line-height: 1.5;
-            text-align: center;
-        }
-
-        span.status {
-            display: block;
-            margin: 8px;
             text-align: center;
         }
 
@@ -142,21 +160,30 @@ class InstallManager extends LitElement {
             case 'uninstalling':
                 return html`<button class="pill" @click="${this.handleReload}">Reload Page</button>`;
             default:
-                return html`<span class="status">Loading ...</span>`;
+                return null;
         }
     }
 
     render() {
-        return html`
-            <details ?open="${!this.collapsed}">
-                <summary>
-                    Install Manager
-                </summary>
-                <div class="content">
-                    ${this.renderButton()}
-                </div>
-            </details>
-        `;
+        switch (this.state) {
+            case 'initializing':
+                return html`
+                    <div class="blocker">
+                        <span class="status">Loading ...</span>
+                    </div>
+                `;
+            default:
+                return html`
+                    <details ?open="${!this.collapsed}">
+                        <summary>
+                            Install Manager
+                        </summary>
+                        <div class="content">
+                            ${this.renderButton()}
+                        </div>
+                    </details>
+                `;
+        }
     }
 }
 
