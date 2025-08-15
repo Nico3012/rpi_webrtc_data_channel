@@ -1,7 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { isInstalled, install, initUninstall, updateAvailable } from '/api/script.js';
 
-class InstallManager extends LitElement {
+class CacheManager extends LitElement {
     static properties = {
         state: { type: String, attribute: false }, // 'initializing', 'installed', 'uninstalling', 'update'
         collapsed: { type: Boolean, attribute: false },
@@ -133,11 +133,11 @@ class InstallManager extends LitElement {
     async handleUninstall() {
         try {
             if (window.matchMedia('(display-mode: standalone)').matches) {
-                alert('Cannot uninstall in standalone mode. Uninstall the PWA first!');
+                alert('Cannot remove cache in app mode. Uninstall the PWA first!');
                 return;
             }
 
-            if (confirm('Make sure to uninstall the PWA before! No PWA installed?')) {
+            if (confirm('Make sure to uninstall the app before! No PWA installed?')) {
                 await initUninstall();
                 this.state = 'uninstalling';
                 this.collapsed = false;
@@ -156,11 +156,11 @@ class InstallManager extends LitElement {
     renderButton() {
         switch (this.state) {
             case 'installed':
-                return html`<button class="pill browser" @click="${this.handleUninstall}">Uninstall App</button>`;
+                return html`<button class="pill browser" @click="${this.handleUninstall}">Remove cache</button>`;
             case 'update':
-                return html`<button class="pill browser" @click="${this.handleUninstall}">Uninstall (Update Available)</button>`;
+                return html`<button class="pill browser" @click="${this.handleUninstall}">Remove cache (Update Available)</button>`;
             case 'uninstalling':
-                return html`<button class="pill" @click="${this.handleReload}">Reload Page</button>`;
+                return html`<button class="pill" @click="${this.handleReload}">Removed! Reload Page</button>`;
             default:
                 return null;
         }
@@ -171,14 +171,14 @@ class InstallManager extends LitElement {
             case 'initializing':
                 return html`
                     <div class="blocker">
-                        <span class="status">Loading ...</span>
+                        <span class="status">Cacheing ...</span>
                     </div>
                 `;
             default:
                 return html`
                     <details ?open="${!this.collapsed}">
                         <summary>
-                            Install Manager
+                            Cache Manager
                         </summary>
                         <div class="content">
                             ${this.renderButton()}
@@ -189,4 +189,4 @@ class InstallManager extends LitElement {
     }
 }
 
-customElements.define('install-manager', InstallManager);
+customElements.define('cache-manager', CacheManager);
