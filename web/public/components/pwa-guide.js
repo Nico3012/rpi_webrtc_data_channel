@@ -18,6 +18,7 @@ export class PwaGuide extends LitElement {
             justify-content: center;
             align-items: center;
             background-color: #00000030;
+            backdrop-filter: blur(8px);
             z-index: 999;
         }
 
