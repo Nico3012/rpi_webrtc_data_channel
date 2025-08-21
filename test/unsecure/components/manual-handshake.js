@@ -3,7 +3,7 @@
 
 import { LitElement, html, css } from 'lit';
 
-class ManualHandshake extends LitElement {
+export class ManualHandshake extends LitElement {
     static properties = {
         answer: { type: String, attribute: false },
         answerCopied: { type: Boolean, attribute: false },
@@ -49,7 +49,7 @@ class ManualHandshake extends LitElement {
 
     /** @private */
     copyAnswer() {
-        const answerInput = document.querySelector('input[name="answer"]');
+        const answerInput = this.renderRoot.querySelector('input[name="answer"]');
         if (answerInput === null) throw new Error('somehow the answer input is not displayed at the moment but the copy button was clicked');
 
         answerInput.focus();
@@ -76,15 +76,15 @@ class ManualHandshake extends LitElement {
         if (this.answer === '') {
             if (this.waitForAnswer) {
                 return html`
+                    Searching...
+                `;
+            } else {
+                return html`
                     <form @submit=${this.handleOfferSubmit}>
                         Gebe die Controller ID ein:
                         <input type="text" name="offer">
                         <button type="submit">Suchen</button>
                     </form>
-                `;
-            } else {
-                return html`
-                    Searching...
                 `;
             }
         } else {
@@ -94,11 +94,11 @@ class ManualHandshake extends LitElement {
                     <input type="text" name="answer" value=${this.answer}>
                     <button type="button" @click=${this.copyAnswer}>${this.answerCopied ? html`
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
                         </svg>
                     ` : html`
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                            <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
                         </svg>
                     `}</button>
                 </div>

@@ -5,7 +5,7 @@ import { LitElement, html, css } from 'lit';
 
 const TARGET_ORIGIN = 'https://localhost:8443';
 
-class AutoHandshake extends LitElement {
+export class AutoHandshake extends LitElement {
     static properties = {
         state: { type: String, attribute: false },
     };

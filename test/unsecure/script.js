@@ -1,14 +1,21 @@
-const SECURE_ORIGIN = 'https://localhost:8443';
+const autoHandshake = document.querySelector('auto-handshake');
+const manualHandshake = document.querySelector('manual-handshake');
 
-const controller = new AbortController();
+autoHandshake.style.display = 'none';
+manualHandshake.style.display = 'none';
 
-window.addEventListener("message", (event) => {
-    if (event.origin === SECURE_ORIGIN) {
-        const offer = event.data;
+if (location.search === '?auto=true') {
+    autoHandshake.style.display = 'block';
 
-        const answer = offer + ';answer';
-        event.source.postMessage(answer, SECURE_ORIGIN); // set targetOrigin, '*' must be avoided
+    autoHandshake.addEventListener('offer-received', event => {
+        autoHandshake.setAnswer(`${event.detail.offer};answer`);
+    });
+}
 
-        controller.abort();
-    }
-}, { signal: controller.signal });
+if (location.search === '?auto=false') {
+    manualHandshake.style.display = 'block';
+
+    manualHandshake.addEventListener('offer-received', event => {
+        manualHandshake.setAnswer(`${event.detail.offer};answer`);
+    });
+}
