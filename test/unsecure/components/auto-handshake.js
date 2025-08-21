@@ -95,7 +95,7 @@ export class AutoHandshake extends LitElement {
         } else {
             return html`
                 Automatische Verbindung fehlgeschlagen. Führen Sie eine manuelle Verbindung durch.
-                <button type="button" @click=${this.closePage}>Zum manuellen Pairing</button>
+                <button type="button" @click=${this.closePage}>Zurück zur App</button>
             `;
         }
     }

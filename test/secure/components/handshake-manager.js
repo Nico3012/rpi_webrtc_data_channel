@@ -3,7 +3,8 @@
 
 import { LitElement, html, css } from 'lit';
 
-const TARGET_ORIGIN = 'http://localhost:8081';
+const MODE_STORAGE_NAME = 'handshake-manager-manual-mode';
+const TARGET_ORIGIN = 'http://10.54.100.113:8081';
 const TARGET = 'myPopupWindow';
 const FORCE_MANUAL_MODE = false;
 
@@ -19,8 +20,8 @@ export class HandshakeManager extends LitElement {
     constructor() {
         super();
 
-        /** @private @type {'ready' | 'manual-offer' | 'manual-waiting-answer' | 'auto-waiting-answer' | 'done'} */
-        this.state = 'ready';
+        /** @private @type {'auto-offer' | 'manual-offer' | 'manual-waiting-answer' | 'auto-waiting-answer'} */
+        this.state = localStorage.getItem(MODE_STORAGE_NAME) === 'true' ? 'manual-offer' : 'auto-offer';
 
         /** @private */
         this.offer = '';
@@ -55,7 +56,7 @@ export class HandshakeManager extends LitElement {
                         },
                     }));
 
-                    this.state = 'done';
+                    this.state = localStorage.getItem(MODE_STORAGE_NAME) === 'true' ? 'manual-offer' : 'auto-offer';
                 }
             }
         }, { signal: this.controller.signal });
@@ -98,9 +99,6 @@ export class HandshakeManager extends LitElement {
         } else {
             window.open(`${TARGET_ORIGIN}/auto/`, TARGET);
         }
-
-        // fallback to manual offer until receiving auto message
-        this.state = 'manual-offer';
     }
 
     /** @private */
@@ -128,18 +126,31 @@ export class HandshakeManager extends LitElement {
             },
         }));
 
-        this.state = 'done';
+        this.state = localStorage.getItem(MODE_STORAGE_NAME) === 'true' ? 'manual-offer' : 'auto-offer';
+    }
+
+    /** @private @param {Event} event */
+    toggleAutoMode(event) {
+        if (event.target.checked) {
+            localStorage.removeItem(MODE_STORAGE_NAME);
+            this.state = 'auto-offer';
+        } else {
+            localStorage.setItem(MODE_STORAGE_NAME, 'true');
+            this.state = 'manual-offer';
+        }
     }
 
     render() {
-        if (this.state === 'ready') {
+        if (this.state === 'auto-offer') {
             return html`
+                Auto mode: <input type="checkbox" @change=${this.toggleAutoMode} checked>
                 <button type="button" @click=${this.startAutoConnection}>Verbinden</button>
             `;
         }
 
         if (this.state === 'manual-offer') {
             return html`
+                Auto mode: <input type="checkbox" @change=${this.toggleAutoMode}>
                 Kopiere die Controller ID:
                 <div>
                     <input type="text" name="offer" value=${this.offer}>
@@ -153,7 +164,7 @@ export class HandshakeManager extends LitElement {
                         </svg>
                     `}</button>
                 </div>
-                <button type="button" @click=${this.startManualConnection}>Verbinden</button>
+                <button type="button" @click=${this.startManualConnection}>Weiter</button>
             `;
         }
 
@@ -170,12 +181,6 @@ export class HandshakeManager extends LitElement {
         if (this.state === 'auto-waiting-answer') {
             return html`
                 Controller ID gesendet. Warten auf Geräte ID...
-            `;
-        }
-
-        if (this.state === 'done') {
-            return html`
-                Verbunden!
             `;
         }
 

@@ -89,7 +89,7 @@ export class ManualHandshake extends LitElement {
             }
         } else {
             return html`
-                Kopiere die Geräte ID:
+                Gefunden! Kopiere die Geräte ID:
                 <div>
                     <input type="text" name="answer" value=${this.answer}>
                     <button type="button" @click=${this.copyAnswer}>${this.answerCopied ? html`
