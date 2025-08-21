@@ -15,11 +15,14 @@ export class AutoHandshake extends LitElement {
     constructor() {
         super();
 
-        /** @private @type {Window | null} */
-        this.w = window.opener;
-
         /** @private @type {'waiting-offer' | 'waiting-answer' | 'waiting-close'} */
         this.state = 'waiting-offer';
+
+        /** @private @type {AbortController | null} */
+        this.controller = null;
+
+        /** @private @type {Window | null} */
+        this.w = window.opener;
     }
 
     connectedCallback() {
@@ -30,13 +33,13 @@ export class AutoHandshake extends LitElement {
         window.addEventListener('message', event => {
             if (event.origin === TARGET_ORIGIN) {
                 if (event.data.type === 'offer') {
+                    this.state = 'waiting-answer';
+
                     this.dispatchEvent(new CustomEvent('offer-received', {
                         detail: {
                             offer: event.data.offer,
                         },
                     }));
-
-                    this.state = 'waiting-answer';
                 }
             }
         }, { signal: this.controller.signal });
@@ -49,7 +52,7 @@ export class AutoHandshake extends LitElement {
 
     disconnectedCallback() {
         super.disconnectedCallback();
-        this.controller.abort();
+        if (this.controller) this.controller.abort();
     }
 
     /** @public @param {string} answer */
@@ -83,7 +86,8 @@ export class AutoHandshake extends LitElement {
 
             if (this.state === 'waiting-close') {
                 return html`
-                    Verbinden...
+                    Verbunden!
+                    <button type="button" @click=${this.closePage}>Zurück zur App</button>
                 `;
             }
 
