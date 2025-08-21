@@ -4,30 +4,34 @@ const UNSECURE_ORIGIN = 'http://localhost:8081';
  * @param {string} offer
  * @returns {Promise<string>}
  */
-const openPageAndSendData = (offer) => new Promise((resolve) => {
+const openPageAndSendData = (offer) => new Promise(async resolve => {
     const w = window.open(UNSECURE_ORIGIN, '_blank');
+    if (!w) return; // never resolve the promise
 
-    if (w) {
-        window.addEventListener('message', (event) => {
-            if (event.origin === UNSECURE_ORIGIN) {
-                const { type, data } = JSON.parse(event.data);
+    const controller = new AbortController();
 
-                if (type === 'connected') {
-                    w.postMessage(JSON.stringify({
-                        type: 'offer',
-                        data: offer,
-                    }), UNSECURE_ORIGIN);
-                }
+    window.addEventListener('message', event => {
+        if (event.origin === UNSECURE_ORIGIN) {
+            const answer = event.data;
+            controller.abort();
 
-                if (type === 'answer') {
-                    w.close();
+            w.close();
+            resolve(answer);
+        }
+    }, { signal: controller.signal });
 
-                    resolve(data);
-                }
-            }
-        });
-    } else {
-        throw new Error('Failed to get window reference');
+    while (true) {
+        if (controller.signal.aborted) {
+            // controller got aborted. Exit the loop
+            break;
+        } else if (w.closed) {
+            // window got closed but controller was not aborted. Therefore aborting controller and exit the loop
+            controller.abort();
+            break;
+        }
+
+        w.postMessage(offer, UNSECURE_ORIGIN);
+        await new Promise(resolve => setTimeout(resolve, 10)); // sleep
     }
 });
 

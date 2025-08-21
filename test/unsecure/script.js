@@ -1,26 +1,14 @@
 const SECURE_ORIGIN = 'https://localhost:8443';
 
-const openerW = window.opener;
-
-if (!openerW) throw new Error('Cannot get reference to opener');
+const controller = new AbortController();
 
 window.addEventListener("message", (event) => {
     if (event.origin === SECURE_ORIGIN) {
-        const { type, data } = JSON.parse(event.data);
+        const offer = event.data;
 
-        if (type === 'offer') {
-            const answer = data + ';answer';
+        const answer = offer + ';answer';
+        event.source.postMessage(answer, SECURE_ORIGIN); // set targetOrigin, '*' must be avoided
 
-            openerW.postMessage(JSON.stringify({
-                type: 'answer',
-                data: answer,
-            }), SECURE_ORIGIN);
-        }
+        controller.abort();
     }
-});
-
-// Tell client, we are connected
-openerW.postMessage(JSON.stringify({
-    type: 'connected',
-    data: '',
-}), SECURE_ORIGIN);
+}, { signal: controller.signal });
