@@ -3,7 +3,8 @@
 
 import { LitElement, html, css } from 'lit';
 
-const TARGET_ORIGIN = 'https://localhost:8443';
+const TARGET_ORIGIN = new URLSearchParams(location.search).get('target_origin');
+if (TARGET_ORIGIN === null) throw new Error('target_origin search param not specified');
 
 export class AutoHandshake extends LitElement {
     static properties = {
