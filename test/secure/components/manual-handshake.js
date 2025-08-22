@@ -94,6 +94,8 @@ export class ManualHandshake extends LitElement {
         }
 
         div.inline input {
+            box-sizing: border-box;
+            width: 40px;
             flex-grow: 1;
         }
 
