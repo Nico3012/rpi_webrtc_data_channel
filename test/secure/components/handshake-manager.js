@@ -14,7 +14,43 @@ export class HandshakeManager extends LitElement {
         offer : { type: String, attribute: false },
     };
 
-    static styles = css``;
+    static styles = css`
+        :host {
+            display: flex;
+            flex-direction: column;
+        }
+
+        div {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        span {
+            margin: 8px;
+            font-family: sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        input {
+            flex-shrink: 0;
+            margin: 8px;
+            padding: 8px;
+            border: 2px solid black;
+            outline: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg%20xmlns='http://www.w3.org/2000/svg'%20width='40'%20height='20'%20viewBox='0%200%2040%2020'><rect%20width='40'%20height='20'%20fill='transparent'/><circle%20cx='10'%20cy='10'%20r='6'%20fill='%23000'/></svg>");
+            box-sizing: border-box;
+            width: 44px;
+            height: 24px;
+            border-radius: 12px;
+        }
+
+        input:checked {
+            background-image: url("data:image/svg+xml;utf8,<svg%20xmlns='http://www.w3.org/2000/svg'%20width='40'%20height='20'%20viewBox='0%200%2040%2020'><rect%20width='40'%20height='20'%20fill='transparent'/><circle%20cx='30'%20cy='10'%20r='6'%20fill='%23000'/></svg>");
+        }
+    `;
 
     constructor() {
         super();
@@ -49,12 +85,12 @@ export class HandshakeManager extends LitElement {
     render() {
         if (this.auto) {
             return html`
-                Auto mode: <input type="checkbox" @change=${this.toggleAutoMode} checked>
+                <div><span>Auto mode:</span><input type="checkbox" @change=${this.toggleAutoMode} checked></div>
                 <auto-handshake .offer=${this.offer} @answer-received=${this.handleAnswerReceived}></auto-handshake>
             `;
         } else {
             return html`
-                Auto mode: <input type="checkbox" @change=${this.toggleAutoMode}>
+                <div><span>Auto mode:</span><input type="checkbox" @change=${this.toggleAutoMode}></div>
                 <manual-handshake .offer=${this.offer} @answer-received=${this.handleAnswerReceived}></manual-handshake>
             `;
         }

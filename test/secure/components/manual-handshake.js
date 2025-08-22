@@ -15,7 +15,93 @@ export class ManualHandshake extends LitElement {
         offerCopied: { type: Boolean, attribute: false },
     };
 
-    static styles = css``;
+    static styles = css`
+        :host {
+            display: flex;
+            flex-direction: column;
+        }
+
+        div.status {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start
+        }
+
+        span.description {
+            color: black;
+            margin: 8px;
+            font-family: serif;
+            font-size: 24px;
+            line-height: 1.5;
+        }
+
+        span.state {
+            flex-shrink: 0;
+            background-color: black;
+            color: white;
+            margin: 8px;
+            font-family: monospace;
+            font-size: 16px;
+            line-height: 1.5;
+            padding: 8px 12px;
+            border-radius: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        input {
+            display: block;
+            appearance: none;
+            margin: 8px;
+            padding: 7px 11px;
+            border-radius: 20px;
+            border: 1px solid black;
+            outline: none;
+            background-color: white;
+            color: black;
+            text-decoration: none;
+            font-family: sans-serif;
+            font-size: 16px;
+            font-weight: normal;
+            line-height: 1.5;
+            text-align: left;
+        }
+
+        button {
+            display: block;
+            appearance: none;
+            margin: 8px;
+            padding: 8px;
+            border-radius: 20px;
+            border: none;
+            outline: none;
+            background-color: black;
+            color: white;
+            text-decoration: none;
+            font-family: sans-serif;
+            font-size: 16px;
+            font-weight: normal;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        div.inline {
+            display: flex;
+            align-items: center;
+        }
+
+        div.inline input {
+            flex-grow: 1;
+        }
+
+        div.inline button {
+            display: flex;
+            padding: 12px;
+        }
+    `;
 
     constructor() {
         super();
@@ -86,8 +172,8 @@ export class ManualHandshake extends LitElement {
     render() {
         if (this.state === 'ready') {
             return html`
-                Kopiere die Controller ID:
-                <div>
+                <div class="status"><span class="description">Kopiere die Controller ID:</span><span class="state">1 / 4</span></div>
+                <div class="inline">
                     <input type="text" name="offer" value=${this.offer} readonly>
                     <button type="button" @click=${this.copyOffer}>${this.offerCopied ? html`
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -106,8 +192,8 @@ export class ManualHandshake extends LitElement {
         if (this.state === 'waiting-answer') {
             return html`
                 <form @submit=${this.handleAnswerSubmit}>
-                    Gebe die Geräte ID ein:
-                    <input type="text" name="answer">
+                    <div class="status"><span class="description">Gebe die Geräte ID ein:</span><span class="state">4 / 4</span></div>
+                    <input type="text" name="answer" placeholder="Geräte ID">
                     <button type="submit">Verbinden</button>
                 </form>
             `;
