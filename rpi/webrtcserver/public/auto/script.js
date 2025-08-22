@@ -6,7 +6,7 @@ autoHandshake.addEventListener('offer-received', async event => {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(event.detail.offer),
+        body: atob(event.detail.offer),
     });
 
     if (!response.ok) {
