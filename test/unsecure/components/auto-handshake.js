@@ -29,6 +29,15 @@ export class AutoHandshake extends LitElement {
             color: black;
         }
 
+        div.small-status {
+            margin: 8px;
+            text-align: left;
+            font-size: 16px;
+            font-family: sans-serif;
+            line-height: 1.5;
+            color: black;
+        }
+
         button {
             display: block;
             appearance: none;
@@ -122,7 +131,7 @@ export class AutoHandshake extends LitElement {
 
             if (this.state === 'waiting-close') {
                 return html`
-                    <div class="status">Verbunden!</div>
+                    <div class="small-status">Verbunden!</div>
                     <button type="button" @click=${this.closePage}>Zurück zur App</button>
                 `;
             }
@@ -130,7 +139,7 @@ export class AutoHandshake extends LitElement {
             return null;
         } else {
             return html`
-                <div class="status">Automatische Verbindung fehlgeschlagen. Führen Sie eine manuelle Verbindung durch.</div>
+                <div class="small-status">Automatische Verbindung fehlgeschlagen. Führen Sie eine manuelle Verbindung durch.</div>
                 <button type="button" @click=${this.closePage}>Zurück zur App</button>
             `;
         }
