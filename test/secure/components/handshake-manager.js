@@ -37,6 +37,7 @@ export class HandshakeManager extends LitElement {
         }
     }
 
+    /** @private */
     handleAnswerReceived(event) {
         this.dispatchEvent(new CustomEvent('answer-received', {
             detail: {

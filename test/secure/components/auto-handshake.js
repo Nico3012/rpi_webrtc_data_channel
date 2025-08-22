@@ -69,6 +69,8 @@ export class AutoHandshake extends LitElement {
         } else {
             window.open(`${TARGET_ORIGIN}/auto/?target_origin=${encodeURIComponent(location.origin)}`, TARGET);
         }
+
+        // state change is managed by the message event
     }
 
     render() {
