@@ -13,7 +13,42 @@ export class AutoHandshake extends LitElement {
         state: { type: String, attribute: false },
     };
 
-    static styles = css``;
+    static styles = css`
+        :host {
+            display: flex;
+            flex-direction: column;
+        }
+
+        div.status {
+            margin: 8px;
+            padding: 7px;
+            border: 1px solid black;
+            text-align: center;
+            font-size: 16px;
+            font-family: monospace;
+            line-height: 1.5;
+            border-radius: 20px;
+            color: black;
+        }
+
+        button {
+            display: block;
+            appearance: none;
+            margin: 8px;
+            padding: 8px;
+            border-radius: 20px;
+            border: none;
+            outline: none;
+            background-color: black;
+            color: white;
+            text-decoration: none;
+            font-family: sans-serif;
+            font-size: 16px;
+            font-weight: normal;
+            line-height: 1.5;
+            text-align: center;
+        }
+    `;
 
     constructor() {
         super();
@@ -82,7 +117,7 @@ export class AutoHandshake extends LitElement {
 
         if (this.state === 'waiting-answer') {
             return html`
-                Controller ID gesendet. Warten auf Geräte ID...
+                <div class="status">Controller ID gesendet. Warten auf Geräte ID...</div>
             `;
         }
 
