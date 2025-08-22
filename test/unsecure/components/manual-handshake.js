@@ -19,7 +19,7 @@ export class ManualHandshake extends LitElement {
         div.status {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start
+            align-items: center;
         }
 
         span.description {
@@ -38,8 +38,8 @@ export class ManualHandshake extends LitElement {
             font-family: monospace;
             font-size: 16px;
             line-height: 1.5;
-            padding: 8px 12px;
-            border-radius: 20px;
+            padding: 4px 10px;
+            border-radius: 16px;
         }
 
         form {
@@ -51,7 +51,7 @@ export class ManualHandshake extends LitElement {
             display: block;
             appearance: none;
             margin: 8px;
-            padding: 7px 11px;
+            padding: 7px 13px;
             border-radius: 20px;
             border: 1px solid black;
             outline: none;
