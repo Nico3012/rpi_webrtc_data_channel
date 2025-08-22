@@ -1,5 +1,4 @@
 import { LitElement, html, css } from 'lit';
-import './handshake-manager.js';
 
 class WebRTCConnection extends LitElement {
 
@@ -13,8 +12,7 @@ class WebRTCConnection extends LitElement {
         hasVideoStream: { type: Boolean },
         requestVideo: { type: Boolean, attribute: 'request-video' },
         hasAudioStream: { type: Boolean },
-        requestAudio: { type: Boolean, attribute: 'request-audio' },
-        offer: { type: String, attribute: false },
+        requestAudio: { type: Boolean, attribute: 'request-audio' }
     };
 
     // lit property
@@ -150,7 +148,6 @@ class WebRTCConnection extends LitElement {
             hasVideo: false,
             hasAudio: false
         };
-        this.offer = '';
     }
 
     // lit property
@@ -192,10 +189,6 @@ class WebRTCConnection extends LitElement {
 
     /** @private */
     renderStepsView() {
-        return html`
-            <handshake-manager .offer=${this.offer} @answer-received=${this.setAnswer2}></handshake-manager>
-        `;
-
         return html`
             <div class="step-container ${this.currentStep !== 1 ? 'hidden' : ''}">
                 <div class="step-header">
@@ -308,12 +301,10 @@ class WebRTCConnection extends LitElement {
             const offer = await this.peerConnection.createOffer();
             await this.peerConnection.setLocalDescription(offer);
 
-            this.offer = btoa(JSON.stringify(this.peerConnection.localDescription));
-
-            // const offerDisplay = this.shadowRoot.querySelector('#offerDisplay');
-            // if (offerDisplay) {
-            //     offerDisplay.value = JSON.stringify(this.peerConnection.localDescription);
-            // }
+            const offerDisplay = this.shadowRoot.querySelector('#offerDisplay');
+            if (offerDisplay) {
+                offerDisplay.value = JSON.stringify(this.peerConnection.localDescription);
+            }
 
         } catch (error) {
             console.error('Error generating offer:', error);
@@ -366,24 +357,6 @@ class WebRTCConnection extends LitElement {
 
             await this.peerConnection.setRemoteDescription(answer);
             answerInput.value = '';
-            this.currentStep = 3;
-            this.updateStatus('Connecting...', false);
-
-        } catch (error) {
-            console.error('Error setting answer:', error);
-            alert('Error setting answer: ' + error.message);
-        }
-    }
-
-    /** @private @param {CustomEvent} e */
-    async setAnswer2(e) {
-        try {
-            const answer = JSON.parse(atob(e.detail.answer));
-            if (!answer.type || !answer.sdp || answer.type !== 'answer') {
-                throw new Error('Invalid device Response Code format');
-            }
-
-            await this.peerConnection.setRemoteDescription(answer);
             this.currentStep = 3;
             this.updateStatus('Connecting...', false);
 
@@ -534,10 +507,10 @@ class WebRTCConnection extends LitElement {
         this.currentStep = 1;
         this.updateStatus('Connection closed manually', false);
 
-        // const answerInput = this.shadowRoot.querySelector('#answerSdp');
-        // if (answerInput) {
-        //     answerInput.value = '';
-        // }
+        const answerInput = this.shadowRoot.querySelector('#answerSdp');
+        if (answerInput) {
+            answerInput.value = '';
+        }
 
         this.requestUpdate();
 
