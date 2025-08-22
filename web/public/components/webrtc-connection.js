@@ -195,45 +195,6 @@ class WebRTCConnection extends LitElement {
         return html`
             <handshake-manager .offer=${this.offer} @answer-received=${this.setAnswer2}></handshake-manager>
         `;
-
-        return html`
-            <div class="step-container ${this.currentStep !== 1 ? 'hidden' : ''}">
-                <div class="step-header">
-                    <h2>Step 1: Copy Controller Code</h2>
-                    <div class="step-indicator">1 / 4</div>
-                </div>
-                <p>Copy your Controller Code to connect to the device:</p>
-                <div class="input-group">
-                    <input type="text" id="offerDisplay" readonly>
-                    <button @click="${this.copyOffer}" class="btn" id="copyOfferBtn">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
-                        </svg>
-                    </button>
-                </div>
-                <a href="http://${this.rpiAddress}:${this.rpiPort}" target="_blank" class="drone-link" @click="${this.nextStep}">
-                    Open device Setup
-                </a>
-            </div>
-
-            <form class="step-container ${this.currentStep !== 2 ? 'hidden' : ''}" @submit="${this.setAnswer}">
-                <div class="step-header">
-                    <h2>Step 2: Paste device Response Code</h2>
-                    <div class="step-indicator">2 / 4</div>
-                </div>
-                <p>Paste the device Response Code you copied from the setup page:</p>
-                <input type="text" id="answerSdp" placeholder="Paste device Response Code here...">
-                <button type="submit" class="btn">Connect</button>
-            </form>
-
-            <div class="step-container ${this.currentStep !== 3 ? 'hidden' : ''}">
-                <div class="step-header">
-                    <h2>Step 3: Connecting to device</h2>
-                    <div class="step-indicator">3 / 4</div>
-                </div>
-                <div class="status">${this.connectionStatus}</div>
-            </div>
-        `;
     }
 
     /** @public @returns {boolean} */
@@ -252,13 +213,6 @@ class WebRTCConnection extends LitElement {
             return Promise.resolve();
         } catch (error) {
             return Promise.reject(error);
-        }
-    }
-
-    /** @private */
-    async nextStep() {
-        if (this.currentStep < 3) {
-            this.currentStep++;
         }
     }
 
@@ -318,60 +272,6 @@ class WebRTCConnection extends LitElement {
         } catch (error) {
             console.error('Error generating offer:', error);
             alert('Error generating offer: ' + error.message);
-        }
-    }
-
-    /** @private */
-    async copyOffer() {
-        const offerDisplay = this.shadowRoot.querySelector('#offerDisplay');
-
-        if (offerDisplay && offerDisplay.value) {
-            offerDisplay.focus();
-            offerDisplay.setSelectionRange(0, offerDisplay.value.length);
-            const copied = document.execCommand('copy');
-            offerDisplay.blur();
-
-            if (copied) {
-                const btn = this.shadowRoot.querySelector('#copyOfferBtn');
-                const originalContent = btn.innerHTML;
-                if (btn) {
-                    btn.innerHTML = `
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                        </svg>
-                    `;
-                    setTimeout(() => {
-                        btn.innerHTML = originalContent;
-                    }, 2000);
-                }
-            }
-        }
-    }
-
-    /** @private @param {SubmitEvent} e */
-    async setAnswer(e) {
-        e.preventDefault();
-
-        try {
-            const answerInput = this.shadowRoot.querySelector('#answerSdp');
-            if (!answerInput || !answerInput.value.trim()) {
-                alert('Please paste the device Response Code first');
-                return;
-            }
-
-            const answer = JSON.parse(answerInput.value);
-            if (!answer.type || !answer.sdp || answer.type !== 'answer') {
-                throw new Error('Invalid device Response Code format');
-            }
-
-            await this.peerConnection.setRemoteDescription(answer);
-            answerInput.value = '';
-            this.currentStep = 3;
-            this.updateStatus('Connecting...', false);
-
-        } catch (error) {
-            console.error('Error setting answer:', error);
-            alert('Error setting answer: ' + error.message);
         }
     }
 
