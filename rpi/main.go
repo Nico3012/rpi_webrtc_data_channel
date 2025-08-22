@@ -1,45 +1,58 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"rpi-webrtc/serialcomm"
 	"rpi-webrtc/webrtcserver"
 	"time"
 )
 
+const winTest = true
+
 func main() {
-	server := webrtcserver.New("8080", "webrtcserver/public", true, true)
-	var port *serialcomm.Port
-	var err error
+	if winTest {
+		server := webrtcserver.New("8081", "webrtcserver/public", false, false)
 
-	for {
-		port, err = serialcomm.NewAuto(9600)
-		if err == nil {
-			break
-		}
+		server.InitReadDataCallback(func(data string) {
+			fmt.Println(data)
+		})
 
-		log.Println(err)
-		time.Sleep(2 * time.Second)
-		log.Println("Try serial initialization again...")
-	}
+		select {}
+	} else {
+		server := webrtcserver.New("8080", "webrtcserver/public", true, true)
+		var port *serialcomm.Port
+		var err error
 
-	defer port.Close()
+		for {
+			port, err = serialcomm.NewAuto(9600)
+			if err == nil {
+				break
+			}
 
-	server.InitReadDataCallback(func(data string) {
-		err := port.SendData(data)
-		if err != nil {
 			log.Println(err)
+			time.Sleep(2 * time.Second)
+			log.Println("Try serial initialization again...")
 		}
-	})
 
-	port.InitDataCallback(func(data string) {
-		if server.IsConnected() {
-			err := server.SendData(data)
+		defer port.Close()
+
+		server.InitReadDataCallback(func(data string) {
+			err := port.SendData(data)
 			if err != nil {
 				log.Println(err)
 			}
-		}
-	})
+		})
 
-	select {}
+		port.InitDataCallback(func(data string) {
+			if server.IsConnected() {
+				err := server.SendData(data)
+				if err != nil {
+					log.Println(err)
+				}
+			}
+		})
+
+		select {}
+	}
 }
