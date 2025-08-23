@@ -5,8 +5,6 @@ class WebRTCConnection extends LitElement {
 
     // lit property
     static properties = {
-        // rpi-address and rpi-port removed: handshake-manager handles server details
-        connectionStatus: { type: String },
         requestVideo: { type: Boolean, attribute: 'request-video' },
         requestAudio: { type: Boolean, attribute: 'request-audio' },
         offer: { type: String, attribute: false },
@@ -125,15 +123,12 @@ class WebRTCConnection extends LitElement {
 
     constructor() {
         super();
-        // minimal state: public attributes preserved per README
-        this.connectionStatus = 'Disconnected';
         this.peerConnection = null;
         this.dataChannel = null;
         this.videoStream = null;
         this.audioStream = null;
         this.requestVideo = false;
         this.requestAudio = false;
-        this._lastConnectionKey = '';
         this.offer = '';
     }
 
@@ -144,19 +139,20 @@ class WebRTCConnection extends LitElement {
 
     // lit property
     render() {
-        return this.isConnected() ? this.renderConnectedView() : this.renderStepsView();
-    }
-
-    /** @private */
-    renderConnectedView() {
-        return html`
-            <div class="step-container">
-                <div class="step-header">
-                    <h2>Device Connected</h2>
+        if (this.isConnected()) {
+            return html`
+                <div class="step-container">
+                    <div class="step-header">
+                        <h2>Device Connected</h2>
+                    </div>
+                    <button @click="${this.closeConnection}" class="btn">Disconnect</button>
                 </div>
-                <button @click="${this.closeConnection}" class="btn">Disconnect</button>
-            </div>
-        `;
+            `;
+        } else {
+            return html`
+                <handshake-manager .offer=${this.offer} @answer-received=${this.setAnswer}></handshake-manager>
+            `;
+        }
     }
 
     /** @public @returns {MediaStream | null} */
@@ -167,11 +163,6 @@ class WebRTCConnection extends LitElement {
     /** @public @returns {MediaStream | null} */
     getAudioStream() {
         return this.requestAudio && this.audioStream ? this.audioStream : null;
-    }
-
-    /** @private */
-    renderStepsView() {
-        return html`<handshake-manager .offer=${this.offer} @answer-received=${this.setAnswer2}></handshake-manager>`;
     }
 
     /** @public @returns {boolean} */
@@ -189,14 +180,13 @@ class WebRTCConnection extends LitElement {
     /** @private */
     async generateOffer() {
         try {
-            this.peerConnection = new RTCPeerConnection({ iceServers: [] });
+            this.peerConnection = new RTCPeerConnection();
 
             this.peerConnection.ontrack = (event) => {
-                console.log('Received remote track:', event.track.kind);
                 if (event.track.kind === 'video') this.videoStream = new MediaStream([event.track]);
                 else if (event.track.kind === 'audio') this.audioStream = new MediaStream([event.track]);
-                this.requestUpdate();
                 this._emitConnectionIfChanged();
+                this.requestUpdate();
             };
 
             if (this.requestVideo) this.peerConnection.addTransceiver('video', { direction: 'recvonly' });
@@ -204,8 +194,40 @@ class WebRTCConnection extends LitElement {
 
             this.dataChannel = this.peerConnection.createDataChannel('messages', { ordered: true });
 
-            this.setupDataChannel();
-            this.setupPeerConnection();
+            this.dataChannel.onopen = () => {
+                console.log('Data channel opened');
+                this._emitConnectionIfChanged();
+                this.requestUpdate();
+            };
+
+            this.dataChannel.onclose = () => {
+                console.log('Data channel closed');
+                this.cleanupMediaResources();
+                this._emitConnectionIfChanged();
+                setTimeout(() => this.generateOffer(), 100);
+                this.requestUpdate();
+            };
+
+            this.dataChannel.onmessage = (event) => {
+                this.dispatchEvent(new CustomEvent('message-received', { detail: { message: event.data } }));
+            };
+
+            this.dataChannel.onerror = (error) => {
+                console.error('Data channel error:', error);
+                this._emitConnectionIfChanged();
+                this.requestUpdate();
+            };
+
+            this.peerConnection.oniceconnectionstatechange = () => {
+                const state = this.peerConnection.iceConnectionState;
+                console.log('ICE connection state:', state);
+                if (state === 'disconnected' || state === 'failed' || state === 'closed') {
+                    this.cleanupMediaResources();
+                    setTimeout(() => this.generateOffer(), 100);
+                }
+                this._emitConnectionIfChanged();
+                this.requestUpdate();
+            };
 
             const offer = await this.peerConnection.createOffer();
             await this.peerConnection.setLocalDescription(offer);
@@ -217,12 +239,11 @@ class WebRTCConnection extends LitElement {
     }
 
     /** @private @param {CustomEvent} e */
-    async setAnswer2(e) {
+    async setAnswer(e) {
         try {
             const answer = JSON.parse(atob(e.detail.answer));
             if (!answer.type || !answer.sdp || answer.type !== 'answer') throw new Error('Invalid answer');
             await this.peerConnection.setRemoteDescription(answer);
-            this.updateStatus('Connecting...', false);
         } catch (error) {
             console.error('Error setting answer:', error);
             alert('Error setting answer: ' + (error.message || error));
@@ -236,80 +257,14 @@ class WebRTCConnection extends LitElement {
     }
 
     /** @private */
-    setupDataChannel() {
-        this.dataChannel.onopen = () => {
-            console.log('Data channel opened');
-            this.updateStatus('Connected', true);
-            this._emitConnectionIfChanged();
-        };
-
-        this.dataChannel.onclose = () => {
-            console.log('Data channel closed');
-            this.cleanupMediaResources();
-            this.updateStatus('Disconnected', false);
-            this._emitConnectionIfChanged();
-            setTimeout(() => this.generateOffer(), 100);
-        };
-
-        this.dataChannel.onmessage = (event) => {
-            console.log('Received message:', event.data);
-            this.dispatchEvent(new CustomEvent('message-received', { detail: { message: event.data }, bubbles: true }));
-        };
-
-        this.dataChannel.onerror = (error) => {
-            console.error('Data channel error:', error);
-            this.updateStatus('Connection Error', false);
-            this._emitConnectionIfChanged();
-        };
-    }
-
-    /** @private */
-    setupPeerConnection() {
-        this.peerConnection.oniceconnectionstatechange = () => {
-            const state = this.peerConnection.iceConnectionState;
-            console.log('ICE connection state:', state);
-            if (state === 'connected' || state === 'completed') {
-                this.updateStatus('Connected', true);
-            } else if (state === 'disconnected' || state === 'failed') {
-                this.cleanupMediaResources();
-                this.updateStatus(state === 'disconnected' ? 'Disconnected' : 'Connection Failed', false);
-                setTimeout(() => this.generateOffer(), 100);
-            }
-            this._emitConnectionIfChanged();
-        };
-    }
-
-    /** @private */
-    updateStatus(message, isConnected = false) {
-        this.connectionStatus = message;
-        // connected state is derived from dataChannel, no separate flag
-        this.requestUpdate();
-    }
-
-    /** @private */
     closeConnection() {
-        this.cleanupMediaResources();
         if (this.dataChannel) this.dataChannel.close();
         if (this.peerConnection) this.peerConnection.close();
-        this.updateStatus('Connection closed manually', false);
-        this._emitConnectionIfChanged();
-        setTimeout(() => this.generateOffer(), 100);
     }
 
     /** @private */
     _emitConnectionIfChanged() {
-        const detail = {
-            connected: this.isConnected(),
-            status: this.connectionStatus,
-            hasVideo: !!this.videoStream,
-            hasAudio: !!this.audioStream
-        };
-        const key = JSON.stringify(detail);
-        if (key !== this._lastConnectionKey) {
-            this._lastConnectionKey = key;
-            this.dispatchEvent(new CustomEvent('connection-changed', { detail, bubbles: true }));
-            console.log('Connection state changed:', detail);
-        }
+        this.dispatchEvent(new CustomEvent('connection-changed'));
     }
 }
 
