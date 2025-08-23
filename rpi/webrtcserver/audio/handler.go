@@ -84,10 +84,10 @@ func (ah *Handler) streamAudio() error {
 	defer udpConn.Close()
 
 	ffmpeg := exec.Command(
-		// LINUX:
+		// WINDOWS PRIVAT:
 
 		"ffmpeg",
-		"-f", "alsa", "-i", "plughw:3,0", // input device
+		"-f", "dshow", "-i", "audio=Mikrofonarray (Intel® Smart Sound Technologie für digitale Mikrofone)", // input device
 		"-c:a", "libopus", // use opus codec
 		"-frame_duration", "20", // 20ms frames
 		"-application", "voip", // Low-latency mode
@@ -95,6 +95,18 @@ func (ah *Handler) streamAudio() error {
 		"-vn",       // Disable video
 		"-f", "rtp", // RTP output format
 		fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
+
+		// LINUX:
+
+		// "ffmpeg",
+		// "-f", "alsa", "-i", "plughw:3,0", // input device
+		// "-c:a", "libopus", // use opus codec
+		// "-frame_duration", "20", // 20ms frames
+		// "-application", "voip", // Low-latency mode
+		// "-b:a", "48k", // Bitrate
+		// "-vn",       // Disable video
+		// "-f", "rtp", // RTP output format
+		// fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
 	)
 
 	// Capture FFmpeg's stdout and stderr

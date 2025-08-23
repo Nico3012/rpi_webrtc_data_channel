@@ -86,7 +86,7 @@ func (vh *Handler) streamCamera() error {
 
 	// Setup FFmpeg to capture directly from the camera and stream as RTP
 	ffmpeg := exec.Command(
-		// WINDOWS:
+		// WINDOWS ARBEIT:
 
 		// "ffmpeg",
 		// "-f", "dshow", // input mode
@@ -101,19 +101,34 @@ func (vh *Handler) streamCamera() error {
 		// "-f", "rtp", // RTP output format
 		// fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
 
-		// LINUX:
+		// WINDOWS PRIVAT:
 
 		"ffmpeg",
-		"-i", "/dev/video0", // input device
+		"-f", "dshow", // input mode
+		"-i", "video=HP Wide Vision 9MP camera", // input device
 		"-c:v", "libvpx", // use VP8 codec
-		"-deadline", "good", // good quality encoding preset (use 'realtime' for better performance or 'best' for better quality)
-		"-cpu-used", "6", // moderate CPU usage for better quality (up to 8 for best performance)
+		"-deadline", "realtime", // fastest encoding preset
+		"-cpu-used", "8", // minimal CPU usage
 		"-video_size", "640x480", // video resolution
-		"-framerate", "60", // frame rate
-		"-b:v", "1.5M", // Bitrate
+		"-framerate", "30", // frame rate
+		"-b:v", "2M", // Bitrate
 		"-an",       // Disable audio
 		"-f", "rtp", // RTP output format
 		fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
+
+		// LINUX:
+
+		// "ffmpeg",
+		// "-i", "/dev/video0", // input device
+		// "-c:v", "libvpx", // use VP8 codec
+		// "-deadline", "good", // good quality encoding preset (use 'realtime' for better performance or 'best' for better quality)
+		// "-cpu-used", "6", // moderate CPU usage for better quality (up to 8 for best performance)
+		// "-video_size", "640x480", // video resolution
+		// "-framerate", "60", // frame rate
+		// "-b:v", "1.5M", // Bitrate
+		// "-an",       // Disable audio
+		// "-f", "rtp", // RTP output format
+		// fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
 	)
 
 	// Capture FFmpeg's stdout and stderr

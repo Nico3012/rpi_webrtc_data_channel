@@ -12,7 +12,7 @@ const winTest = true
 
 func main() {
 	if winTest {
-		server := webrtcserver.New("8081", "webrtcserver/public", false, false)
+		server := webrtcserver.New("8081", "webrtcserver/public", true, true)
 
 		server.InitReadDataCallback(func(data string) {
 			fmt.Println(data)
