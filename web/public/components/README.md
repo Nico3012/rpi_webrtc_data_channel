@@ -4,7 +4,7 @@
 <webrtc-connection rpi-address="..." rpi-port="..." request-video request-audio></webrtc-connection>
 ```
 ### Events
-`message-received`
+`message-received` event.details.message
 `connection-changed`
 ### Methods
 getVideoStream() => MediaStream | null
