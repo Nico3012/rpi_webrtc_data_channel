@@ -24,27 +24,29 @@
 </head>
 <body>
     <div class="container">
-        <pwa-guide></pwa-guide>
-        <cache-manager></cache-manager>
-        <details>
-            <summary>Connection</summary>
-            <!-- <webrtc-connection rpi-address="10.3.141.1" rpi-port="8080" request-video request-audio></webrtc-connection> -->
-            <webrtc-connection request-video request-audio></webrtc-connection>
-        </details>
-        <div class="position">
-            <button id="start-position">Start</button>
-            <span id="position">x: Unknown; y: Unknown; z: Unknown</span>
-            <button id="stop-position">Stop</button>
-        </div>
-        <div class="controller">
-            <digital-joystick id="left-joystick" precise stick-y default-y="-1"></digital-joystick>
-            <div class="media">
-                <div class="video">
-                    <video id="camera" autoplay playsinline muted></video>
-                </div>
-                <audio id="microphone" autoplay></audio>
+        <pwa-guide app-name="Device Controller" app-icon-src="/assets/icon-192.png"></pwa-guide>
+        <div class="wrapper">
+            <cache-manager></cache-manager>
+            <details>
+                <summary>Connection</summary>
+                <!-- <webrtc-connection rpi-address="10.3.141.1" rpi-port="8080" request-video request-audio></webrtc-connection> -->
+                <webrtc-connection request-video request-audio></webrtc-connection>
+            </details>
+            <div class="position">
+                <button id="start-position">Start</button>
+                <span id="position">x: Unknown; y: Unknown; z: Unknown</span>
+                <button id="stop-position">Stop</button>
             </div>
-            <digital-joystick id="right-joystick" precise></digital-joystick>
+            <div class="controller">
+                <digital-joystick id="left-joystick" precise stick-y default-y="-1"></digital-joystick>
+                <div class="media">
+                    <div class="video">
+                        <video id="camera" autoplay playsinline muted></video>
+                    </div>
+                    <audio id="microphone" autoplay></audio>
+                </div>
+                <digital-joystick id="right-joystick" precise></digital-joystick>
+            </div>
         </div>
     </div>
 </body>

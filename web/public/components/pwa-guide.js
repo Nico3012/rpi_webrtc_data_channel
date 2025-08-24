@@ -1,3 +1,5 @@
+// set the 'app-icon-src' and 'app-name' attributes on this element
+
 import { LitElement, html, css } from 'lit';
 
 export class PwaGuide extends LitElement {
@@ -6,62 +8,87 @@ export class PwaGuide extends LitElement {
         info: { type: Boolean, attribute: false }, // Display info or not
         guide: { type: String, attribute: false }, // the name of the guide, that is shown e.g. ios
         state: { type: String, attribute: false }, // 'guide' | 'installable' | 'installing' | 'installed'
+        appIconSrc: { type: String, attribute: 'app-icon-src' },
+        appName: { type: String, attribute: 'app-name' },
     };
 
     static styles = css`
-        div.notification {
-            position: fixed;
-            right: 16px;
-            top: 16px;
+        :host {
             display: flex;
-            align-items: center;
-            background-color: white;
-            color: black;
-            box-shadow: 4px 4px 16px rgba(0, 0, 0, 0.3);
-            border-radius: 26px;
-            z-index: 999;
-            padding-right: 14px;
+            flex-direction: column;
         }
 
-        div.info {
-            padding: 8px;
-            font-family: monospace;
-            font-size: 24px;
-            line-height: 1.5;
+        div.notification {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             background-color: black;
             color: white;
-            width: 36px;
-            text-align: center;
-            border-radius: 26px;
+            padding: 4px;
         }
 
-        div.notification span {
+        div.app-description {
+            display: flex;
+            align-items: center;
+        }
+
+        div.app-description img {
+            margin: 4px;
+            width: 28px;
+            height: 28px;
+            border-radius: 20%;
+        }
+
+        div.app-name {
+            display: flex;
+            flex-direction: column;
+        }
+
+        h6 {
+            margin: 4px;
+            margin-bottom: 2px;
+            padding: 0;
+            font-size: 12px;
+            font-weight: bolder;
             font-family: sans-serif;
-            font-size: 16px;
-            line-height: 1.5;
-            margin: 8px;
+            line-height: 1;
+            text-decoration: none;
+        }
+
+        p {
+            margin: 4px;
+            margin-top: 2px;
+            padding: 0;
+            font-size: 12px;
+            font-weight: lighter;
+            font-family: sans-serif;
+            line-height: 1;
+            text-decoration: none;
         }
 
         button.close {
+            flex-shrink: 0;
+            margin: 4px;
             display: block;
             appearance: none;
             padding: 3px;
-            border-radius: 0;
             border: none;
             outline: none;
-            background-color: black;
-            color: white;
+            background-color: white;
+            color: black;
             text-decoration: none;
             font-family: monospace;
             font-size: 12px;
             font-weight: normal;
-            line-height: 1.5;
+            line-height: 1.0;
             text-align: center;
             cursor: pointer;
-            width: 18px;
-            box-sizing: content-box;
             border-radius: 12px;
+            width: 12px;
+            box-sizing: content-box;
         }
+
+        /* Ende des info styles */
 
         div.wrapper {
             position: fixed;
@@ -246,6 +273,12 @@ export class PwaGuide extends LitElement {
         /** @private @type {BeforeInstallPromptEvent | null} */
         this.event = null;
 
+        /** @private */
+        this.appIconSrc = '';
+
+        /** @private */
+        this.appName = '';
+
         window.addEventListener('beforeinstallprompt', (event) => {
             event.preventDefault();
             this.state = 'installable';
@@ -310,8 +343,13 @@ export class PwaGuide extends LitElement {
                     case true:
                         return html`
                             <div class="notification" @click=${this.notificationClick}>
-                                <div class="info">i</div>
-                                <span>App installieren</span>
+                                <div class="app-description">
+                                    <img src=${this.appIconSrc} alt=${this.appName}>
+                                    <div class="app-name">
+                                        <h6>${this.appName}</h6>
+                                        <p>App installieren</p>
+                                    </div>
+                                </div>
                                 <button class="close" @click=${this.notificationClose}>x</button>
                             </div>
                         `;
@@ -321,7 +359,7 @@ export class PwaGuide extends LitElement {
             default:
                 return html`
                     <div class="wrapper" @click=${this.closeGuide}>
-                        <div class="container" @click=${(e) => e.stopPropagation()}>
+                        <div class="container" @click=${e => e.stopPropagation()}>
                             <h2>App installieren</h2>
                             <button class="primary" @click=${this.installPWA} ?hidden=${this.state !== 'installable'}>Installieren</button>
                             <div class="status" ?hidden=${this.state !== 'installing'}>
