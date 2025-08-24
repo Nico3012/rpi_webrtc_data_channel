@@ -236,10 +236,12 @@ class WebRTCConnection extends LitElement {
     async setAnswer(e) {
         try {
             const answer = JSON.parse(atob(e.detail.answer));
+            if (typeof answer !== 'object' || answer.type !== "answer") throw new Error('Please provide a valid answer!');
             await this.peerConnection.setRemoteDescription(answer);
         } catch (error) {
             console.error('Error setting answer:', error);
             alert(`Error setting answer: ${error.message}`);
+            this.reset();
         }
     }
 
