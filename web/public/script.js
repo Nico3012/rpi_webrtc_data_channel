@@ -4,7 +4,7 @@ const microphoneElement = document.getElementById('microphone');
 const leftJoystick = document.getElementById('left-joystick');
 const rightJoystick = document.getElementById('right-joystick');
 
-webrtcConnection.addEventListener('connection-changed', () => {
+webrtcConnection.addEventListener('connection-update', () => {
     // Update video element with current stream (or null when disconnected)
     const videoStream = webrtcConnection.getVideoStream();
     cameraElement.srcObject = videoStream;
