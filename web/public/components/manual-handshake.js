@@ -1,10 +1,10 @@
+// Setzen Sie 'target-origin' als attribut z.B. target-origin="http://10.3.141.1:8080"
 // Vor klick auf Verbinden wird erwaretet, dass die property offer: string gesetzt wird.
 // Dieses custom element feuert ein CustomEvent namens 'answer-received', welches die answer über event.detail.answer als string bereitstellt.
 // Das Nach erfolgreichem Handshake setzt sich das Element auf den Anfangsstatus zurück
 
 import { LitElement, html, css } from 'lit';
 
-const TARGET_ORIGIN = 'http://192.168.2.53:8081';
 const TARGET = 'myPopupWindow';
 const FORCE_MANUAL_MODE = false;
 
@@ -13,6 +13,7 @@ export class ManualHandshake extends LitElement {
         state: { type: String, attribute: false },
         offer: { type: String, attribute: false },
         offerCopied: { type: Boolean, attribute: false },
+        targetOrigin: { type: String, attribute: 'target-origin' },
     };
 
     static styles = css`
@@ -116,6 +117,9 @@ export class ManualHandshake extends LitElement {
 
         /** @private */
         this.offerCopied = false;
+
+        /** @private */
+        this.targetOrigin = '';
     }
 
     /** @public @param {string} offer */
@@ -146,9 +150,9 @@ export class ManualHandshake extends LitElement {
     /** @private */
     openPage() {
         if (FORCE_MANUAL_MODE) {
-            window.open(`${TARGET_ORIGIN}/manual/`, TARGET, 'noopener');
+            window.open(`${this.targetOrigin}/manual/`, TARGET, 'noopener');
         } else {
-            window.open(`${TARGET_ORIGIN}/manual/`, TARGET);
+            window.open(`${this.targetOrigin}/manual/`, TARGET);
         }
 
         // display waiting answer state

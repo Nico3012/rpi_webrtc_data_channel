@@ -1,3 +1,4 @@
+// set "target-origin" string attribute e.g. target-origin="http://10.3.141.1:8080"
 // set "request-video" and "request-audio" boolean attributes to enable video- and/or audio support on this component.
 // use the isConnected() method to get a boolean, wether the data channel can be used.
 // use the sendData(data: string) method to send data to the client
@@ -16,6 +17,7 @@ class WebRTCConnection extends LitElement {
         requestAudio: { type: Boolean, attribute: 'request-audio' },
         offer: { type: String, attribute: false },
         state: { type: String, attribute: false },
+        targetOrigin: { type: String, attribute: 'target-origin' },
     };
 
     // lit property
@@ -58,16 +60,27 @@ class WebRTCConnection extends LitElement {
 
     constructor() {
         super();
+
+        /** @private */
         this.peerConnection = null;
+        /** @private */
         this.dataChannel = null;
+        /** @private */
         this.videoStream = null;
+        /** @private */
         this.audioStream = null;
+        /** @private */
         this.requestVideo = false;
+        /** @private */
         this.requestAudio = false;
+        /** @private */
         this.offer = '';
 
         /** @private @type {'disconnected' | 'connecting' | 'connected'} */
         this.state = 'disconnected';
+
+        /** @private */
+        this.targetOrigin = '';
 
         /** @private @type {AbortController | null} */
         this.controller = null;
@@ -267,7 +280,7 @@ class WebRTCConnection extends LitElement {
 
         if (this.state === 'disconnected') {
             return html`
-                <handshake-manager .offer=${this.offer} @answer-received=${this.setAnswer}></handshake-manager>
+                <handshake-manager target-origin=${this.targetOrigin} .offer=${this.offer} @answer-received=${this.setAnswer}></handshake-manager>
             `;
         }
 

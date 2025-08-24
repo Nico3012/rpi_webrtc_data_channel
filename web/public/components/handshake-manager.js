@@ -1,3 +1,4 @@
+// Setzen Sie 'target-origin' als attribut z.B. target-origin="http://10.3.141.1:8080"
 // Vor klick auf Verbinden wird erwaretet, dass die property offer: string gesetzt wird.
 // Dieses custom element feuert ein CustomEvent namens 'answer-received', welches die answer über event.detail.answer als string bereitstellt.
 // Das Nach erfolgreichem Handshake setzt sich das Element auf den Anfangsstatus zurück
@@ -12,6 +13,7 @@ export class HandshakeManager extends LitElement {
     static properties = {
         auto: { type: Boolean, attribute: false },
         offer : { type: String, attribute: false },
+        targetOrigin: { type: String, attribute: 'target-origin' },
     };
 
     static styles = css`
@@ -60,6 +62,9 @@ export class HandshakeManager extends LitElement {
 
         /** @public @type {string} */
         this.offer = '';
+
+        /** @private */
+        this.targetOrigin = '';
     }
 
     /** @private @param {Event} event */
@@ -86,12 +91,12 @@ export class HandshakeManager extends LitElement {
         if (this.auto) {
             return html`
                 <div><span>Auto mode:</span><input type="checkbox" @change=${this.toggleAutoMode} checked></div>
-                <auto-handshake .offer=${this.offer} @answer-received=${this.handleAnswerReceived}></auto-handshake>
+                <auto-handshake target-origin=${this.targetOrigin} .offer=${this.offer} @answer-received=${this.handleAnswerReceived}></auto-handshake>
             `;
         } else {
             return html`
                 <div><span>Auto mode:</span><input type="checkbox" @change=${this.toggleAutoMode}></div>
-                <manual-handshake .offer=${this.offer} @answer-received=${this.handleAnswerReceived}></manual-handshake>
+                <manual-handshake target-origin=${this.targetOrigin} .offer=${this.offer} @answer-received=${this.handleAnswerReceived}></manual-handshake>
             `;
         }
     }

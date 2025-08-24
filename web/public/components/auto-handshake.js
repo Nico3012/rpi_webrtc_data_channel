@@ -1,16 +1,17 @@
+// Setzen Sie 'target-origin' als attribut z.B. target-origin="http://10.3.141.1:8080"
 // Vor klick auf Verbinden wird erwaretet, dass die property offer: string gesetzt wird.
 // Dieses custom element feuert ein CustomEvent namens 'answer-received', welches die answer über event.detail.answer als string bereitstellt.
 // Das Nach erfolgreichem Handshake setzt sich das Element auf den Anfangsstatus zurück
 
 import { LitElement, html, css } from 'lit';
 
-const TARGET_ORIGIN = 'http://192.168.2.53:8081';
 const TARGET = 'myPopupWindow';
 const FORCE_MANUAL_MODE = false;
 
 export class AutoHandshake extends LitElement {
     static properties = {
         state: { type: String, attribute: false },
+        targetOrigin: { type: String, attribute: 'target-origin' },
     };
 
     static styles = css`
@@ -56,6 +57,9 @@ export class AutoHandshake extends LitElement {
         /** @private @type {'ready' | 'waiting-answer'} */
         this.state = 'ready';
 
+        /** @private */
+        this.targetOrigin = '';
+
         /** @public @type {string} */
         this.offer = '';
 
@@ -69,12 +73,12 @@ export class AutoHandshake extends LitElement {
         this.controller = new AbortController();
 
         window.addEventListener('message', event => {
-            if (event.origin === TARGET_ORIGIN) {
+            if (event.origin === this.targetOrigin) {
                 if (event.data.type === 'auto') {
                     event.source.postMessage({
                         type: 'offer',
                         offer: this.offer,
-                    }, TARGET_ORIGIN);
+                    }, this.targetOrigin);
 
                     this.state = 'waiting-answer';
                 }
@@ -100,9 +104,9 @@ export class AutoHandshake extends LitElement {
     /** @private */
     openPage() {
         if (FORCE_MANUAL_MODE) {
-            window.open(`${TARGET_ORIGIN}/auto/?target_origin=${encodeURIComponent(location.origin)}`, TARGET, 'noopener');
+            window.open(`${this.targetOrigin}/auto/?target_origin=${encodeURIComponent(location.origin)}`, TARGET, 'noopener');
         } else {
-            window.open(`${TARGET_ORIGIN}/auto/?target_origin=${encodeURIComponent(location.origin)}`, TARGET);
+            window.open(`${this.targetOrigin}/auto/?target_origin=${encodeURIComponent(location.origin)}`, TARGET);
         }
 
         // state change is managed by the message event
