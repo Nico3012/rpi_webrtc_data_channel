@@ -1,3 +1,10 @@
+// set "request-video" and "request-audio" boolean attributes to enable video- and/or audio support on this component.
+// use the isConnected() method to get a boolean, wether the data channel can be used.
+// use the sendData(data: string) method to send data to the client
+// use the getVideoStream() and getAudioStream() methods to get the current MediaStream. If no MediaStream is available, null is returned
+// listen for "connection-update" event, to be notified, when anything changes on the connection
+// listen for "message-received" event to access incomming messages with event.detail.message
+
 import { LitElement, html, css } from 'lit';
 import './handshake-manager.js';
 
