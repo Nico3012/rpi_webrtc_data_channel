@@ -170,11 +170,7 @@ func (vh *Handler) streamCamera() error {
 		ffmpeg.Stdout = io.Discard
 	}
 
-	if _, exists := os.LookupEnv("FFMPEG_LOG_STDERR"); exists {
-		ffmpeg.Stderr = log.Writer()
-	} else {
-		ffmpeg.Stderr = io.Discard
-	}
+	ffmpeg.Stderr = log.Writer()
 
 	// Start the FFmpeg process
 	if err := ffmpeg.Start(); err != nil {
