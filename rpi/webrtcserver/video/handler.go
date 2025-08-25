@@ -90,11 +90,20 @@ func (vh *Handler) streamCamera() error {
 	// Setup FFmpeg to capture directly from the camera and stream as RTP
 	var ffmpeg *exec.Cmd
 
+	_, logWarning := os.LookupEnv("FFMPEG_LOG_WARNING")
+
+	var logLevel string
+	if logWarning {
+		logLevel = "warning"
+	} else {
+		logLevel = "error"
+	}
+
 	switch videoMode := os.Getenv("VIDEO_MODE"); videoMode {
 	case "linux": // LINUX
 		ffmpeg = exec.Command(
 			"ffmpeg",
-			"-loglevel", "warning",
+			"-loglevel", logLevel,
 			"-hide_banner",      // removes version/config dump
 			"-nostats",          // removes the periodic "time=... bitrate=..." progress lines
 			"-i", "/dev/video0", // input device
@@ -111,7 +120,7 @@ func (vh *Handler) streamCamera() error {
 	case "windows-work": // WINDOWS ARBEIT
 		ffmpeg = exec.Command(
 			"ffmpeg",
-			"-loglevel", "warning",
+			"-loglevel", logLevel,
 			"-hide_banner", // removes version/config dump
 			"-nostats",     // removes the periodic "time=... bitrate=..." progress lines
 			"-f", "dshow",  // input mode
@@ -129,7 +138,7 @@ func (vh *Handler) streamCamera() error {
 	case "windows-privat": // WINDOWS PRIVAT
 		ffmpeg = exec.Command(
 			"ffmpeg",
-			"-loglevel", "warning",
+			"-loglevel", logLevel,
 			"-hide_banner", // removes version/config dump
 			"-nostats",     // removes the periodic "time=... bitrate=..." progress lines
 			"-f", "dshow",  // input mode
@@ -147,7 +156,7 @@ func (vh *Handler) streamCamera() error {
 	default: // VIDEO
 		ffmpeg = exec.Command(
 			"ffmpeg",
-			"-loglevel", "warning",
+			"-loglevel", logLevel,
 			"-hide_banner", // removes version/config dump
 			"-nostats",     // removes the periodic "time=... bitrate=..." progress lines
 			"-re",          // realtime speed
@@ -164,12 +173,7 @@ func (vh *Handler) streamCamera() error {
 		)
 	}
 
-	if _, exists := os.LookupEnv("FFMPEG_LOG_STDOUT"); exists {
-		ffmpeg.Stdout = log.Writer()
-	} else {
-		ffmpeg.Stdout = io.Discard
-	}
-
+	ffmpeg.Stdout = io.Discard // all logs in ffmpeg go to stderr
 	ffmpeg.Stderr = log.Writer()
 
 	// Start the FFmpeg process

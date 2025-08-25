@@ -89,11 +89,20 @@ func (ah *Handler) streamAudio() error {
 	// Setup FFmpeg to capture directly from the camera and stream as RTP
 	var ffmpeg *exec.Cmd
 
+	_, logWarning := os.LookupEnv("FFMPEG_LOG_WARNING")
+
+	var logLevel string
+	if logWarning {
+		logLevel = "warning"
+	} else {
+		logLevel = "error"
+	}
+
 	switch audioMode := os.Getenv("AUDIO_MODE"); audioMode {
 	case "linux": // LINUX
 		ffmpeg = exec.Command(
 			"ffmpeg",
-			"-loglevel", "warning",
+			"-loglevel", logLevel,
 			"-hide_banner",                   // removes version/config dump
 			"-nostats",                       // removes the periodic "time=... bitrate=..." progress lines
 			"-f", "alsa", "-i", "plughw:3,0", // input device
@@ -108,7 +117,7 @@ func (ah *Handler) streamAudio() error {
 	case "windows-work": // WINDOWS ARBEIT
 		ffmpeg = exec.Command(
 			"ffmpeg",
-			"-loglevel", "warning",
+			"-loglevel", logLevel,
 			"-hide_banner",                                           // removes version/config dump
 			"-nostats",                                               // removes the periodic "time=... bitrate=..." progress lines
 			"-f", "dshow", "-i", "audio=Mikrofon (Realtek(R) Audio)", // input device
@@ -123,7 +132,7 @@ func (ah *Handler) streamAudio() error {
 	case "windows-privat": // WINDOWS PRIVAT
 		ffmpeg = exec.Command(
 			"ffmpeg",
-			"-loglevel", "warning",
+			"-loglevel", logLevel,
 			"-hide_banner",                                                                                     // removes version/config dump
 			"-nostats",                                                                                         // removes the periodic "time=... bitrate=..." progress lines
 			"-f", "dshow", "-i", "audio=Mikrofonarray (Intel® Smart Sound Technologie für digitale Mikrofone)", // input device
@@ -138,7 +147,7 @@ func (ah *Handler) streamAudio() error {
 	default: // AUDIO
 		ffmpeg = exec.Command(
 			"ffmpeg",
-			"-loglevel", "warning",
+			"-loglevel", logLevel,
 			"-hide_banner", // removes version/config dump
 			"-nostats",     // removes the periodic "time=... bitrate=..." progress lines
 			"-re",          // realtime speed
@@ -153,12 +162,7 @@ func (ah *Handler) streamAudio() error {
 		)
 	}
 
-	if _, exists := os.LookupEnv("FFMPEG_LOG_STDOUT"); exists {
-		ffmpeg.Stdout = log.Writer()
-	} else {
-		ffmpeg.Stdout = io.Discard
-	}
-
+	ffmpeg.Stdout = io.Discard // all logs in ffmpeg go to stderr
 	ffmpeg.Stderr = log.Writer()
 
 	// Start the FFmpeg process
