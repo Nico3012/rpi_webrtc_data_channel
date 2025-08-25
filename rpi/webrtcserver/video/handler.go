@@ -94,6 +94,9 @@ func (vh *Handler) streamCamera() error {
 	case "linux": // LINUX
 		ffmpeg = exec.Command(
 			"ffmpeg",
+			"-loglevel", "warning",
+			"-hide_banner",      // removes version/config dump
+			"-nostats",          // removes the periodic "time=... bitrate=..." progress lines
 			"-i", "/dev/video0", // input device
 			"-c:v", "libvpx", // use VP8 codec
 			"-deadline", "realtime", // good quality encoding preset (use 'realtime' for better performance or 'best' for better quality)
@@ -108,7 +111,10 @@ func (vh *Handler) streamCamera() error {
 	case "windows-work": // WINDOWS ARBEIT
 		ffmpeg = exec.Command(
 			"ffmpeg",
-			"-f", "dshow", // input mode
+			"-loglevel", "warning",
+			"-hide_banner", // removes version/config dump
+			"-nostats",     // removes the periodic "time=... bitrate=..." progress lines
+			"-f", "dshow",  // input mode
 			"-i", "video=HP HD Camera", // input device
 			"-c:v", "libvpx", // use VP8 codec
 			"-deadline", "realtime", // fastest encoding preset
@@ -123,7 +129,10 @@ func (vh *Handler) streamCamera() error {
 	case "windows-privat": // WINDOWS PRIVAT
 		ffmpeg = exec.Command(
 			"ffmpeg",
-			"-f", "dshow", // input mode
+			"-loglevel", "warning",
+			"-hide_banner", // removes version/config dump
+			"-nostats",     // removes the periodic "time=... bitrate=..." progress lines
+			"-f", "dshow",  // input mode
 			"-i", "video=HP Wide Vision 9MP camera", // input device
 			"-c:v", "libvpx", // use VP8 codec
 			"-deadline", "realtime", // fastest encoding preset
@@ -138,7 +147,10 @@ func (vh *Handler) streamCamera() error {
 	default: // VIDEO
 		ffmpeg = exec.Command(
 			"ffmpeg",
-			"-re", // realtime speed
+			"-loglevel", "warning",
+			"-hide_banner", // removes version/config dump
+			"-nostats",     // removes the periodic "time=... bitrate=..." progress lines
+			"-re",          // realtime speed
 			"-f", "lavfi", "-i", "testsrc=size=640x480:rate=30",
 			"-c:v", "libvpx", // use VP8 codec
 			"-deadline", "realtime", // good quality encoding preset (use 'realtime' for better performance or 'best' for better quality)

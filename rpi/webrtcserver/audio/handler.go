@@ -93,6 +93,9 @@ func (ah *Handler) streamAudio() error {
 	case "linux": // LINUX
 		ffmpeg = exec.Command(
 			"ffmpeg",
+			"-loglevel", "warning",
+			"-hide_banner",                   // removes version/config dump
+			"-nostats",                       // removes the periodic "time=... bitrate=..." progress lines
 			"-f", "alsa", "-i", "plughw:3,0", // input device
 			"-c:a", "libopus", // use opus codec
 			"-frame_duration", "20", // 20ms frames
@@ -105,6 +108,9 @@ func (ah *Handler) streamAudio() error {
 	case "windows-work": // WINDOWS ARBEIT
 		ffmpeg = exec.Command(
 			"ffmpeg",
+			"-loglevel", "warning",
+			"-hide_banner",                                           // removes version/config dump
+			"-nostats",                                               // removes the periodic "time=... bitrate=..." progress lines
 			"-f", "dshow", "-i", "audio=Mikrofon (Realtek(R) Audio)", // input device
 			"-c:a", "libopus", // use opus codec
 			"-frame_duration", "20", // 20ms frames
@@ -117,6 +123,9 @@ func (ah *Handler) streamAudio() error {
 	case "windows-privat": // WINDOWS PRIVAT
 		ffmpeg = exec.Command(
 			"ffmpeg",
+			"-loglevel", "warning",
+			"-hide_banner",                                                                                     // removes version/config dump
+			"-nostats",                                                                                         // removes the periodic "time=... bitrate=..." progress lines
 			"-f", "dshow", "-i", "audio=Mikrofonarray (Intel® Smart Sound Technologie für digitale Mikrofone)", // input device
 			"-c:a", "libopus", // use opus codec
 			"-frame_duration", "20", // 20ms frames
@@ -129,7 +138,10 @@ func (ah *Handler) streamAudio() error {
 	default: // AUDIO
 		ffmpeg = exec.Command(
 			"ffmpeg",
-			"-re", // realtime speed
+			"-loglevel", "warning",
+			"-hide_banner", // removes version/config dump
+			"-nostats",     // removes the periodic "time=... bitrate=..." progress lines
+			"-re",          // realtime speed
 			"-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000",
 			"-c:a", "libopus", // use opus codec
 			"-frame_duration", "20", // 20ms frames
