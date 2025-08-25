@@ -102,7 +102,6 @@ func (s *Server) SendData(data string) error {
 		return fmt.Errorf("data channel is not open")
 	}
 
-	fmt.Printf("Sending data: %s\n", data)
 	return s.dataChannel.SendText(data)
 }
 
@@ -255,7 +254,6 @@ func (s *Server) processOffer(offerType, offerSDP string) (string, error) {
 		// Handle incoming messages
 		dc.OnMessage(func(msg webrtc.DataChannelMessage) {
 			message := string(msg.Data)
-			fmt.Printf("Received message from web client: %s\n", message)
 
 			// Call the user-defined callback if set
 			if s.messageCallback != nil {

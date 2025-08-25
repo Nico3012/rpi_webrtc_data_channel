@@ -3,6 +3,7 @@ package audio
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -140,9 +141,17 @@ func (ah *Handler) streamAudio() error {
 		)
 	}
 
-	// Capture FFmpeg's stdout and stderr
-	ffmpeg.Stdout = log.Writer()
-	ffmpeg.Stderr = log.Writer()
+	if _, exists := os.LookupEnv("FFMPEG_LOG_STDOUT"); exists {
+		ffmpeg.Stdout = log.Writer()
+	} else {
+		ffmpeg.Stdout = io.Discard
+	}
+
+	if _, exists := os.LookupEnv("FFMPEG_LOG_STDERR"); exists {
+		ffmpeg.Stderr = log.Writer()
+	} else {
+		ffmpeg.Stderr = io.Discard
+	}
 
 	// Start the FFmpeg process
 	if err := ffmpeg.Start(); err != nil {

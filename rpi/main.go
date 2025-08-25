@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"rpi-webrtc/serialcomm"
 	"rpi-webrtc/webrtcserver"
@@ -17,7 +16,7 @@ func main() {
 		server := webrtcserver.New("8081", "webrtcserver/public", true, true)
 
 		server.InitReadDataCallback(func(data string) {
-			fmt.Println(data)
+			// fmt.Println(data)
 		})
 
 		select {}
