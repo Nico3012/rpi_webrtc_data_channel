@@ -4,3 +4,10 @@
 
 # How to find microphone name on Windows
 `ffmpeg -list_devices true -f dshow -i dummy` Insert the name into the `audio=<camera name>`
+
+# Generate audio.ogg from camera on WINDOWS ARBEIT
+`ffmpeg -f dshow -i "audio=Mikrofon (Realtek(R) Audio)" -c:a libopus -frame_duration 20 -application voip -b:a 48k -vn audio.ogg`
+
+# Generate audio.ogg from file
+Download https://download.samplelib.com/mp4/sample-5s.mp4
+`ffmpeg -i sample-5s.mp4 -c:a libopus -frame_duration 20 -application voip -b:a 48k -vn audio.ogg`

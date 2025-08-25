@@ -11,6 +11,9 @@ import (
 	"github.com/pion/webrtc/v4"
 )
 
+// 0 = linux pi; 1 = windows arbeit; 2 = windows privat
+const mode = 3
+
 // Handler manages the video streaming functionality
 type Handler struct {
 	videoTrack  *webrtc.TrackLocalStaticRTP
@@ -85,51 +88,70 @@ func (vh *Handler) streamCamera() error {
 	defer udpConn.Close()
 
 	// Setup FFmpeg to capture directly from the camera and stream as RTP
-	ffmpeg := exec.Command(
-		// WINDOWS ARBEIT:
+	var ffmpeg *exec.Cmd
 
-		// "ffmpeg",
-		// "-f", "dshow", // input mode
-		// "-i", "video=HP HD Camera", // input device
-		// "-c:v", "libvpx", // use VP8 codec
-		// "-deadline", "realtime", // fastest encoding preset
-		// "-cpu-used", "8", // minimal CPU usage
-		// "-video_size", "640x480", // video resolution
-		// "-framerate", "30", // frame rate
-		// "-b:v", "2M", // Bitrate
-		// "-an",       // Disable audio
-		// "-f", "rtp", // RTP output format
-		// fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
-
-		// WINDOWS PRIVAT:
-
-		"ffmpeg",
-		"-f", "dshow", // input mode
-		"-i", "video=HP Wide Vision 9MP camera", // input device
-		"-c:v", "libvpx", // use VP8 codec
-		"-deadline", "realtime", // fastest encoding preset
-		"-cpu-used", "8", // minimal CPU usage
-		"-video_size", "640x480", // video resolution
-		"-framerate", "30", // frame rate
-		"-b:v", "2M", // Bitrate
-		"-an",       // Disable audio
-		"-f", "rtp", // RTP output format
-		fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
-
-		// LINUX:
-
-		// "ffmpeg",
-		// "-i", "/dev/video0", // input device
-		// "-c:v", "libvpx", // use VP8 codec
-		// "-deadline", "good", // good quality encoding preset (use 'realtime' for better performance or 'best' for better quality)
-		// "-cpu-used", "6", // moderate CPU usage for better quality (up to 8 for best performance)
-		// "-video_size", "640x480", // video resolution
-		// "-framerate", "60", // frame rate
-		// "-b:v", "1.5M", // Bitrate
-		// "-an",       // Disable audio
-		// "-f", "rtp", // RTP output format
-		// fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
-	)
+	switch mode {
+	case 0: // LINUX
+		ffmpeg = exec.Command(
+			"ffmpeg",
+			"-i", "/dev/video0", // input device
+			"-c:v", "libvpx", // use VP8 codec
+			"-deadline", "realtime", // good quality encoding preset (use 'realtime' for better performance or 'best' for better quality)
+			"-cpu-used", "8", // moderate CPU usage for better quality (up to 8 for best performance)
+			"-video_size", "640x480", // video resolution
+			"-framerate", "30", // frame rate
+			"-b:v", "1.5M", // Bitrate
+			"-an",       // Disable audio
+			"-f", "rtp", // RTP output format
+			fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
+		)
+	case 1: // WINDOWS ARBEIT
+		ffmpeg = exec.Command(
+			"ffmpeg",
+			"-f", "dshow", // input mode
+			"-i", "video=HP HD Camera", // input device
+			"-c:v", "libvpx", // use VP8 codec
+			"-deadline", "realtime", // fastest encoding preset
+			"-cpu-used", "8", // minimal CPU usage
+			"-video_size", "640x480", // video resolution
+			"-framerate", "30", // frame rate
+			"-b:v", "1.5M", // Bitrate
+			"-an",       // Disable audio
+			"-f", "rtp", // RTP output format
+			fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
+		)
+	case 2: // WINDOWS PRIVAT
+		ffmpeg = exec.Command(
+			"ffmpeg",
+			"-f", "dshow", // input mode
+			"-i", "video=HP Wide Vision 9MP camera", // input device
+			"-c:v", "libvpx", // use VP8 codec
+			"-deadline", "realtime", // fastest encoding preset
+			"-cpu-used", "8", // minimal CPU usage
+			"-video_size", "640x480", // video resolution
+			"-framerate", "30", // frame rate
+			"-b:v", "1.5M", // Bitrate
+			"-an",       // Disable audio
+			"-f", "rtp", // RTP output format
+			fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
+		)
+	default: // VIDEO
+		ffmpeg = exec.Command(
+			"ffmpeg",
+			"-re",
+			"-stream_loop", "-1", // loop forever
+			"-i", "webrtcserver/video/video.webm", // input device
+			"-c:v", "libvpx", // use VP8 codec
+			"-deadline", "realtime", // good quality encoding preset (use 'realtime' for better performance or 'best' for better quality)
+			"-cpu-used", "8", // moderate CPU usage for better quality (up to 8 for best performance)
+			"-video_size", "640x480", // video resolution
+			"-framerate", "30", // frame rate
+			"-b:v", "1.5M", // Bitrate
+			"-an",       // Disable audio
+			"-f", "rtp", // RTP output format
+			fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
+		)
+	}
 
 	// Capture FFmpeg's stdout and stderr
 	ffmpeg.Stdout = log.Writer()

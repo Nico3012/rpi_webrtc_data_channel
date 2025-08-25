@@ -11,6 +11,9 @@ import (
 	"github.com/pion/webrtc/v4"
 )
 
+// 0 = linux pi; 1 = windows arbeit; 2 = windows privat
+const mode = 3
+
 // Handler manages the audio streaming functionality
 type Handler struct {
 	audioTrack  *webrtc.TrackLocalStaticRTP
@@ -83,31 +86,61 @@ func (ah *Handler) streamAudio() error {
 	}
 	defer udpConn.Close()
 
-	ffmpeg := exec.Command(
-		// WINDOWS PRIVAT:
+	// Setup FFmpeg to capture directly from the camera and stream as RTP
+	var ffmpeg *exec.Cmd
 
-		"ffmpeg",
-		"-f", "dshow", "-i", "audio=Mikrofonarray (Intel® Smart Sound Technologie für digitale Mikrofone)", // input device
-		"-c:a", "libopus", // use opus codec
-		"-frame_duration", "20", // 20ms frames
-		"-application", "voip", // Low-latency mode
-		"-b:a", "48k", // Bitrate
-		"-vn",       // Disable video
-		"-f", "rtp", // RTP output format
-		fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
-
-		// LINUX:
-
-		// "ffmpeg",
-		// "-f", "alsa", "-i", "plughw:3,0", // input device
-		// "-c:a", "libopus", // use opus codec
-		// "-frame_duration", "20", // 20ms frames
-		// "-application", "voip", // Low-latency mode
-		// "-b:a", "48k", // Bitrate
-		// "-vn",       // Disable video
-		// "-f", "rtp", // RTP output format
-		// fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
-	)
+	switch mode {
+	case 0: // LINUX
+		ffmpeg = exec.Command(
+			"ffmpeg",
+			"-f", "alsa", "-i", "plughw:3,0", // input device
+			"-c:a", "libopus", // use opus codec
+			"-frame_duration", "20", // 20ms frames
+			"-application", "voip", // Low-latency mode
+			"-b:a", "48k", // Bitrate
+			"-vn",       // Disable video
+			"-f", "rtp", // RTP output format
+			fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
+		)
+	case 1: // WINDOWS ARBEIT
+		ffmpeg = exec.Command(
+			"ffmpeg",
+			"-f", "dshow", "-i", "audio=Mikrofon (Realtek(R) Audio)", // input device
+			"-c:a", "libopus", // use opus codec
+			"-frame_duration", "20", // 20ms frames
+			"-application", "voip", // Low-latency mode
+			"-b:a", "48k", // Bitrate
+			"-vn",       // Disable video
+			"-f", "rtp", // RTP output format
+			fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
+		)
+	case 2: // WINDOWS PRIVAT
+		ffmpeg = exec.Command(
+			"ffmpeg",
+			"-f", "dshow", "-i", "audio=Mikrofonarray (Intel® Smart Sound Technologie für digitale Mikrofone)", // input device
+			"-c:a", "libopus", // use opus codec
+			"-frame_duration", "20", // 20ms frames
+			"-application", "voip", // Low-latency mode
+			"-b:a", "48k", // Bitrate
+			"-vn",       // Disable video
+			"-f", "rtp", // RTP output format
+			fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
+		)
+	default: // AUDIO
+		ffmpeg = exec.Command(
+			"ffmpeg",
+			"-re",
+			"-stream_loop", "-1", // loop audio indefinitely
+			"-i", "webrtcserver/audio/audio.ogg", // input device
+			"-c:a", "libopus", // use opus codec
+			"-frame_duration", "20", // 20ms frames
+			"-application", "voip", // Low-latency mode
+			"-b:a", "48k", // Bitrate
+			"-vn",       // Disable video
+			"-f", "rtp", // RTP output format
+			fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
+		)
+	}
 
 	// Capture FFmpeg's stdout and stderr
 	ffmpeg.Stdout = log.Writer()
