@@ -1,11 +1,11 @@
 import { LitElement, html, css } from 'lit';
-import { isInstalled, install, initUninstall, updateAvailable } from '/api/script.js';
+import { isInstalled, install, uninstall, updateAvailable } from '/api/script.js';
 
 const UPDATE_INTERVAL = 8000;
 
 class CacheManager extends LitElement {
     static properties = {
-        state: { type: String, attribute: false }, // 'initializing', 'installed', 'uninstalling', 'update'
+        state: { type: String, attribute: false }, // 'initializing', 'installed', 'uninstalled', 'update'
         collapsed: { type: Boolean, attribute: false },
     };
 
@@ -115,7 +115,7 @@ class CacheManager extends LitElement {
     async connectedCallback() {
         super.connectedCallback();
 
-        if (isInstalled()) {
+        if (await isInstalled()) {
             this.state = 'installed';
             this.collapsed = true;
 
@@ -166,8 +166,8 @@ class CacheManager extends LitElement {
 
             if (confirm('Make sure to uninstall the app before! No PWA installed?')) {
                 clearInterval(this.updateInterval);
-                await initUninstall();
-                this.state = 'uninstalling';
+                await uninstall();
+                this.state = 'uninstalled';
                 this.collapsed = false;
             }
         } catch (e) {
@@ -187,7 +187,7 @@ class CacheManager extends LitElement {
                 return html`<button class="pill browser" @click="${this.handleUninstall}">Remove cache</button>`;
             case 'update':
                 return html`<button class="pill browser" @click="${this.handleUninstall}">Remove cache (Update Available)</button>`;
-            case 'uninstalling':
+            case 'uninstalled':
                 return html`<button class="pill" @click="${this.handleReload}">Removed! Reload Page</button>`;
             default:
                 return null;
