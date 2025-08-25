@@ -1,3 +1,5 @@
+// IMPORTANT: Restart the server to make changes in this file appear!
+
 const CACHE_NAME = 'cache-v1';
 const INDEX_HTML_HANDLER = true;
 

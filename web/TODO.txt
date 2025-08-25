@@ -1,2 +1,1 @@
 - When clicking ctrl + reload, the install function of script.js hangs, because the updatefound event does not appear. Therefore never resolving!
-- /api/script.js does not refresh reliable in chrome on reload. only after closing the server and manually requesting the page to tell the browser not use a previous used version
