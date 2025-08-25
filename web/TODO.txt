@@ -1,1 +1,0 @@
-- When clicking ctrl + reload, the install function of script.js hangs, because the updatefound event does not appear. Therefore never resolving!
