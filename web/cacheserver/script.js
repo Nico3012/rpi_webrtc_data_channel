@@ -3,32 +3,20 @@
 
 const CACHE_NAME = 'cache-v1';
 
-/** @returns {boolean} */
-export const isInstalled = () => !!navigator.serviceWorker.controller; // A ServiceWorker object if its state is activating or activated, or null if there is no active worker.
+/** @returns {Promise<boolean>} */
+export const isInstalled = async () => {
+    const registration = await navigator.serviceWorker.getRegistration('/');
+
+    return !!registration;
+};
 
 /** @returns {Promise<void>} */
-export const install = () => new Promise(async (resolve) => {
-    if (isInstalled()) throw new Error('Already installed.');
+export const install = async () => {
+    if (await isInstalled()) throw new Error('Already installed.');
 
-    { // cache:
-        const cache = await caches.open(CACHE_NAME);
-
-        // load pathnames
-        const response = await fetch('/api/pathnames.json');
-        await cache.put('/api/pathnames.json', response.clone());
-
-        /** @type {string[]} */
-        const pathnames = await response.json();
-
-        pathnames.push('/api/script.js', '/api/sw.js', '/api/hash/current.json');
-
-        for (const pathname of pathnames) {
-            const response = await fetch(pathname, { redirect: 'manual' });
-            await cache.put(pathname, response);
-        }
-    }
-
-    { // service worker:
+    // service worker:
+    await new Promise(async resolve => {
+        // update service worker first, because maybe old service worker might still be active
         const registration = await navigator.serviceWorker.register('/api/sw.js', { scope: '/' });
 
         registration.addEventListener('updatefound', () => {
@@ -40,36 +28,58 @@ export const install = () => new Promise(async (resolve) => {
                 }
             });
         });
+    });
+
+    { // cache:
+        /** @type {{ [pathname: string]: Response; }} */
+        const responses = {};
+
+        const response = await fetch('/api/pathnames.json');
+        responses['/api/pathnames.json'] = response.clone();
+
+        /** @type {string[]} */
+        const pathnames = await response.json();
+
+        pathnames.push('/api/script.js', '/api/sw.js', '/api/hash/current.json');
+
+        for (const pathname of pathnames) {
+            const response = await fetch(pathname, { redirect: 'manual' });
+            responses[pathname] = response;
+        }
+
+        // All fetch events are gone through the service worker.
+        // Now open the cache. After opening the cache, the service worker interprets the state as installed.
+
+        const cache = await caches.open(CACHE_NAME);
+
+        // Cache all responses and await the cache. In this step, its possible that fetching data in other scripts fails. After this function call, fetching is again safe.
+        await Promise.all(Object.entries(responses).map(([pathname, response]) => cache.put(pathname, response)));
     }
-});
+};
 
 /**
  * The active service worker will only be released after a reload.
- * Therefore this function only initializes the uninstall process.
- * isInstalled stays true after this function call
+ * To make this still work, the service worker acts like a gateway to the server, if the cache is removed.
  * @returns {Promise<void>}
  */
-export const initUninstall = async () => {
-    if (!isInstalled()) throw new Error('Not installed.');
+export const uninstall = async () => {
+    if (!(await isInstalled())) throw new Error('Not installed.');
 
     if (window.matchMedia('(display-mode: standalone)').matches)
         throw new Error('Cannot uninstall in standalone mode. Uninstall the PWA first!');
 
-    // unregister all service workers
-    const registrations = await navigator.serviceWorker.getRegistrations();
-    await Promise.all(registrations.map(reg => reg.unregister()));
-
     // delete caches
     const cacheNames = await caches.keys();
     await Promise.all(cacheNames.map(name => caches.delete(name)));
+
+    // unregister all service workers
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(registrations.map(reg => reg.unregister()));
 };
 
-/**
- * This function should not be called after initUninstall was called, because then the cache is gone but the service worker stays active until the page reloads
- * @returns {Promise<boolean>}
- */
+/** @returns {Promise<boolean>} */
 export const updateAvailable = async () => {
-    if (!isInstalled()) return false; // cant be true, if app is not installed
+    if (!(await isInstalled())) return false; // cant be true, if app is not installed
 
     const currentResponse = await fetch('/api/hash/current.json');
     const latestResponse = await fetch('/api/hash/latest.json');

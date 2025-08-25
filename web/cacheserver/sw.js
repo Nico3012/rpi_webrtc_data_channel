@@ -13,6 +13,9 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
     event.respondWith((async () => {
+        // if cache is not available, bypass the service worker!
+        if (!(await caches.has(CACHE_NAME))) return await fetch(event.request);
+
         const cache = await caches.open(CACHE_NAME);
 
         const request = event.request;
