@@ -5,56 +5,40 @@ const CACHE_NAME = 'cache-v1';
 
 /** @returns {Promise<boolean>} */
 export const isInstalled = async () => {
-    const registration = await navigator.serviceWorker.getRegistration('/');
-
-    return !!registration;
+    return await caches.has(CACHE_NAME);
 };
 
 /** @returns {Promise<void>} */
 export const install = async () => {
     if (await isInstalled()) throw new Error('Already installed.');
 
-    // service worker:
-    await new Promise(async resolve => {
-        // update service worker first, because maybe old service worker might still be active
-        const registration = await navigator.serviceWorker.register('/api/sw.js', { scope: '/' });
+    // install service worker:
+    await navigator.serviceWorker.register('/api/sw.js', { scope: '/' });
 
-        registration.addEventListener('updatefound', () => {
-            const sw = registration.installing;
+    // start fetching resources:
+    /** @type {{ [pathname: string]: Response; }} */
+    const responses = {};
 
-            sw.addEventListener('statechange', () => {
-                if (sw.state === 'activated') {
-                    resolve();
-                }
-            });
-        });
-    });
+    const response = await fetch('/api/pathnames.json');
+    responses['/api/pathnames.json'] = response.clone();
 
-    { // cache:
-        /** @type {{ [pathname: string]: Response; }} */
-        const responses = {};
+    /** @type {string[]} */
+    const pathnames = await response.json();
 
-        const response = await fetch('/api/pathnames.json');
-        responses['/api/pathnames.json'] = response.clone();
+    pathnames.push('/api/script.js', '/api/sw.js', '/api/hash/current.json');
 
-        /** @type {string[]} */
-        const pathnames = await response.json();
-
-        pathnames.push('/api/script.js', '/api/sw.js', '/api/hash/current.json');
-
-        for (const pathname of pathnames) {
-            const response = await fetch(pathname, { redirect: 'manual' });
-            responses[pathname] = response;
-        }
-
-        // All fetch events are gone through the service worker.
-        // Now open the cache. After opening the cache, the service worker interprets the state as installed.
-
-        const cache = await caches.open(CACHE_NAME);
-
-        // Cache all responses and await the cache. In this step, its possible that fetching data in other scripts fails. After this function call, fetching is again safe.
-        await Promise.all(Object.entries(responses).map(([pathname, response]) => cache.put(pathname, response)));
+    for (const pathname of pathnames) {
+        const response = await fetch(pathname, { redirect: 'manual' });
+        responses[pathname] = response;
     }
+
+    // All fetch events are gone through the service worker.
+    // Now open the cache. After opening the cache, the service worker interprets the state as installed.
+
+    const cache = await caches.open(CACHE_NAME);
+
+    // Cache all responses and await the cache. In this step, its possible that fetching data in other scripts fails. After this function call, fetching is again safe.
+    await Promise.all(Object.entries(responses).map(([pathname, response]) => cache.put(pathname, response)));
 };
 
 /**
