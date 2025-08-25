@@ -11,9 +11,7 @@ const winTest = true
 
 func main() {
 	if winTest {
-		// set VIDEO_MODE=linux || possible values are windows-work, windows-privat or linux
-		// set AUDIO_MODE=linux || possible values are windows-work, windows-privat or linux
-		server := webrtcserver.New("8081", "webrtcserver/public", true, true)
+		server := webrtcserver.New("8081", true, true)
 
 		server.InitReadDataCallback(func(data string) {
 			// fmt.Println(data)
@@ -21,7 +19,7 @@ func main() {
 
 		select {}
 	} else {
-		server := webrtcserver.New("8080", "webrtcserver/public", true, true)
+		server := webrtcserver.New("8080", true, true)
 		var port *serialcomm.Port
 		var err error
 
