@@ -13,6 +13,8 @@ import (
 	"github.com/pion/webrtc/v4"
 )
 
+const udpPort = 5004
+
 // Handler manages the video streaming functionality
 type Handler struct {
 	videoTrack  *webrtc.TrackLocalStaticRTP
@@ -74,7 +76,6 @@ func (vh *Handler) StopStreaming() {
 
 // streamCamera handles the camera capture and streaming
 func (vh *Handler) streamCamera() error {
-	const udpPort = 5004
 	localAddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("127.0.0.1:%d", udpPort))
 	if err != nil {
 		return fmt.Errorf("failed to resolve UDP address: %w", err)

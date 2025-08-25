@@ -13,6 +13,8 @@ import (
 	"github.com/pion/webrtc/v4"
 )
 
+const udpPort = 5006
+
 // Handler manages the audio streaming functionality
 type Handler struct {
 	audioTrack  *webrtc.TrackLocalStaticRTP
@@ -73,7 +75,6 @@ func (ah *Handler) StopStreaming() {
 }
 
 func (ah *Handler) streamAudio() error {
-	const udpPort = 5006
 	localAddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("127.0.0.1:%d", udpPort))
 	if err != nil {
 		return fmt.Errorf("failed to resolve UDP address: %w", err)
