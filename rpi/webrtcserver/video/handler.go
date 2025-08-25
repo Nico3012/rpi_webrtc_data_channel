@@ -137,9 +137,8 @@ func (vh *Handler) streamCamera() error {
 	default: // VIDEO
 		ffmpeg = exec.Command(
 			"ffmpeg",
-			"-re",
-			"-stream_loop", "-1", // loop forever
-			"-i", "webrtcserver/video/video.webm", // input device
+			"-re", // realtime speed
+			"-f", "lavfi", "-i", "testsrc=size=640x480:rate=30",
 			"-c:v", "libvpx", // use VP8 codec
 			"-deadline", "realtime", // good quality encoding preset (use 'realtime' for better performance or 'best' for better quality)
 			"-cpu-used", "8", // moderate CPU usage for better quality (up to 8 for best performance)

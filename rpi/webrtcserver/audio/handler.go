@@ -128,9 +128,8 @@ func (ah *Handler) streamAudio() error {
 	default: // AUDIO
 		ffmpeg = exec.Command(
 			"ffmpeg",
-			"-re",
-			"-stream_loop", "-1", // loop audio indefinitely
-			"-i", "webrtcserver/audio/audio.ogg", // input device
+			"-re", // realtime speed
+			"-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000",
 			"-c:a", "libopus", // use opus codec
 			"-frame_duration", "20", // 20ms frames
 			"-application", "voip", // Low-latency mode
