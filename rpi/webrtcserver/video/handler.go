@@ -5,14 +5,12 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"os/exec"
 	"time"
 
 	"github.com/pion/webrtc/v4"
 )
-
-// 0 = linux pi; 1 = windows arbeit; 2 = windows privat
-const mode = 3
 
 // Handler manages the video streaming functionality
 type Handler struct {
@@ -90,8 +88,8 @@ func (vh *Handler) streamCamera() error {
 	// Setup FFmpeg to capture directly from the camera and stream as RTP
 	var ffmpeg *exec.Cmd
 
-	switch mode {
-	case 0: // LINUX
+	switch videoMode := os.Getenv("VIDEO_MODE"); videoMode {
+	case "linux": // LINUX
 		ffmpeg = exec.Command(
 			"ffmpeg",
 			"-i", "/dev/video0", // input device
@@ -105,7 +103,7 @@ func (vh *Handler) streamCamera() error {
 			"-f", "rtp", // RTP output format
 			fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
 		)
-	case 1: // WINDOWS ARBEIT
+	case "windows-work": // WINDOWS ARBEIT
 		ffmpeg = exec.Command(
 			"ffmpeg",
 			"-f", "dshow", // input mode
@@ -120,7 +118,7 @@ func (vh *Handler) streamCamera() error {
 			"-f", "rtp", // RTP output format
 			fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
 		)
-	case 2: // WINDOWS PRIVAT
+	case "windows-privat": // WINDOWS PRIVAT
 		ffmpeg = exec.Command(
 			"ffmpeg",
 			"-f", "dshow", // input mode

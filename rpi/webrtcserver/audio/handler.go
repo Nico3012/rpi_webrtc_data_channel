@@ -5,14 +5,12 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"os/exec"
 	"time"
 
 	"github.com/pion/webrtc/v4"
 )
-
-// 0 = linux pi; 1 = windows arbeit; 2 = windows privat
-const mode = 3
 
 // Handler manages the audio streaming functionality
 type Handler struct {
@@ -89,8 +87,8 @@ func (ah *Handler) streamAudio() error {
 	// Setup FFmpeg to capture directly from the camera and stream as RTP
 	var ffmpeg *exec.Cmd
 
-	switch mode {
-	case 0: // LINUX
+	switch audioMode := os.Getenv("AUDIO_MODE"); audioMode {
+	case "linux": // LINUX
 		ffmpeg = exec.Command(
 			"ffmpeg",
 			"-f", "alsa", "-i", "plughw:3,0", // input device
@@ -102,7 +100,7 @@ func (ah *Handler) streamAudio() error {
 			"-f", "rtp", // RTP output format
 			fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
 		)
-	case 1: // WINDOWS ARBEIT
+	case "windows-work": // WINDOWS ARBEIT
 		ffmpeg = exec.Command(
 			"ffmpeg",
 			"-f", "dshow", "-i", "audio=Mikrofon (Realtek(R) Audio)", // input device
@@ -114,7 +112,7 @@ func (ah *Handler) streamAudio() error {
 			"-f", "rtp", // RTP output format
 			fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
 		)
-	case 2: // WINDOWS PRIVAT
+	case "windows-privat": // WINDOWS PRIVAT
 		ffmpeg = exec.Command(
 			"ffmpeg",
 			"-f", "dshow", "-i", "audio=Mikrofonarray (Intel® Smart Sound Technologie für digitale Mikrofone)", // input device
