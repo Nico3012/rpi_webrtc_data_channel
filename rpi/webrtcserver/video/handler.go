@@ -181,10 +181,10 @@ func (vh *Handler) streamCamera() error {
 	go func() {
 		<-vh.stopChan
 		log.Println("Stopping FFmpeg process and UDP listener")
-		udpConn.Close()
 		if err := ffmpeg.Process.Kill(); err != nil {
 			log.Printf("Error killing FFmpeg process: %v", err)
 		}
+		udpConn.Close()
 	}()
 
 	// Buffer for reading RTP packets (1500 bytes is typical MTU size)
@@ -204,6 +204,12 @@ func (vh *Handler) streamCamera() error {
 				if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 					continue
 				}
+
+				// If the connection was closed as part of normal shutdown, treat it as non-error
+				if errors.Is(err, net.ErrClosed) {
+					return nil
+				}
+
 				return fmt.Errorf("UDP read error: %w", err)
 			}
 
