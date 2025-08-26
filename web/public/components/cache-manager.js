@@ -5,7 +5,7 @@ const UPDATE_INTERVAL = 8000;
 
 class CacheManager extends LitElement {
     static properties = {
-        state: { type: String, attribute: false }, // 'initializing', 'installed', 'uninstalled', 'update'
+        state: { type: String, attribute: false },
         collapsed: { type: Boolean, attribute: false },
     };
 
@@ -103,7 +103,7 @@ class CacheManager extends LitElement {
     constructor() {
         super();
 
-        /** @private */
+        /** @private @type {'initializing' | 'installed' | 'uninstalled' | 'update'} */
         this.state = 'initializing';
         /** @private */
         this.collapsed = true;
