@@ -12,10 +12,10 @@ export const isInstalled = async () => {
 export const install = async () => {
     if (await isInstalled()) throw new Error('Already installed.');
 
-    // install service worker:
+    // register service worker (does not activate the sw immediately)
     await navigator.serviceWorker.register('/api/sw.js', { scope: '/' });
 
-    // start fetching resources:
+    // start fetching resources
     /** @type {{ [pathname: string]: Response; }} */
     const responses = {};
 
@@ -56,7 +56,7 @@ export const uninstall = async () => {
     const cacheNames = await caches.keys();
     await Promise.all(cacheNames.map(name => caches.delete(name)));
 
-    // unregister all service workers
+    // unregister all service workers (does not deactive the sw immediately)
     const registrations = await navigator.serviceWorker.getRegistrations();
     await Promise.all(registrations.map(reg => reg.unregister()));
 };
