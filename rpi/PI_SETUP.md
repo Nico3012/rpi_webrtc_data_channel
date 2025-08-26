@@ -58,6 +58,12 @@ This ensures, we always get the latest version!
 Go environment variable: `export PATH=$PATH:/usr/local/go/bin`
 
 # Project
+Cross compile go binary:
+```cmd
+set GOARCH=arm64
+set GOOS=linux
+go build .
+```
 Copy the content of this directory `.` into a `/app/` directory
 Copy the `rpi.service` file to `/etc/systemd/system/rpi.service`
 Run `systemctl enable rpi.service`
