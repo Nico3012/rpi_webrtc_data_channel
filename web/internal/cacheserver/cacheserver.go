@@ -5,7 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"service-worker/cacheserver/internal/routing"
+
+	"github.com/Nico3012/rpi_webrtc_data_channel/web/internal/cacheserver/internal/routing"
 )
 
 //go:embed script.js sw.js

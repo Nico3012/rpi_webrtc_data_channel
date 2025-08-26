@@ -6,4 +6,4 @@ COPY . .
 
 RUN go install .
 
-CMD [ "service-worker" ]
+CMD [ "web" ]
