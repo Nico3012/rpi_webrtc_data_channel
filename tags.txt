@@ -7,3 +7,4 @@ v1.0.1 - add missing tag description
 v1.0.2 - disable https and add dockerfile for pusblishment in liquipay cluster
 v1.1.0 - add pwa-guide element
 v1.2.0 - server and all components of web directory working very good together
+v1.2.1 - hotfix for proxy
