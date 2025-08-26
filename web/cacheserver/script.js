@@ -13,6 +13,7 @@ export const install = async () => {
     if (await isInstalled()) throw new Error('Already installed.');
 
     // register service worker (does not activate the sw immediately)
+    // Browsers themself handle, if they use the service worker or not
     await navigator.serviceWorker.register('/api/sw.js', { scope: '/' });
 
     // start fetching resources
