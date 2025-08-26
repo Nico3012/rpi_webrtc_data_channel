@@ -1,5 +1,5 @@
 // THESE METHODS ARE NOT INSTALLING/UNINSTALLING A PWA APP! THEY ONLY CACHE RESOURCES AND INSTALL THE SERVICE WORKER! THE SERVICE WORKER IS PWA COMPATIBLE!
-// IMPORTANT: Restart the server to make changes in this file appear!
+// IMPORTANT: Restart the go server to make changes in this file appear!
 
 const CACHE_NAME = 'cache-v1';
 
@@ -37,7 +37,7 @@ export const install = async () => {
 
     const cache = await caches.open(CACHE_NAME);
 
-    // Cache all responses and await the cache. In this step, its possible that fetching data in other scripts fails. After this function call, fetching is again safe.
+    // Cache all responses in sync and await the cache. In this step, its theoretically possible that fetching data in other scripts fails. After this function call, fetching is safe.
     await Promise.all(Object.entries(responses).map(([pathname, response]) => cache.put(pathname, response)));
 };
 
