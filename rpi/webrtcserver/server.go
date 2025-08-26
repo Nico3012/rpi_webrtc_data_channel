@@ -309,6 +309,21 @@ func (s *Server) processOffer(offerType, offerSDP string) (string, error) {
 		})
 	})
 
+	// Add connection state change handler to stop streaming on lost connection
+	s.peerConnection.OnConnectionStateChange(func(state webrtc.PeerConnectionState) {
+		fmt.Printf("PeerConnection state changed: %s\n", state.String())
+		if state == webrtc.PeerConnectionStateFailed || state == webrtc.PeerConnectionStateDisconnected || state == webrtc.PeerConnectionStateClosed {
+			if s.videoEnabled && s.videoHandler != nil {
+				s.videoHandler.StopStreaming()
+				fmt.Println("Video streaming stopped (connection lost)")
+			}
+			if s.audioEnabled && s.audioHandler != nil {
+				s.audioHandler.StopStreaming()
+				fmt.Println("Audio streaming stopped (connection lost)")
+			}
+		}
+	})
+
 	// Set the remote description
 	offer := webrtc.SessionDescription{
 		Type: webrtc.SDPTypeOffer,
