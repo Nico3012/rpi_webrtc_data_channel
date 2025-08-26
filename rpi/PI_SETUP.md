@@ -58,7 +58,7 @@ This ensures, we always get the latest version!
 Go environment variable: `export PATH=$PATH:/usr/local/go/bin`
 
 # Project
-Copy this directory `rpi` into a `/app` directory
+Copy the content of this directory `.` into a `/app/` directory
 Copy the `rpi.service` file to `/etc/systemd/system/rpi.service`
 Run `systemctl enable rpi.service`
 Run `systemctl start rpi.service`
