@@ -3,9 +3,10 @@ package main
 import (
 	"fmt"
 	"log"
-	"rpi-webrtc/serialcomm"
-	"rpi-webrtc/webrtcserver"
 	"time"
+
+	"github.com/Nico3012/rpi_webrtc_data_channel/rpi/internal/serialcomm"
+	"github.com/Nico3012/rpi_webrtc_data_channel/rpi/internal/webrtcserver"
 )
 
 const winTest = true
