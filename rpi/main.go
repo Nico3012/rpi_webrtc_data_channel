@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"rpi-webrtc/serialcomm"
 	"rpi-webrtc/webrtcserver"
@@ -14,10 +15,19 @@ func main() {
 		server := webrtcserver.New("8081", true, true)
 
 		server.InitReadDataCallback(func(data string) {
-			// fmt.Println(data)
+			fmt.Println(data)
 		})
 
-		select {}
+		i := 0
+
+		for {
+			if server.IsConnected() {
+				server.SendData(fmt.Sprintf("Message: %d", i))
+				i++
+			}
+
+			time.Sleep(2 * time.Second)
+		}
 	} else {
 		server := webrtcserver.New("8080", true, true)
 		var port *serialcomm.Port

@@ -173,7 +173,6 @@ func (ah *Handler) streamAudio() error {
 	// Setup cleanup to ensure ffmpeg process is terminated
 	go func() {
 		<-ah.stopChan
-		log.Println("Stopping FFmpeg process and UDP listener")
 		if err := ffmpeg.Process.Kill(); err != nil {
 			log.Printf("Error killing FFmpeg process: %v", err)
 		}
