@@ -1,11 +1,3 @@
-# Download releases from:
-https://github.com/BtbN/FFmpeg-Builds/releases
-
-ffmpeg-n7.1-latest-linux64-lgpl-7.1.tar.xz
-ffmpeg-n7.1-latest-linuxarm64-lgpl-7.1.tar.xz
-ffmpeg-n7.1-latest-win64-lgpl-7.1.zip
-ffmpeg-n7.1-latest-winarm64-lgpl-7.1.zip
-
 # Build go program
 ```cmd
 set GOOS=linux
@@ -24,3 +16,13 @@ set GOOS=windows
 set GOARCH=arm64
 go build -o rpi_windows_arm64.exe .
 ```
+
+# Download ffmpeg binary releases from:
+https://github.com/BtbN/FFmpeg-Builds/releases
+
+Download:
+ffmpeg-n7.1-latest-linux64-lgpl-7.1.tar.xz
+ffmpeg-n7.1-latest-linuxarm64-lgpl-7.1.tar.xz
+ffmpeg-n7.1-latest-win64-lgpl-7.1.zip
+ffmpeg-n7.1-latest-winarm64-lgpl-7.1.zip
+Extract the archive and set the FFMPEG_BINARY environment variable to the path of the ffmpeg binary
