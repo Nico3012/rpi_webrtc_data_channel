@@ -90,6 +90,11 @@ func (vh *Handler) streamCamera() error {
 	// Setup FFmpeg to capture directly from the camera and stream as RTP
 	var ffmpeg *exec.Cmd
 
+	ffmpegBinary := os.Getenv("FFMPEG_BINARY")
+	if ffmpegBinary == "" {
+		ffmpegBinary = "ffmpeg"
+	}
+
 	_, logWarning := os.LookupEnv("FFMPEG_LOG_WARNING")
 
 	var logLevel string
@@ -102,7 +107,7 @@ func (vh *Handler) streamCamera() error {
 	switch videoMode := os.Getenv("VIDEO_MODE"); videoMode {
 	case "linux": // LINUX
 		ffmpeg = exec.Command(
-			"ffmpeg",
+			ffmpegBinary,
 			"-loglevel", logLevel,
 			"-hide_banner",      // removes version/config dump
 			"-nostats",          // removes the periodic "time=... bitrate=..." progress lines
@@ -119,7 +124,7 @@ func (vh *Handler) streamCamera() error {
 		)
 	case "windows-work": // WINDOWS ARBEIT
 		ffmpeg = exec.Command(
-			"ffmpeg",
+			ffmpegBinary,
 			"-loglevel", logLevel,
 			"-hide_banner", // removes version/config dump
 			"-nostats",     // removes the periodic "time=... bitrate=..." progress lines
@@ -137,7 +142,7 @@ func (vh *Handler) streamCamera() error {
 		)
 	case "windows-privat": // WINDOWS PRIVAT
 		ffmpeg = exec.Command(
-			"ffmpeg",
+			ffmpegBinary,
 			"-loglevel", logLevel,
 			"-hide_banner", // removes version/config dump
 			"-nostats",     // removes the periodic "time=... bitrate=..." progress lines
@@ -155,7 +160,7 @@ func (vh *Handler) streamCamera() error {
 		)
 	default: // VIDEO
 		ffmpeg = exec.Command(
-			"ffmpeg",
+			ffmpegBinary,
 			"-loglevel", logLevel,
 			"-hide_banner", // removes version/config dump
 			"-nostats",     // removes the periodic "time=... bitrate=..." progress lines

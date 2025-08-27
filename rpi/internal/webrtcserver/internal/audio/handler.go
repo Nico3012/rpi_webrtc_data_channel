@@ -89,6 +89,11 @@ func (ah *Handler) streamAudio() error {
 	// Setup FFmpeg to capture directly from the camera and stream as RTP
 	var ffmpeg *exec.Cmd
 
+	ffmpegBinary := os.Getenv("FFMPEG_BINARY")
+	if ffmpegBinary == "" {
+		ffmpegBinary = "ffmpeg"
+	}
+
 	_, logWarning := os.LookupEnv("FFMPEG_LOG_WARNING")
 
 	var logLevel string
@@ -101,7 +106,7 @@ func (ah *Handler) streamAudio() error {
 	switch audioMode := os.Getenv("AUDIO_MODE"); audioMode {
 	case "linux": // LINUX
 		ffmpeg = exec.Command(
-			"ffmpeg",
+			ffmpegBinary,
 			"-loglevel", logLevel,
 			"-hide_banner",                   // removes version/config dump
 			"-nostats",                       // removes the periodic "time=... bitrate=..." progress lines
@@ -116,7 +121,7 @@ func (ah *Handler) streamAudio() error {
 		)
 	case "windows-work": // WINDOWS ARBEIT
 		ffmpeg = exec.Command(
-			"ffmpeg",
+			ffmpegBinary,
 			"-loglevel", logLevel,
 			"-hide_banner",                                           // removes version/config dump
 			"-nostats",                                               // removes the periodic "time=... bitrate=..." progress lines
@@ -131,7 +136,7 @@ func (ah *Handler) streamAudio() error {
 		)
 	case "windows-privat": // WINDOWS PRIVAT
 		ffmpeg = exec.Command(
-			"ffmpeg",
+			ffmpegBinary,
 			"-loglevel", logLevel,
 			"-hide_banner",                                                                                     // removes version/config dump
 			"-nostats",                                                                                         // removes the periodic "time=... bitrate=..." progress lines
@@ -146,7 +151,7 @@ func (ah *Handler) streamAudio() error {
 		)
 	default: // AUDIO
 		ffmpeg = exec.Command(
-			"ffmpeg",
+			ffmpegBinary,
 			"-loglevel", logLevel,
 			"-hide_banner", // removes version/config dump
 			"-nostats",     // removes the periodic "time=... bitrate=..." progress lines

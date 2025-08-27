@@ -1,2 +1,13 @@
 *.exe
 *.mp4
+
+# Linux build files
+rpi_linux_amd64
+rpi_linux_arm64
+rpi_windows_amd64.exe
+rpi_windows_arm64.exe
+
+ffmpeg-n7.1-latest-win64-lgpl-7.1
+ffmpeg-n7.1-latest-winarm64-lgpl-7.1
+ffmpeg-n7.1-latest-linuxarm64-lgpl-7.1
+ffmpeg-n7.1-latest-linux64-lgpl-7.1
