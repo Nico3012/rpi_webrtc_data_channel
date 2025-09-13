@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 )
 
 func main() {
@@ -22,11 +23,14 @@ func RemoveOtherVersions() {
 	// Parent directory that holds versioned directories (e.g. v1.0.0, v2.0.0)
 	parent := filepath.Dir(wd)
 
-	// Safety: don't operate if parent is same as wd or parent is root
-	if parent == "" || parent == wd || parent == string(filepath.Separator) {
+	// Safety: don't operate if parent is same as cwd or empty
+	if parent == "" || parent == wd {
 		fmt.Fprintf(os.Stderr, "refusing to operate on parent '%s' for cwd '%s'\n", parent, wd)
 		return
 	}
+
+	// Only remove directories that start with 'v' followed by a digit (e.g. v1, v2, v10, v1.0.0, v1.2rc1)
+	vPattern := regexp.MustCompile(`^v\d+`)
 
 	entries, err := os.ReadDir(parent)
 	if err != nil {
@@ -51,6 +55,11 @@ func RemoveOtherVersions() {
 
 		// Extra safety: ensure the child path is one level below parent
 		if filepath.Dir(absChild) != filepath.Clean(parent) {
+			continue
+		}
+
+		// Only remove directories that look like version folders (start with v + digit)
+		if !vPattern.MatchString(e.Name()) {
 			continue
 		}
 
