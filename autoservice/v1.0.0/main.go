@@ -8,7 +8,58 @@ import (
 )
 
 func main() {
-	//
+	RemoveOtherVersions()
+}
+
+func RemoveOtherVersions() {
+	// Determine current working directory (the version directory being executed)
+	wd, err := os.Getwd()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to get working directory: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Parent directory that holds versioned directories (e.g. v1.0.0, v2.0.0)
+	parent := filepath.Dir(wd)
+
+	// Safety: don't operate if parent is same as wd or parent is root
+	if parent == "" || parent == wd || parent == string(filepath.Separator) {
+		fmt.Fprintf(os.Stderr, "refusing to operate on parent '%s' for cwd '%s'\n", parent, wd)
+		return
+	}
+
+	entries, err := os.ReadDir(parent)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to read parent dir '%s': %v\n", parent, err)
+		os.Exit(1)
+	}
+
+	// Remove any directory entries in parent that are not the current working directory
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+
+		childPath := filepath.Join(parent, e.Name())
+
+		// Skip the directory we are currently in
+		absChild, _ := filepath.Abs(childPath)
+		absWd, _ := filepath.Abs(wd)
+		if absChild == absWd {
+			continue
+		}
+
+		// Extra safety: ensure the child path is one level below parent
+		if filepath.Dir(absChild) != filepath.Clean(parent) {
+			continue
+		}
+
+		// Remove the directory and its contents
+		fmt.Printf("removing old version directory: %s\n", absChild)
+		if err := os.RemoveAll(absChild); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to remove '%s': %v\n", absChild, err)
+		}
+	}
 }
 
 func WriteSystemdService(serviceName, execPath, workDir string) error {
