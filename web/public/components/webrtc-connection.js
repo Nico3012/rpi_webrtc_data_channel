@@ -150,6 +150,8 @@ class WebRTCConnection extends LitElement {
             // general state of everything
             this.peerConnection.addEventListener('connectionstatechange', (event) => {
                 if (this.peerConnection.connectionState === 'new' || this.peerConnection.connectionState === 'connecting') {
+                    // Theoretically the state should already be connecting.
+                    // Just ensure, we are definetly in connecting state!
                     this.state = 'connecting';
                 } else if (this.peerConnection.connectionState === 'connected') {
                     this.state = 'connected';
@@ -250,6 +252,7 @@ class WebRTCConnection extends LitElement {
         try {
             const answer = JSON.parse(atob(e.detail.answer));
             if (typeof answer !== 'object' || answer.type !== "answer") throw new Error('Please provide a valid answer!');
+            this.state = 'connecting'; // set immediately to connecting, because handshake manager will reset now.
             await this.peerConnection.setRemoteDescription(answer);
         } catch (error) {
             console.error('Error setting answer:', error);
