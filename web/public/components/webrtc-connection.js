@@ -9,7 +9,7 @@
 import { LitElement, html, css } from 'lit';
 import './handshake-manager.js';
 
-class WebRTCConnection extends LitElement {
+export class WebRTCConnection extends LitElement {
 
     // lit property
     static properties = {

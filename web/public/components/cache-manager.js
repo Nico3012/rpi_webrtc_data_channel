@@ -3,7 +3,7 @@ import { isInstalled, install, uninstall, updateAvailable } from '/api/script.js
 
 const UPDATE_INTERVAL = 8000;
 
-class CacheManager extends LitElement {
+export class CacheManager extends LitElement {
     static properties = {
         state: { type: String, attribute: false },
         collapsed: { type: Boolean, attribute: false },
