@@ -1,8 +1,12 @@
+import { DataChannelMux } from "./data-channel-mux.js";
+import { uploadFile } from "./upload.js";
+
 const webrtcConnection = document.querySelector('webrtc-connection');
 const cameraElement = document.getElementById('camera');
 const microphoneElement = document.getElementById('microphone');
 const leftJoystick = document.getElementById('left-joystick');
 const rightJoystick = document.getElementById('right-joystick');
+const uploadBtn = document.getElementById('upload-btn');
 
 webrtcConnection.addEventListener('connection-update', () => {
     // Update video element with current stream (or null when disconnected)
@@ -14,39 +18,53 @@ webrtcConnection.addEventListener('connection-update', () => {
     microphoneElement.srcObject = audioStream;
 });
 
-webrtcConnection.addEventListener('message-received', (event) => {
-    console.log('Message received:', event.detail.message);
-});
+// webrtcConnection.addEventListener('message-received', (event) => {
+//     console.log('Message received:', event.detail.message);
+// });
 
-let speed = 0; //  0 - 1
-let angle = 0; // -1 - 1
+// let speed = 0; //  0 - 1
+// let angle = 0; // -1 - 1
 
-leftJoystick.addEventListener('stick-move', (event) => {
-    speed = (event.detail.y + 1) / 2; // assign speed
+// leftJoystick.addEventListener('stick-move', (event) => {
+//     speed = (event.detail.y + 1) / 2; // assign speed
 
-    if (webrtcConnection.isConnected()) {
-        // console.log(`${speed.toFixed(2)};${angle.toFixed(2)}`);
-        webrtcConnection.sendData(`${speed.toFixed(2)};${angle.toFixed(2)}`);
-    } else {
-        // console.log('not connected:', `${speed.toFixed(2)};${angle.toFixed(2)}`);
-    }
-});
+//     if (webrtcConnection.isConnected()) {
+//         // console.log(`${speed.toFixed(2)};${angle.toFixed(2)}`);
+//         webrtcConnection.sendData(`${speed.toFixed(2)};${angle.toFixed(2)}`);
+//     } else {
+//         // console.log('not connected:', `${speed.toFixed(2)};${angle.toFixed(2)}`);
+//     }
+// });
 
-rightJoystick.addEventListener('stick-move', (event) => {
-    angle = event.detail.x; // assign angle
+// rightJoystick.addEventListener('stick-move', (event) => {
+//     angle = event.detail.x; // assign angle
 
-    if (webrtcConnection.isConnected()) {
-        // console.log(`${speed.toFixed(2)};${angle.toFixed(2)}`);
-        webrtcConnection.sendData(`${speed.toFixed(2)};${angle.toFixed(2)}`);
-    } else {
-        // console.log('not connected:', `${speed.toFixed(2)};${angle.toFixed(2)}`);
-    }
-});
+//     if (webrtcConnection.isConnected()) {
+//         // console.log(`${speed.toFixed(2)};${angle.toFixed(2)}`);
+//         webrtcConnection.sendData(`${speed.toFixed(2)};${angle.toFixed(2)}`);
+//     } else {
+//         // console.log('not connected:', `${speed.toFixed(2)};${angle.toFixed(2)}`);
+//     }
+// });
 
-setInterval(() => {
-    if (webrtcConnection.isConnected()) {
-        webrtcConnection.sendData(`${speed.toFixed(2)};${angle.toFixed(2)}`);
-    }
-}, 100);
+// setInterval(() => {
+//     if (webrtcConnection.isConnected()) {
+//         webrtcConnection.sendData(`${speed.toFixed(2)};${angle.toFixed(2)}`);
+//     }
+// }, 100);
 
 export { };
+
+// --- File upload logic ---
+// User-configurable values
+const FETCH_PATH = '/assets/video.mp4'; // path to fetch the binary from
+const UPLOAD_FILENAME = 'uploaded_video.mp4'; // filename to send as target name on receiver
+
+const mux = new DataChannelMux(webrtcConnection);
+
+const channel = mux.createChannel('123456');
+
+uploadBtn?.addEventListener('click', async () => {
+    await uploadFile(channel, FETCH_PATH, UPLOAD_FILENAME);
+    console.log('uploaded');
+});
