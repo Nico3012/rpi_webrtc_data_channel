@@ -24,17 +24,17 @@ var embedFS embed.FS // embed all static files into the binary
 
 // Server represents the WebRTC server
 type Server struct {
-	peerConnection  *webrtc.PeerConnection
-	dataChannel     *webrtc.DataChannel
-	api             *webrtc.API
-	mutex           sync.Mutex
-	stopChan        chan bool
-	messageCallback func(string)
-	port            string
-	videoHandler    *video.Handler
-	videoEnabled    bool
-	audioHandler    *audio.Handler
-	audioEnabled    bool
+	peerConnection   *webrtc.PeerConnection
+	dataChannel      *webrtc.DataChannel
+	api              *webrtc.API
+	mutex            sync.Mutex
+	stopChan         chan bool
+	messageCallbacks []func(string)
+	port             string
+	videoHandler     *video.Handler
+	videoEnabled     bool
+	audioHandler     *audio.Handler
+	audioEnabled     bool
 }
 
 // SDPRequest represents an incoming SDP offer
@@ -114,9 +114,13 @@ func (s *Server) SendData(data string) error {
 	return s.dataChannel.SendText(data)
 }
 
-// InitReadDataCallback sets a callback function that will be executed when a new message is received
-func (s *Server) InitReadDataCallback(callback func(string)) {
-	s.messageCallback = callback
+// OnMessage registers a callback function that will be executed when a new message is received.
+// Multiple callbacks can be registered; they are appended to the internal list.
+func (s *Server) OnMessage(callback func(string)) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	s.messageCallbacks = append(s.messageCallbacks, callback)
 }
 
 // IsConnected returns true if the data channel is connected and ready
@@ -264,9 +268,13 @@ func (s *Server) processOffer(offerType, offerSDP string) (string, error) {
 		dc.OnMessage(func(msg webrtc.DataChannelMessage) {
 			message := string(msg.Data)
 
-			// Call the user-defined callback if set
-			if s.messageCallback != nil {
-				s.messageCallback(message)
+			// Call all registered callbacks (copy under lock to avoid holding lock while calling)
+			s.mutex.Lock()
+			callbacks := append([]func(string){}, s.messageCallbacks...)
+			s.mutex.Unlock()
+
+			for _, cb := range callbacks {
+				cb(message)
 			}
 		})
 
