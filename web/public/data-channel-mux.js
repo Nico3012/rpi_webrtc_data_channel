@@ -1,6 +1,6 @@
 const ID_LENGTH = 6;
 
-class Channel extends EventTarget {
+export class Channel extends EventTarget {
     /**
      * @param {import('./components/webrtc-connection.js').WebRTCConnection} webrtcConnection
      * @param {string} id

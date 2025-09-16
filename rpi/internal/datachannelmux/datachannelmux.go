@@ -45,7 +45,7 @@ type DataChannelMux struct {
 	server *webrtcserver.Server
 }
 
-func CreateDataChannelMux(server *webrtcserver.Server) *DataChannelMux {
+func New(server *webrtcserver.Server) *DataChannelMux {
 	mux := &DataChannelMux{
 		server: server,
 	}
