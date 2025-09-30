@@ -65,6 +65,9 @@ const mux = new DataChannelMux(webrtcConnection);
 const channel = mux.createChannel('123456');
 
 uploadBtn?.addEventListener('click', async () => {
-    await uploadFile(channel, FETCH_PATH, UPLOAD_FILENAME);
-    console.log('uploaded');
+    for await (const step of uploadFile(channel, FETCH_PATH, UPLOAD_FILENAME)) {
+        console.log(UPLOAD_FILENAME, `${step.filename}: ${(step.progress * 100).toFixed(1)}%`);
+    }
+
+    console.log(UPLOAD_FILENAME, 'uploaded. Completed this file!');
 });

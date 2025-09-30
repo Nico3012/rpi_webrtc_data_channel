@@ -3,10 +3,12 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/Nico3012/rpi_webrtc_data_channel/rpi/internal/datachannelmux"
@@ -24,28 +26,52 @@ type fileInitMsg struct {
 
 type fileChunkMsg struct {
 	Type        string `json:"type"`
+	Filename    string `json:"filename"`
 	Index       int    `json:"index"`
 	TotalChunks int    `json:"totalChunks"`
 	Data        string `json:"data"` // base64
 }
 
+type fileAckMsg struct {
+	Type     string `json:"type"`
+	Filename string `json:"filename"`
+	Index    int    `json:"index"`
+}
+
+type fileCompleteMsg struct {
+	Type        string `json:"type"`
+	Filename    string `json:"filename"`
+	TotalChunks int    `json:"totalChunks"`
+	TotalSize   int    `json:"totalSize"`
+}
+
+type fileErrorMsg struct {
+	Type     string `json:"type"`
+	Filename string `json:"filename"`
+	Reason   string `json:"reason"`
+}
+
+type transferState struct {
+	safePath    string
+	totalChunks int
+	totalSize   int
+	chunks      map[int][]byte
+}
+
 func UploadListener(channel *datachannelmux.Channel) {
 
-	// Map to collect incoming chunks per filename
-	var mu sync.Mutex
-	files := make(map[string]map[int][]byte)
-	totals := make(map[string]int)
+	var (
+		mu        sync.Mutex
+		transfers = make(map[string]*transferState)
+	)
 
-	// Ensure output folder exists
 	if err := os.MkdirAll(outputFolder, 0o755); err != nil {
 		log.Fatalf("failed to create output folder: %v", err)
 	}
 
 	channel.OnMessage(func(data string) {
-		// Try to parse as JSON to detect file messages
 		var generic map[string]interface{}
 		if err := json.Unmarshal([]byte(data), &generic); err != nil {
-			// not JSON - print as before
 			fmt.Println(data)
 			return
 		}
@@ -60,10 +86,26 @@ func UploadListener(channel *datachannelmux.Channel) {
 				return
 			}
 
+			safePath, err := safeRelativePath(init.Filename)
+			if err != nil {
+				log.Printf("rejecting file %q: %v", init.Filename, err)
+				sendFileError(channel, init.Filename, "invalid filename")
+				return
+			}
+
 			mu.Lock()
-			// prepare storage for chunks
-			files[init.Filename] = make(map[int][]byte)
-			totals[init.Filename] = init.TotalChunks
+			if _, ok := transfers[init.Filename]; ok {
+				mu.Unlock()
+				log.Printf("transfer already active for %s", init.Filename)
+				sendFileError(channel, init.Filename, "transfer already active")
+				return
+			}
+			transfers[init.Filename] = &transferState{
+				safePath:    safePath,
+				totalChunks: init.TotalChunks,
+				totalSize:   init.TotalSize,
+				chunks:      make(map[int][]byte),
+			}
 			mu.Unlock()
 
 			log.Printf("Receiving file init: %s (%d chunks, %d bytes)", init.Filename, init.TotalChunks, init.TotalSize)
@@ -75,78 +117,134 @@ func UploadListener(channel *datachannelmux.Channel) {
 				return
 			}
 
-			// Need to figure out filename - in this simple protocol we assume only one active transfer
-			// Use the first key in totals map as active filename
-			mu.Lock()
-			var activeFilename string
-			for fn := range totals {
-				activeFilename = fn
-				break
-			}
-			if activeFilename == "" {
-				log.Println("no active file for incoming chunk")
-				mu.Unlock()
-				return
-			}
-
-			// decode base64
 			raw, err := base64.StdEncoding.DecodeString(chunk.Data)
 			if err != nil {
-				mu.Unlock()
 				log.Println("base64 decode error:", err)
+				failTransfer(channel, &mu, transfers, chunk.Filename, "invalid chunk payload")
 				return
 			}
 
-			// store chunk
-			files[activeFilename][chunk.Index] = raw
-			received := len(files[activeFilename])
-			total := totals[activeFilename]
-			log.Printf("Received chunk %d for %s (%d/%d)", chunk.Index, activeFilename, received, total)
-
-			// send ack for this chunk back to sender
-			ack := map[string]interface{}{
-				"type":  "file-ack",
-				"index": chunk.Index,
-			}
-			if b, err := json.Marshal(ack); err == nil {
-				// best-effort send
-				channel.SendData(string(b))
+			mu.Lock()
+			transfer, ok := transfers[chunk.Filename]
+			if !ok {
+				mu.Unlock()
+				log.Printf("no active file transfer for chunk: %s", chunk.Filename)
+				sendFileError(channel, chunk.Filename, "no active transfer")
+				return
 			}
 
-			// If we've received all chunks, assemble and write
-			if received >= total {
-				// assemble in order
-				out := make([]byte, 0)
-				for i := 0; i < total; i++ {
-					part, ok := files[activeFilename][i]
+			if chunk.Index < 0 || chunk.Index >= transfer.totalChunks {
+				mu.Unlock()
+				log.Printf("chunk index %d out of bounds for %s", chunk.Index, chunk.Filename)
+				failTransfer(channel, &mu, transfers, chunk.Filename, "chunk index out of bounds")
+				return
+			}
+
+			transfer.chunks[chunk.Index] = raw
+			received := len(transfer.chunks)
+			total := transfer.totalChunks
+
+			var (
+				completeData []byte
+				safePath     string
+				totalSize    int
+				missingIndex = -1
+			)
+
+			if received == transfer.totalChunks {
+				completeData = make([]byte, 0, transfer.totalSize)
+				for i := 0; i < transfer.totalChunks; i++ {
+					part, ok := transfer.chunks[i]
 					if !ok {
-						log.Printf("missing chunk %d for %s", i, activeFilename)
-						// abort assembly
-						mu.Unlock()
-						return
+						missingIndex = i
+						break
 					}
-					out = append(out, part...)
+					completeData = append(completeData, part...)
 				}
-
-				// write to disk
-				outPath := outputFolder + string(os.PathSeparator) + activeFilename
-				if err := ioutil.WriteFile(outPath, out, 0o644); err != nil {
-					log.Println("failed to write file:", err)
-				} else {
-					log.Printf("Wrote file: %s (%d bytes)", outPath, len(out))
+				if missingIndex == -1 {
+					safePath = transfer.safePath
+					totalSize = len(completeData)
+					delete(transfers, chunk.Filename)
 				}
-
-				// cleanup
-				delete(files, activeFilename)
-				delete(totals, activeFilename)
 			}
 
 			mu.Unlock()
 
+			if missingIndex != -1 {
+				log.Printf("missing chunk %d for %s", missingIndex, chunk.Filename)
+				failTransfer(channel, &mu, transfers, chunk.Filename, fmt.Sprintf("missing chunk %d", missingIndex))
+				return
+			}
+
+			sendJSON(channel, fileAckMsg{
+				Type:     "file-ack",
+				Filename: chunk.Filename,
+				Index:    chunk.Index,
+			})
+			log.Printf("Received chunk %d for %s (%d/%d)", chunk.Index, chunk.Filename, received, total)
+
+			if completeData != nil {
+				outPath := filepath.Join(outputFolder, safePath)
+				if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
+					log.Println("failed to create output directory:", err)
+					failTransfer(channel, &mu, transfers, chunk.Filename, "failed to create output directory")
+					return
+				}
+
+				if err := os.WriteFile(outPath, completeData, 0o644); err != nil {
+					log.Println("failed to write file:", err)
+					failTransfer(channel, &mu, transfers, chunk.Filename, "failed to write file")
+					return
+				}
+
+				log.Printf("Wrote file: %s (%d bytes)", outPath, totalSize)
+				sendJSON(channel, fileCompleteMsg{
+					Type:        "file-complete",
+					Filename:    chunk.Filename,
+					TotalChunks: total,
+					TotalSize:   totalSize,
+				})
+			}
+
 		default:
-			// unknown JSON type - print raw
 			fmt.Println(data)
 		}
 	})
 
+}
+
+func safeRelativePath(name string) (string, error) {
+	cleaned := filepath.Clean("/" + name)
+	if cleaned == "/" || cleaned == "." {
+		return "", errors.New("empty filename")
+	}
+	cleaned = strings.TrimPrefix(cleaned, "/")
+	if cleaned == "" || cleaned == "." {
+		return "", errors.New("invalid filename")
+	}
+	return cleaned, nil
+}
+
+func sendJSON(channel *datachannelmux.Channel, payload interface{}) {
+	b, err := json.Marshal(payload)
+	if err != nil {
+		log.Printf("failed to marshal payload: %v", err)
+		return
+	}
+	channel.SendData(string(b))
+}
+
+func sendFileError(channel *datachannelmux.Channel, filename, reason string) {
+	sendJSON(channel, fileErrorMsg{
+		Type:     "file-error",
+		Filename: filename,
+		Reason:   reason,
+	})
+}
+
+func failTransfer(channel *datachannelmux.Channel, mu *sync.Mutex, transfers map[string]*transferState, filename, reason string) {
+	mu.Lock()
+	delete(transfers, filename)
+	mu.Unlock()
+	sendFileError(channel, filename, reason)
 }
