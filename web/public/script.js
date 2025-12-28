@@ -53,8 +53,6 @@ webrtcConnection.addEventListener('connection-update', () => {
 //     }
 // }, 100);
 
-export { };
-
 // --- File upload logic ---
 // User-configurable values
 const FETCH_PATH = '/assets/video.mp4'; // path to fetch the binary from
