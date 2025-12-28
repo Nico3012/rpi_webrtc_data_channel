@@ -1,0 +1,21 @@
+html,
+body,
+#map {
+    height: 100%;
+    margin: 0;
+}
+
+.fallback {
+    position: absolute;
+    inset: 0;
+    display: none;
+    place-items: center;
+    font: 14px/1.4 monospace;
+    padding: 16px;
+    text-align: center;
+    background: white;
+}
+
+.fallback.show {
+    display: grid;
+}
