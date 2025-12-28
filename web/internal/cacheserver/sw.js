@@ -13,13 +13,16 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
     event.respondWith((async () => {
-        // if cache is not available, bypass the service worker!
-        if (!(await caches.has(CACHE_NAME))) return await fetch(event.request);
-
-        const cache = await caches.open(CACHE_NAME);
-
         const request = event.request;
         const url = new URL(request.url);
+
+        // Allow external URLs to pass through (CDN resources, etc.)
+        if (url.origin !== self.location.origin) return await fetch(request);
+
+        // if cache is not available, bypass the service worker!
+        if (!(await caches.has(CACHE_NAME))) return await fetch(request);
+
+        const cache = await caches.open(CACHE_NAME);
 
         // static routing server (Go http.FileServer compatible)
         if (!url.pathname.startsWith('/api/')) {
