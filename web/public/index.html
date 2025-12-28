@@ -13,10 +13,10 @@
             }
         }
     </script>
-    <script type="module" src="components/pwa-guide.js"></script>
-    <script type="module" src="components/cache-manager.js"></script>
-    <script type="module" src="components/webrtc-connection.js"></script>
-    <script type="module" src="components/digital-joystick.js"></script>
+    <script type="module" src="/components/pwa-guide.js"></script>
+    <script type="module" src="/components/cache-manager.js"></script>
+    <script type="module" src="/components/webrtc-connection.js"></script>
+    <script type="module" src="/components/digital-joystick.js"></script>
     <script type="module" src="script.js"></script>
     <script type="module" src="position.js"></script>
     <script type="module" src="style.js"></script>
@@ -47,6 +47,9 @@
                         <video id="camera" autoplay playsinline muted></video>
                     </div>
                     <audio id="microphone" autoplay></audio>
+                </div>
+                <div class="gps">
+                    <a href="/gps/" target="_top">GPS</a>
                 </div>
                 <digital-joystick id="right-joystick" precise></digital-joystick>
             </div>
