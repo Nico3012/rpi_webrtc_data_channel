@@ -16,10 +16,10 @@ import (
 var vars = map[string]string{
 	"Iface":    "wlp2s0",
 	"IP":       "192.168.50.1/24",
-	"SSID":     "LinuxAP",
-	"Password": "MeinPasswort123",
 	"DHCPMin":  "192.168.50.10",
 	"DHCPMax":  "192.168.50.100",
+	"SSID":     "Device Controller",
+	"Password": "Passwort123!",
 }
 
 /* ================= SHELL TEMPLATES ================= */

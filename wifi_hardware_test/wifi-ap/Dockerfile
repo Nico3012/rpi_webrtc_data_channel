@@ -1,8 +1,12 @@
-FROM debian:latest
+FROM golang:1-alpine
 
-RUN apt update && apt install -y hostapd dnsmasq
+# install dependencies
+RUN apk update && apk add iproute2 hostapd dnsmasq
 
-COPY hostapd.conf /etc/hostapd/hostapd.conf
-COPY dnsmasq.conf /etc/dnsmasq.conf
+WORKDIR /app
 
-CMD ["/bin/bash", "-c", "hostapd /etc/hostapd/hostapd.conf & dnsmasq --conf-file=/etc/dnsmasq.conf --no-daemon"]
+COPY . .
+
+RUN go install .
+
+CMD [ "wifi-ap" ]
