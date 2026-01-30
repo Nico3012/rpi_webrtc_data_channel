@@ -1,6 +1,7 @@
-FROM golang:1
+FROM golang:1-alpine
 
-RUN apt update && apt install -y iproute2 hostapd dnsmasq
+# install dependencies
+RUN apk update && apk add iproute2 hostapd dnsmasq
 
 WORKDIR /app
 
