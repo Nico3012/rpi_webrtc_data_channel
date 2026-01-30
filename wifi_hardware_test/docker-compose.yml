@@ -1,5 +1,11 @@
 services:
   wifi-ap:
-    build: .
+    build: ./wifi-ap
     network_mode: host
     privileged: true
+    restart: always
+  server:
+    build: ./server
+    ports:
+      - 80:80/tcp
+    restart: always
