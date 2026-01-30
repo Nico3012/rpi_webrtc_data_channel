@@ -1,0 +1,5 @@
+services:
+  wifi-ap:
+    build: .
+    network_mode: host
+    privileged: true
