@@ -74,7 +74,7 @@ func main() {
 		return
 	}
 
-	// 2) main.sh Logik direkt ausführen
+	// 2) main Logik direkt ausführen
 	mainCmdStr, err := renderTemplate(mainTemplate, vars)
 	if err != nil {
 		log.Printf("render main template failed: %v", err)
