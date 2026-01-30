@@ -20,6 +20,8 @@ var vars = map[string]string{
 	"DHCPMax":  "192.168.50.100",
 	"SSID":     "Device Controller",
 	"Password": "Passwort123!",
+	"Domain":   "device-controller.net",
+	"DomainIP": "192.168.50.1",
 }
 
 /* ================= SHELL TEMPLATES ================= */
@@ -44,6 +46,7 @@ cat > dnsmasq.conf <<EOF
 interface={{.Iface}}
 bind-interfaces
 dhcp-range={{.DHCPMin}},{{.DHCPMax}},12h
+address=/{{.Domain}}/{{.DomainIP}}
 EOF
 `
 
