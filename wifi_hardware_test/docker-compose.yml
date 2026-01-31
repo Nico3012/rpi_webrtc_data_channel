@@ -1,9 +1,16 @@
+name: device-controller
+
 services:
   wifi-ap:
     build: ./wifi-ap
     network_mode: host
     privileged: true
     stop_grace_period: 60s  # Wait 60 seconds before killing the container. The container performs cleanup actions
+    restart: always
+  hello-world:
+    build: ./hello-world
+    ports:
+      - 8080:8080/tcp
     restart: always
   server:
     build: ./server
