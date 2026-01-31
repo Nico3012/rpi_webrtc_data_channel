@@ -118,6 +118,23 @@ func (vh *Handler) streamCamera() error {
 			"-f", "rtp", // RTP output format
 			fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
 		)
+	case "linux-work": // UBUNTU ARBEIT
+		ffmpeg = exec.Command(
+			ffmpegBinary,
+			"-loglevel", ffmpegLogLevel,
+			"-hide_banner",      // removes version/config dump
+			"-nostats",          // removes the periodic "time=... bitrate=..." progress lines
+			"-i", "/dev/video0", // input device
+			"-c:v", "libvpx", // use VP8 codec
+			"-deadline", "realtime", // good quality encoding preset (use 'realtime' for better performance or 'best' for better quality)
+			"-cpu-used", "8", // moderate CPU usage for better quality (up to 8 for best performance)
+			"-video_size", "640x480", // video resolution
+			"-framerate", "30", // frame rate
+			"-b:v", "1.5M", // Bitrate
+			"-an",       // Disable audio
+			"-f", "rtp", // RTP output format
+			fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
+		)
 	case "windows-work": // WINDOWS ARBEIT
 		ffmpeg = exec.Command(
 			ffmpegBinary,

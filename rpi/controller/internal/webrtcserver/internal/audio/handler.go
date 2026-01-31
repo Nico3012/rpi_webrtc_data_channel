@@ -115,6 +115,21 @@ func (ah *Handler) streamAudio() error {
 			"-f", "rtp", // RTP output format
 			fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
 		)
+	case "linux-work": // UBUNTU ARBEIT
+		ffmpeg = exec.Command(
+			ffmpegBinary,
+			"-loglevel", ffmpegLogLevel,
+			"-hide_banner",                   // removes version/config dump
+			"-nostats",                       // removes the periodic "time=... bitrate=..." progress lines
+			"-f", "alsa", "-i", "plughw:1,0", // input device
+			"-c:a", "libopus", // use opus codec
+			"-frame_duration", "20", // 20ms frames
+			"-application", "voip", // Low-latency mode
+			"-b:a", "48k", // Bitrate
+			"-vn",       // Disable video
+			"-f", "rtp", // RTP output format
+			fmt.Sprintf("rtp://127.0.0.1:%d", udpPort), // output URL
+		)
 	case "windows-work": // WINDOWS ARBEIT
 		ffmpeg = exec.Command(
 			ffmpegBinary,
