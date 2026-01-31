@@ -12,8 +12,8 @@ services:
     ports:
       - 8080:8080/tcp
     restart: always
-  server:
-    build: ./server
+  controller:
+    build: ./controller
     ports:
       - 80:80/tcp
     restart: always
