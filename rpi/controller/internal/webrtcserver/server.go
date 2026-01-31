@@ -13,8 +13,8 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/Nico3012/rpi_webrtc_data_channel/rpi/internal/webrtcserver/internal/audio"
-	"github.com/Nico3012/rpi_webrtc_data_channel/rpi/internal/webrtcserver/internal/video"
+	"github.com/Nico3012/rpi_webrtc_data_channel/rpi/controller/internal/webrtcserver/internal/audio"
+	"github.com/Nico3012/rpi_webrtc_data_channel/rpi/controller/internal/webrtcserver/internal/video"
 
 	"github.com/pion/webrtc/v4"
 )
