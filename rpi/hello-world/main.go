@@ -25,5 +25,5 @@ func main() {
 		fileServer.ServeHTTP(w, r)
 	})
 
-	log.Fatalln(http.ListenAndServe(":8080", mux))
+	log.Fatalln(http.ListenAndServe(":3000", mux))
 }
