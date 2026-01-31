@@ -5,7 +5,7 @@ services:
     build: ./wifi-ap
     network_mode: host
     privileged: true
-    stop_grace_period: 60s  # Wait 60 seconds before killing the container. The container performs cleanup actions
+    stop_grace_period: 60s # Wait 60 seconds before killing the container. The container performs cleanup actions
     restart: always
   hello-world:
     build: ./hello-world
@@ -14,6 +14,5 @@ services:
     restart: always
   controller:
     build: ./controller
-    ports:
-      - 80:80/tcp
+    network_mode: host # Port 80 freigeben reicht nicht aus, da webrtc auch über andere ports kommuniziert. Daher host netzwerk nutzen. (Diese option funktioniert unter windows aufgrund der docker linux vm nicht richtig.)
     restart: always
