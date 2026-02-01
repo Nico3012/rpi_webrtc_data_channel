@@ -8,8 +8,9 @@ import (
 )
 
 // New starts the startCommand in the background and returns a stop function.
-// The stop function gracefully stops the command if it's still running and then runs the cleanupCommand synchronously.
-func New(startCommand, cleanupCommand string) func() {
+// The stop function gracefully stops the command if it's still running.
+func New(startCommand string) func() {
+	log.Printf("[RUNNER]: Starting command")
 	cmd := exec.Command("sh", "-c", startCommand)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -27,6 +28,7 @@ func New(startCommand, cleanupCommand string) func() {
 	}()
 
 	return func() {
+		log.Printf("[RUNNER]: Stopping command...")
 		// If the process is still running, stop it gracefully
 		if cmd.Process != nil && cmd.ProcessState == nil {
 			err := cmd.Process.Signal(syscall.SIGTERM)
@@ -36,14 +38,6 @@ func New(startCommand, cleanupCommand string) func() {
 			// Wait for the process to finish
 			<-done
 		}
-
-		// Run the cleanup command and wait for it to finish
-		cleanupCmd := exec.Command("sh", "-c", cleanupCommand)
-		cleanupCmd.Stdout = os.Stdout
-		cleanupCmd.Stderr = os.Stderr
-		err := cleanupCmd.Run()
-		if err != nil {
-			log.Printf("Cleanup command '%s' failed: %v", cleanupCommand, err)
-		}
+		log.Printf("[RUNNER]: Stopped command")
 	}
 }

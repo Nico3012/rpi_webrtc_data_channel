@@ -66,6 +66,7 @@ func saveConfig(config map[string]string) (map[string]string, error) {
 
 var startTemplate = `
 set -e
+echo [SH]: Starting command
 ip addr add {{.IP}} dev {{.Iface}} || true
 
 cat > hostapd.conf <<EOF
@@ -93,6 +94,7 @@ dnsmasq --conf-file=./dnsmasq.conf --no-daemon &
 PID2=$!
 
 shutdown() {
+  echo [SH]: Stopping command...
   # Gracefully stop child processes and wait until they have finished their shutdown.
   kill -TERM "$PID1" "$PID2" 2>/dev/null || true
   wait "$PID1" 2>/dev/null || true
@@ -103,6 +105,7 @@ shutdown() {
 cleanup() {
   ip addr del {{.IP}} dev {{.Iface}} || true
   rm -f hostapd.conf dnsmasq.conf
+  echo [SH]: Stopped command
 }
 
 # On SIGTERM/SIGINT: stop children gracefully, then exit. Cleanup will run via EXIT trap.
@@ -113,11 +116,6 @@ trap 'cleanup' EXIT
 
 # Normal operation: wait indefinitely until hostapd/dnsmasq exit.
 wait "$PID1" "$PID2"
-`
-
-var cleanupTemplate = `
-set -e
-echo "cleanupTemplate: nothing to do (handled in startTemplate shutdown)"
 `
 
 /* ================= UTIL ================= */
@@ -204,13 +202,7 @@ func main() {
 			log.Fatalf("failed to render start template: %v", err)
 		}
 
-		// Render cleanup command
-		cleanupCommand, err := renderTemplate(cleanupTemplate, vars)
-		if err != nil {
-			log.Fatalf("failed to render cleanup template: %v", err)
-		}
-
-		stop := runner.New(startCommand, cleanupCommand)
+		stop := runner.New(startCommand)
 
 		sig := make(chan os.Signal, 1)
 		signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
