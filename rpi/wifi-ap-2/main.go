@@ -97,6 +97,7 @@ shutdown() {
   kill -TERM "$PID1" "$PID2" 2>/dev/null || true
   wait "$PID1" 2>/dev/null || true
   wait "$PID2" 2>/dev/null || true
+  exit 0
 }
 
 cleanup() {
@@ -105,7 +106,7 @@ cleanup() {
 }
 
 # On SIGTERM/SIGINT: stop children gracefully, then exit. Cleanup will run via EXIT trap.
-trap 'shutdown; exit 0' TERM INT
+trap 'shutdown' TERM INT
 
 # Always cleanup on exit (normal exit or signal-triggered exit).
 trap 'cleanup' EXIT
