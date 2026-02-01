@@ -15,41 +15,44 @@
 <body>
   <h1>WiFi AP Config</h1>
 
-  <div class="row">
-    <label for="ssid">SSID</label>
-    <input id="ssid" type="text" />
-  </div>
+  <form id="configForm">
+    <div class="row">
+      <label for="ssid">SSID</label>
+      <input id="ssid" name="ssid" type="text" required />
+    </div>
 
-  <div class="row">
-    <label for="oldPassword">Altes Passwort</label>
-    <input id="oldPassword" type="password" />
-  </div>
+    <div class="row">
+      <label for="oldPassword">Altes Passwort</label>
+      <input id="oldPassword" name="oldPassword" type="password" required />
+    </div>
 
-  <div class="row">
-    <label for="newPassword">Neues Passwort</label>
-    <input id="newPassword" type="password" />
-  </div>
+    <div class="row">
+      <label for="newPassword">Neues Passwort</label>
+      <input id="newPassword" name="newPassword" type="password" required />
+    </div>
 
-  <div class="row">
-    <label for="newPassword2">Neues Passwort (wiederholen)</label>
-    <input id="newPassword2" type="password" />
-  </div>
+    <div class="row">
+      <label for="newPassword2">Neues Passwort (wiederholen)</label>
+      <input id="newPassword2" name="newPassword2" type="password" required />
+    </div>
 
-  <button id="save">Speichern</button>
+    <button type="submit">Speichern</button>
+  </form>
 
   <script>
+    const form = document.getElementById('configForm');
     const ssid = document.getElementById('ssid');
     const oldPassword = document.getElementById('oldPassword');
     const newPassword = document.getElementById('newPassword');
     const newPassword2 = document.getElementById('newPassword2');
-    const save = document.getElementById('save');
 
     fetch('/get-config')
       .then(r => r.json())
       .then(data => { ssid.value = data.ssid || ''; })
       .catch(err => console.error(err));
 
-    save.addEventListener('click', async () => {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
       if (newPassword.value !== newPassword2.value) {
         alert('Neue Passwörter stimmen nicht überein');
         return;
