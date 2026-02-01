@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WiFi AP Config</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; max-width: 640px; }
+    label { display:block; margin-top: 12px; }
+    input { width: 100%; padding: 8px; box-sizing: border-box; }
+    button { margin-top: 16px; padding: 10px 16px; }
+    .row { margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>WiFi AP Config</h1>
+
+  <div class="row">
+    <label for="ssid">SSID</label>
+    <input id="ssid" type="text" />
+  </div>
+
+  <div class="row">
+    <label for="oldPassword">Altes Passwort</label>
+    <input id="oldPassword" type="password" />
+  </div>
+
+  <div class="row">
+    <label for="newPassword">Neues Passwort</label>
+    <input id="newPassword" type="password" />
+  </div>
+
+  <div class="row">
+    <label for="newPassword2">Neues Passwort (wiederholen)</label>
+    <input id="newPassword2" type="password" />
+  </div>
+
+  <button id="save">Speichern</button>
+
+  <script>
+    const ssid = document.getElementById('ssid');
+    const oldPassword = document.getElementById('oldPassword');
+    const newPassword = document.getElementById('newPassword');
+    const newPassword2 = document.getElementById('newPassword2');
+    const save = document.getElementById('save');
+
+    fetch('/get-config')
+      .then(r => r.json())
+      .then(data => { ssid.value = data.ssid || ''; })
+      .catch(err => console.error(err));
+
+    save.addEventListener('click', async () => {
+      if (newPassword.value !== newPassword2.value) {
+        alert('Neue Passwörter stimmen nicht überein');
+        return;
+      }
+      const res = await fetch('/set-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ssid: ssid.value,
+          oldPassword: oldPassword.value,
+          newPassword: newPassword.value,
+        })
+      });
+      if (res.ok) {
+        alert('Gespeichert. AP wird neu gestartet.');
+        oldPassword.value = '';
+        newPassword.value = '';
+        newPassword2.value = '';
+      } else {
+        alert('Fehler: ' + await res.text());
+      }
+    });
+  </script>
+</body>
+</html>
