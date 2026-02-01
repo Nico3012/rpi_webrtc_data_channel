@@ -4,77 +4,21 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>WiFi AP Config</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; max-width: 640px; }
-    label { display:block; margin-top: 12px; }
-    input { width: 100%; padding: 8px; box-sizing: border-box; }
-    button { margin-top: 16px; padding: 10px 16px; }
-    .row { margin-top: 8px; }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>WiFi AP Config</h1>
-
-  <form id="configForm">
-    <div class="row">
-      <label for="ssid">SSID</label>
-      <input id="ssid" name="ssid" type="text" required />
-    </div>
-
-    <div class="row">
-      <label for="oldPassword">Altes Passwort</label>
-      <input id="oldPassword" name="oldPassword" type="password" required />
-    </div>
-
-    <div class="row">
-      <label for="newPassword">Neues Passwort</label>
-      <input id="newPassword" name="newPassword" type="password" required />
-    </div>
-
-    <div class="row">
-      <label for="newPassword2">Neues Passwort (wiederholen)</label>
-      <input id="newPassword2" name="newPassword2" type="password" required />
-    </div>
-
-    <button type="submit">Speichern</button>
-  </form>
-
-  <script>
-    const form = document.getElementById('configForm');
-    const ssid = document.getElementById('ssid');
-    const oldPassword = document.getElementById('oldPassword');
-    const newPassword = document.getElementById('newPassword');
-    const newPassword2 = document.getElementById('newPassword2');
-
-    fetch('/get-config')
-      .then(r => r.json())
-      .then(data => { ssid.value = data.ssid || ''; })
-      .catch(err => console.error(err));
-
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      if (newPassword.value !== newPassword2.value) {
-        alert('Neue Passwörter stimmen nicht überein');
-        return;
-      }
-      const res = await fetch('/set-config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ssid: ssid.value,
-          oldPassword: oldPassword.value,
-          newPassword: newPassword.value,
-        })
-      });
-      if (res.ok) {
-        alert('Gespeichert. AP wird neu gestartet.');
-        oldPassword.value = '';
-        newPassword.value = '';
-        newPassword2.value = '';
-      } else {
-        alert('Fehler: ' + await res.text());
-      }
-    });
-  </script>
+  <div class="container">
+    <h1>WiFi AP Config</h1>
+    <form id="configForm" class="config-form">
+      <div class="form-group">
+        <label>SSID <input name="ssid" type="text" required /></label>
+      </div>
+      <div class="form-group">
+        <label>Passwort <input name="password" type="text" required /></label>
+      </div>
+      <button type="submit" class="btn">Speichern</button>
+    </form>
+  </div>
+  <script type="module" src="script.js"></script>
 </body>
 </html>

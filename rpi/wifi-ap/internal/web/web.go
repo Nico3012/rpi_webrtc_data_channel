@@ -12,18 +12,8 @@ import (
 var embedFS embed.FS
 
 type Config struct {
-	SSID     string
-	Password string
-}
-
-type GetConfigResponse struct {
-	SSID string `json:"ssid"`
-}
-
-type SetConfigRequest struct {
-	SSID        string `json:"ssid"`
-	OldPassword string `json:"oldPassword"`
-	NewPassword string `json:"newPassword"`
+	SSID     string `json:"ssid"`
+	Password string `json:"password"`
 }
 
 type GetConfigFunc func() (Config, error)
@@ -82,7 +72,7 @@ func (s *Server) handleGetConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(GetConfigResponse{SSID: cfg.SSID})
+	json.NewEncoder(w).Encode(cfg)
 }
 
 func (s *Server) handleSetConfig(w http.ResponseWriter, r *http.Request) {
@@ -94,25 +84,12 @@ func (s *Server) handleSetConfig(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "setConfig not configured", http.StatusInternalServerError)
 		return
 	}
-	var req SetConfigRequest
+	var req Config
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	currentCfg, err := s.getConfig()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if req.OldPassword != currentCfg.Password {
-		http.Error(w, "Invalid old password", http.StatusBadRequest)
-		return
-	}
-	newCfg := Config{
-		SSID:     req.SSID,
-		Password: req.NewPassword,
-	}
-	if err := s.setConfig(newCfg); err != nil {
+	if err := s.setConfig(req); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
