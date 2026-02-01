@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiFi AP Configuration</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        input { width: 100%; box-sizing: border-box; }
+        button { padding: 10px 20px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+    </style>
+</head>
+<body>
+    <h1>WiFi AP Configuration</h1>
+    <table id="configTable">
+        <thead>
+            <tr>
+                <th>Key</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Rows will be populated by JavaScript -->
+        </tbody>
+    </table>
+    <br>
+    <button id="saveButton">Save</button>
+
+    <script>
+        const configTable = document.getElementById('configTable').querySelector('tbody');
+        const saveButton = document.getElementById('saveButton');
+
+        // Load current config
+        fetch('/api/config')
+            .then(response => response.json())
+            .then(data => {
+                for (const [key, value] of Object.entries(data)) {
+                    const row = configTable.insertRow();
+                    const keyCell = row.insertCell(0);
+                    const valueCell = row.insertCell(1);
+                    keyCell.textContent = key;
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = value;
+                    valueCell.appendChild(input);
+                }
+            })
+            .catch(error => console.error('Error loading config:', error));
+
+        // Save config
+        saveButton.addEventListener('click', () => {
+            const data = {};
+            const rows = configTable.rows;
+            for (let i = 0; i < rows.length; i++) {
+                const key = rows[i].cells[0].textContent;
+                const value = rows[i].cells[1].querySelector('input').value;
+                data[key] = value;
+            }
+            fetch('/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('Configuration saved and AP restarted.');
+                } else {
+                    alert('Error saving configuration.');
+                }
+            })
+            .catch(error => console.error('Error saving config:', error));
+        });
+    </script>
+</body>
+</html>
