@@ -1,24 +1,30 @@
 <!doctype html>
 <html lang="de">
+
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WiFi AP Config</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WiFi AP Config</title>
+    <link rel="stylesheet" href="style.css" />
+    <script defer src="qr-code-styling@1.5.0/qr-code-styling.js"></script>
+    <script type="module" src="script.js"></script>
 </head>
+
 <body>
-  <div class="container">
-    <h1>WiFi AP Config</h1>
-    <form id="configForm" class="config-form">
-      <div class="form-group">
-        <label>SSID <input name="ssid" type="text" required /></label>
-      </div>
-      <div class="form-group">
-        <label>Passwort <input name="password" type="text" required /></label>
-      </div>
-      <button type="submit" class="btn">Speichern</button>
-    </form>
-  </div>
-  <script type="module" src="script.js"></script>
+    <div class="container">
+        <h1>WiFi AP Config</h1>
+        <form id="configForm" class="config-form">
+            <div class="form-group">
+                <label>SSID <input name="ssid" type="text" required /></label>
+            </div>
+            <div class="form-group">
+                <label>Passwort <input name="password" type="text" required /></label>
+            </div>
+            <button type="submit" class="btn">Speichern</button>
+        </form>
+        <div id="qr-code-container"></div>
+        <button id="download-qr-code">Download</button>
+    </div>
 </body>
+
 </html>

@@ -106,6 +106,10 @@ input:invalid {
   box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
 }
 
+#qr-code-container > canvas {
+  width: 200px;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   .container {
