@@ -5,6 +5,8 @@ services:
     build: ./wifi-ap
     network_mode: host
     privileged: true
+    environment:
+      - DEVICE=linux-work
     stop_grace_period: 60s # Wait 60 seconds before killing the container. The container performs cleanup actions
     restart: always
   hello-world:
