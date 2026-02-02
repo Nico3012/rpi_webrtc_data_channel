@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/assets/favicon.png" type="image/png">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <script type="importmap">
+        {
+            "imports": {
+                "lit": "/lit@3.2.1/lit-core.min.js"
+            }
+        }
+    </script>
+    <script type="module" src="/components/pwa-guide.js"></script>
+    <script type="module" src="/components/cache-manager.js"></script>
+    <script type="module" src="geolocation-manager.js"></script>
+    <script type="module" src="script.js"></script>
+    <title>Device Controller</title>
+</head>
+<body>
+    <div class="container">
+        <pwa-guide app-name="Device Controller" app-icon-src="/assets/icon-192.png"></pwa-guide>
+        <div class="wrapper">
+            <cache-manager></cache-manager>
+            <div class="dashboard">
+                <h1>Hallo World</h1>
+                <geolocation-manager></geolocation-manager>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+    "compilerOptions": {
+        "checkJs": true,
+        "noEmit": true,
+        "strict": true,
+
+        // code checks
+        "allowUnreachableCode": false,
+        "alwaysStrict": true,
+        "exactOptionalPropertyTypes": true,
+        "noImplicitAny": true,
+        "noImplicitReturns": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "noUncheckedIndexedAccess": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "strictFunctionTypes": true,
+        "strictNullChecks": true,
+        "useUnknownInCatchVariables": true,
+
+        // import types from npm, that are resolved by a importmap
+        "moduleResolution": "nodenext",
+        "module": "NodeNext"
+    },
+    "include": ["./**/*.js"],
+    "exclude": [
+        "lit@3.2.1",
+        "node_modules"
+    ]
+}
