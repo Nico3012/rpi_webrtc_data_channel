@@ -1,5 +1,7 @@
 import { LitElement, html, css } from 'lit';
 
+const dirname = import.meta.url.substring(0, import.meta.url.lastIndexOf('/') + 1);
+
 export class GeolocationManager extends LitElement {
     static properties = {
         watching: { type: Boolean, attribute: false },
@@ -50,9 +52,7 @@ export class GeolocationManager extends LitElement {
     }
 
     /** @private @param {GeolocationPosition} pos */
-    successCallback(pos) {
-        console.log(pos.coords);
-
+    successCallback = (pos) => {
         this.latitude = pos.coords.latitude;
         this.longitude = pos.coords.longitude;
         this.accuracy = pos.coords.accuracy;
@@ -66,7 +66,7 @@ export class GeolocationManager extends LitElement {
     }
 
     /** @private */
-    stopWatching() {
+    stopWatching = () => {
         navigator.geolocation.clearWatch(this.watchingId);
         this.watching = false;
 
@@ -83,13 +83,13 @@ export class GeolocationManager extends LitElement {
     }
 
     /** @private @param {GeolocationPositionError} err */
-    errorCallback(err) {
+    errorCallback = (err) => {
         console.warn(err);
         this.stopWatching();
     }
 
     /** @private */
-    toggleWatching() {
+    toggleWatching = () => {
         if (this.watching) {
             this.stopWatching();
         } else {
@@ -102,7 +102,28 @@ export class GeolocationManager extends LitElement {
         }
     }
 
-    static styles = css``;
+    static styles = css`
+        .heading {
+            display: grid;
+            justify-items: center;
+            align-items: center;
+        }
+
+        .heading-background {
+            grid-area: 1 / 1 / 2 / 2;
+            width: 256px;
+            height: 256px;
+            padding: 16px;
+            border-radius: 50%;
+            border: 4px solid black;
+        }
+
+        .heading-foreground {
+            grid-area: 1 / 1 / 2 / 2;
+            width: 32px;
+            height: 128px;
+        }
+    `;
 
     render() {
         return html`
@@ -118,26 +139,9 @@ export class GeolocationManager extends LitElement {
                 </div>
             `}
             ${this.heading === null ? null : html`
-                <div>
-                    <svg width="120" height="120" viewBox="0 0 100 100" style="transform: rotate(-${this.heading.toFixed(0)}deg); transition: transform 0.2s linear;">
-                        <!-- Außenkreis -->
-                        <circle
-                            cx="50"
-                            cy="50"
-                            r="48"
-                            fill="none"
-                            stroke="black"
-                            stroke-width="4"
-                        />
-
-                        <!-- Nadel -->
-                        <g>
-                            <polygon
-                                points="50,10 54,50 50,90 46,50"
-                                fill="black"
-                            />
-                        </g>
-                    </svg>
+                <div class="heading">
+                    <img class="heading-background" src="${dirname}heading-background.svg" alt="heading-background">
+                    <img class="heading-foreground" src="${dirname}heading-foreground.svg" alt="heading-foreground" style="transform: rotate(-${this.heading.toFixed(0)}deg); transition: transform 0.2s linear;">
                 </div>
             `}
         `;
