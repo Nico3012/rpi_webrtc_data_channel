@@ -49,6 +49,29 @@ export class GeolocationManager extends LitElement {
 
         /** @type {number | null} @private */
         this.speed = null;
+
+        // leaflet:
+
+        /** @type {HTMLIFrameElement} @private */
+        this.leafletIFrame = document.createElement('iframe');
+        this.leafletIFrame.src = `${dirname}iframe/`;
+        this.leafletIFrame.className = 'leaflet';
+
+        /** @type {Promise<any>} @private */
+        this.leafletL = new Promise(resolve => {
+            this.leafletIFrame.addEventListener('load', () => {
+                const contentWindow = this.leafletIFrame.contentWindow;
+                if (!contentWindow) throw new Error('somehow contentWindow null on load event');
+                
+                // @ts-expect-error
+                const L = contentWindow.L;
+                if (!L) throw new Error('cannot find leaflet L');
+
+                // initialize leaflet map
+
+                resolve(L);
+            });
+        });
     }
 
     /** @private @param {GeolocationPosition} pos */
@@ -63,6 +86,8 @@ export class GeolocationManager extends LitElement {
         this.heading = pos.coords.heading;
 
         this.speed = pos.coords.speed;
+
+        // updating leaflet map:
     }
 
     /** @private */
@@ -123,6 +148,16 @@ export class GeolocationManager extends LitElement {
             width: 32px;
             height: 128px;
         }
+
+        .leaflet {
+            margin: 0;
+            padding: 0;
+            border: none;
+            outline: none;
+            width: 384px;
+            height: 384px;
+            border-radius: 0;
+        }
     `;
 
     render() {
@@ -145,10 +180,11 @@ export class GeolocationManager extends LitElement {
                 </div>
             `}
             ${this.latitude === null || this.longitude === null || this.accuracy === null ? null : html`
-                <div>
+                <div class="map">
                     <div><span>Latitude: ${this.latitude.toString()} deg</span></div>
                     <div><span>Longitude: ${this.longitude.toString()} deg</span></div>
                     <div><span>Genauigkeit: ${this.accuracy.toFixed(1)} m</span></div>
+                    ${this.leafletIFrame}
                 </div>
             `}
         `;
