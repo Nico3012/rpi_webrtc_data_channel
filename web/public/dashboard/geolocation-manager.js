@@ -33,11 +33,11 @@ export class GeolocationManager extends LitElement {
         // coords:
 
         /** @type {number | null} @private */
-        this.latitude = null;
+        this.latitude = null; // in the spec, this is not a optional parameter. It will always be a number, in the successCallback
         /** @type {number | null} @private */
-        this.longitude = null;
+        this.longitude = null; // in the spec, this is not a optional parameter. It will always be a number, in the successCallback
         /** @type {number | null} @private */
-        this.accuracy = null;
+        this.accuracy = null; // in the spec, this is not a optional parameter. It will always be a number, in the successCallback
 
         /** @type {number | null} @private */
         this.altitude = null;
@@ -142,6 +142,13 @@ export class GeolocationManager extends LitElement {
                 <div class="heading">
                     <img class="heading-background" src="${dirname}heading-background.svg" alt="heading-background">
                     <img class="heading-foreground" src="${dirname}heading-foreground.svg" alt="heading-foreground" style="transform: rotate(-${this.heading.toFixed(0)}deg); transition: transform 0.2s linear;">
+                </div>
+            `}
+            ${this.latitude === null || this.longitude === null || this.accuracy === null ? null : html`
+                <div>
+                    <div><span>Latitude: ${this.latitude.toString()} deg</span></div>
+                    <div><span>Longitude: ${this.longitude.toString()} deg</span></div>
+                    <div><span>Genauigkeit: ${this.accuracy.toFixed(1)} m</span></div>
                 </div>
             `}
         `;
