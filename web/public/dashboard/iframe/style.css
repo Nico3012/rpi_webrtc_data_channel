@@ -5,3 +5,17 @@
     width: 100%;
     height: 100%;
 }
+
+/* custom marker styling */
+
+.icon-marker-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+img.marker-image {
+    width: 25%;
+    height: 100%;
+    transition: transform 0.2s linear;
+}
