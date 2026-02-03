@@ -36,14 +36,17 @@ tiles.addTo(map);
         }
     };
 
+    // @ts-expect-error
     const defaultIcon = new L.Icon.Default();
 
+    // @ts-expect-error
     const divIcon = L.divIcon({
         className: 'icon-marker-container',
         html: img,
         iconSize: [40, 40],
     });
 
+    // @ts-expect-error
     const marker = L.marker([lat, lon], {icon: defaultIcon});
 
     setMarkerHeading(heading);
@@ -67,7 +70,7 @@ tiles.addTo(map);
     // Function to update position based on speed and heading
     const updatePosition = () => {
         if (speed === 0 || speed === null || heading === null) {
-            return;
+            return; // no movement calculation possible or needed
         }
 
         const deltaTime = 0.1; // seconds (100ms interval)
