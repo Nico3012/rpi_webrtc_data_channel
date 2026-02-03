@@ -31,6 +31,11 @@
                 <summary>Connection</summary>
                 <webrtc-connection target-origin="http://device-controller.net:8080" request-video request-audio></webrtc-connection>
             </details>
+            <div class="gps">
+                <a href="/gps/" target="_top">GPS</a>
+                <a href="/qr-code/" target="_top">QR-Code</a>
+                <a href="/dashboard/" target="_top">Dashboard</a>
+            </div>
             <div class="position">
                 <button id="start-position">Start</button>
                 <span id="position">x: Unknown; y: Unknown; z: Unknown</span>
@@ -38,18 +43,11 @@
             </div>
             <div class="controller">
                 <digital-joystick id="left-joystick" precise stick-y default-y="-1"></digital-joystick>
-                <div class="upload">
-                    <button id="upload-btn">Upload file</button>
-                </div>
                 <div class="media">
                     <div class="video">
                         <video id="camera" autoplay playsinline muted></video>
                     </div>
                     <audio id="microphone" autoplay></audio>
-                </div>
-                <div class="gps">
-                    <a href="/gps/" target="_top">GPS</a>
-                    <a href="/qr-code/" target="_top">QR-Code</a>
                 </div>
                 <digital-joystick id="right-joystick" precise></digital-joystick>
             </div>

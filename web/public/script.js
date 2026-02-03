@@ -1,5 +1,4 @@
 import { DataChannelMux } from "./data-channel-mux.js";
-import { uploadFile } from "./upload.js";
 
 const webrtcConnection = document.querySelector('webrtc-connection');
 const cameraElement = document.getElementById('camera');
@@ -55,17 +54,17 @@ webrtcConnection.addEventListener('connection-update', () => {
 
 // --- File upload logic ---
 // User-configurable values
-const FETCH_PATH = '/assets/video.mp4'; // path to fetch the binary from
-const UPLOAD_FILENAME = 'uploaded_video.mp4'; // filename to send as target name on receiver
+// const FETCH_PATH = '/assets/video.mp4'; // path to fetch the binary from
+// const UPLOAD_FILENAME = 'uploaded_video.mp4'; // filename to send as target name on receiver
 
-const mux = new DataChannelMux(webrtcConnection);
+// const mux = new DataChannelMux(webrtcConnection);
 
-const channel = mux.createChannel('123456');
+// const channel = mux.createChannel('123456');
 
-uploadBtn?.addEventListener('click', async () => {
-    for await (const step of uploadFile(channel, FETCH_PATH, UPLOAD_FILENAME)) {
-        console.log(UPLOAD_FILENAME, `${step.filename}: ${(step.progress * 100).toFixed(1)}%`);
-    }
+// uploadBtn?.addEventListener('click', async () => {
+//     for await (const step of uploadFile(channel, FETCH_PATH, UPLOAD_FILENAME)) {
+//         console.log(UPLOAD_FILENAME, `${step.filename}: ${(step.progress * 100).toFixed(1)}%`);
+//     }
 
-    console.log(UPLOAD_FILENAME, 'uploaded. Completed this file!');
-});
+//     console.log(UPLOAD_FILENAME, 'uploaded. Completed this file!');
+// });
