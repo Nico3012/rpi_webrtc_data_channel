@@ -84,7 +84,7 @@ export class GeolocationManager extends LitElement {
 
         const leafletWindow = await this.leafletWindow;
 
-        leafletWindow.updateMarker(this.latitude, this.longitude, this.heading || 30, this.speed || 10);
+        leafletWindow.updateMarker(this.latitude, this.longitude, this.heading, this.speed);
     }
 
     /** @private */
