@@ -58,24 +58,17 @@ export class GeolocationManager extends LitElement {
         this.leafletIFrame.className = 'leaflet';
 
         /** @type {Promise<any>} @private */
-        this.leafletL = new Promise(resolve => {
+        this.leafletWindow = new Promise(resolve => {
             this.leafletIFrame.addEventListener('load', () => {
                 const contentWindow = this.leafletIFrame.contentWindow;
                 if (!contentWindow) throw new Error('somehow contentWindow null on load event');
-                
-                // @ts-expect-error
-                const L = contentWindow.L;
-                if (!L) throw new Error('cannot find leaflet L');
-
-                // initialize leaflet map
-
-                resolve(L);
+                resolve(contentWindow);
             });
         });
     }
 
     /** @private @param {GeolocationPosition} pos */
-    successCallback = (pos) => {
+    successCallback = async (pos) => {
         this.latitude = pos.coords.latitude;
         this.longitude = pos.coords.longitude;
         this.accuracy = pos.coords.accuracy;
@@ -88,6 +81,10 @@ export class GeolocationManager extends LitElement {
         this.speed = pos.coords.speed;
 
         // updating leaflet map:
+
+        const leafletWindow = await this.leafletWindow;
+
+        leafletWindow.updateMarker(this.latitude, this.longitude, this.heading || 30, this.speed || 10);
     }
 
     /** @private */
@@ -120,7 +117,7 @@ export class GeolocationManager extends LitElement {
         } else {
             this.watchingId = navigator.geolocation.watchPosition(this.successCallback, this.errorCallback, {
                 enableHighAccuracy: true,
-                timeout: 8000,
+                timeout: 15000,
                 maximumAge: 0,
             });
             this.watching = true;
