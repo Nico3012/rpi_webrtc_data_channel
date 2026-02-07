@@ -191,6 +191,7 @@ export class CacheManager extends LitElement {
                 this.collapsed = false;
             }
         } catch (e) {
+            // if e.g. the path to the service worker changes, then the exception will be thrown we we end up here
             alert(e.message);
         }
     }
