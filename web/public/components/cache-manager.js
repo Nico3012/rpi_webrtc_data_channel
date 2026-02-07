@@ -184,14 +184,13 @@ export class CacheManager extends LitElement {
     /** @private */
     async handleUpdate() {
         try {
-            if (confirm('This update method may not update app metadata such as icons. If this is needed, please use the \'Remove cache\' button.')) {
+            if (confirm('This update method only works for content updates or updates inside an existing service worker script. Also it may not update app metadata such as icons. Please use \'Remove cache\' otherwise.')) {
                 clearInterval(this.updateInterval);
-                await update();
+                await update(); // might fail, if e.g. the path to the service worker changes
                 this.state = 'uninstalled';
                 this.collapsed = false;
             }
         } catch (e) {
-            // if e.g. the path to the service worker changes, then the exception will be thrown we we end up here
             alert(e.message);
         }
     }
