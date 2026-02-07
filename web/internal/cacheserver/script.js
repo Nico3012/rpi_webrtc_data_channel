@@ -5,6 +5,7 @@ const CACHE_NAME = 'cache-v1';
 
 /** @returns {Promise<boolean>} */
 export const isInstalled = async () => {
+    // installed creteria is not the service worker! The service worker also checks, if the cache exists and if not, it behaves like a bridge between frontend and backend and does nothing
     return await caches.has(CACHE_NAME);
 };
 
@@ -12,9 +13,10 @@ export const isInstalled = async () => {
 export const install = async () => {
     if (await isInstalled()) throw new Error('Already installed.');
 
-    // register service worker (does not activate the sw immediately)
-    // Browsers themself handle, if they use the service worker or not
-    await navigator.serviceWorker.register('/api/sw.js', { scope: '/' });
+    // Check if service worker is already registered for scope '/'
+    // If not, register service worker (it will activate immediately due to skipWaiting() and claim all clients)
+    const registration = await navigator.serviceWorker.getRegistration('/');
+    if (!registration) await navigator.serviceWorker.register('/api/sw.js', { scope: '/' });
 
     // start fetching resources
     /** @type {{ [pathname: string]: Response; }} */
@@ -60,6 +62,22 @@ export const uninstall = async () => {
     // unregister all service workers (does not deactive the sw immediately)
     const registrations = await navigator.serviceWorker.getRegistrations();
     await Promise.all(registrations.map(reg => reg.unregister()));
+};
+
+/**
+ * This function updates the service worker registration. If the path has changed for example, this might fail and uninstall must be used
+ * @returns {Promise<void>}
+ */
+export const update = async () => {
+    if (!(await isInstalled())) throw new Error('Not installed.');
+
+    // delete caches
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map(name => caches.delete(name)));
+
+    // update all service workers
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(registrations.map(reg => reg.update()));
 };
 
 /** @returns {Promise<boolean>} */

@@ -1,5 +1,5 @@
 import { LitElement, html, css } from 'lit';
-import { isInstalled, install, uninstall, updateAvailable } from '/api/script.js';
+import { isInstalled, install, uninstall, update, updateAvailable } from '/api/script.js';
 
 const UPDATE_INTERVAL = 8000;
 
@@ -159,6 +159,7 @@ export class CacheManager extends LitElement {
     /** @private */
     async handleUninstall() {
         try {
+            // we are explicitely filtering for states, where this method is not allowed. We could also check, if the display-mode is e.g. browser and only allow this method then but this might break the feature in the future on other browser modes, where this feature should work. So in this case, we allow this feature and its up to the user to know what he is doing in an (at the moment) unknown state. Make sure, to keep this align with checks in /api/script.js
             if (window.matchMedia('(display-mode: standalone)').matches) {
                 alert('Cannot remove cache in app mode. Uninstall the PWA first!');
                 return;
@@ -181,14 +182,32 @@ export class CacheManager extends LitElement {
     }
 
     /** @private */
+    async handleUpdate() {
+        try {
+            if (confirm('This update method may not update app metadata such as icons. If this is needed, please use the \'Remove cache\' button.')) {
+                clearInterval(this.updateInterval);
+                await update();
+                this.state = 'uninstalled';
+                this.collapsed = false;
+            }
+        } catch (e) {
+            alert(e.message);
+        }
+    }
+
+    /** @private */
     renderButton() {
         switch (this.state) {
             case 'installed':
+                // technisch könnte auch hier der Update button angezeigt werden aber um den Nutzer nicht zu irritieren, wird der button nur im update state angezeigt
                 return html`<button class="pill browser" @click="${this.handleUninstall}">Remove cache</button>`;
             case 'update':
-                return html`<button class="pill browser" @click="${this.handleUninstall}">Remove cache (Update Available)</button>`;
+                return html`
+                    <button class="pill browser" @click="${this.handleUninstall}">Remove cache</button>
+                    <button class="pill" @click="${this.handleUpdate}">Update</button>
+                `;
             case 'uninstalled':
-                return html`<button class="pill" @click="${this.handleReload}">Removed! Reload Page</button>`;
+                return html`<button class="pill" @click="${this.handleReload}">Reload Page</button>`;
             default:
                 return null;
         }
