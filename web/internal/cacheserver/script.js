@@ -14,9 +14,14 @@ export const install = async () => {
     if (await isInstalled()) throw new Error('Already installed.');
 
     // Check if service worker is already registered for scope '/'
-    // If not, register service worker (it will activate immediately due to skipWaiting() and claim all clients)
     const registration = await navigator.serviceWorker.getRegistration('/');
-    if (!registration) await navigator.serviceWorker.register('/api/sw.js', { scope: '/' });
+    if (registration) {
+        // update service worker (it will activate immediately due to skipWaiting() and claim all clients)
+        registration.update();
+    } else {
+        // register service worker (it will activate immediately due to skipWaiting() and claim all clients)
+        await navigator.serviceWorker.register('/api/sw.js', { scope: '/' });
+    }
 
     // start fetching resources
     /** @type {{ [pathname: string]: Response; }} */
@@ -65,7 +70,7 @@ export const uninstall = async () => {
 };
 
 /**
- * This function updates the service worker registration. If the path has changed for example, this might fail and uninstall must be used
+ * This function removes the cache. The service worker then acts as a gateway to the server. The install function then updates the service worker
  * @returns {Promise<void>}
  */
 export const update = async () => {
@@ -74,10 +79,6 @@ export const update = async () => {
     // delete caches
     const cacheNames = await caches.keys();
     await Promise.all(cacheNames.map(name => caches.delete(name)));
-
-    // update all service workers
-    const registrations = await navigator.serviceWorker.getRegistrations();
-    await Promise.all(registrations.map(reg => reg.update()));
 };
 
 /** @returns {Promise<boolean>} */
