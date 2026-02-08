@@ -17,7 +17,7 @@ export const install = async () => {
     const registration = await navigator.serviceWorker.getRegistration('/');
     if (registration) {
         // update service worker (it will activate immediately due to skipWaiting() and claim all clients)
-        registration.update();
+        await registration.update();
     } else {
         // register service worker (it will activate immediately due to skipWaiting() and claim all clients)
         await navigator.serviceWorker.register('/api/sw.js', { scope: '/' });
