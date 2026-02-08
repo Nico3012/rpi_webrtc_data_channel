@@ -14,7 +14,7 @@ export const install = async () => {
     if (await isInstalled()) throw new Error('Already installed.');
 
     // register service worker (it will activate immediately due to skipWaiting() and claim all clients). If a service worker already exists for this scope, it will be replaced
-    await navigator.serviceWorker.register('/api/sw.js', { scope: '/' });
+    await navigator.serviceWorker.register('/api/sw.js', { scope: '/', type: 'module', updateViaCache: 'none' });
 
     // start fetching resources
     /** @type {{ [pathname: string]: Response; }} */
