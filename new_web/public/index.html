@@ -5,16 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="/assets/favicon.png" type="image/png">
     <link rel="manifest" href="/manifest.json">
+    <script type="module" src="script.js"></script>
     <title>Device Controller</title>
+    <script type="module">
+        const registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
+        await registration.update();
+    </script>
 </head>
 <body>
-    <h1>Testxyztmn</h1>
-    <script>
-        if (navigator.serviceWorker) {
-            navigator.serviceWorker
-                .register('/sw.js', { updateViaCache: 'none' })
-                .then((registration) => registration.update())
-        }
-    </script>
+    <h1>Hallo Welt!</h1>
 </body>
 </html>
