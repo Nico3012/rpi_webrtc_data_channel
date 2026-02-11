@@ -13,6 +13,7 @@ func HashDirectory(root string) (uint64, error) {
 	hasher := fnv.New64a()
 	var paths []string
 
+	// Collect all file and directory paths
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -24,6 +25,7 @@ func HashDirectory(root string) (uint64, error) {
 		return 0, err
 	}
 
+	// Sort paths for deterministic hashing
 	sort.Strings(paths)
 
 	for _, path := range paths {
@@ -31,6 +33,7 @@ func HashDirectory(root string) (uint64, error) {
 		if err != nil {
 			return 0, err
 		}
+		// Hash path and file mode
 		hasher.Write([]byte(path))
 		hasher.Write([]byte(info.Mode().String()))
 
@@ -40,8 +43,7 @@ func HashDirectory(root string) (uint64, error) {
 				return 0, err
 			}
 			defer f.Close()
-
-			buf := make([]byte, 32*1024)
+			buf := make([]byte, 32*1024) // 32KB buffer for efficient streaming
 			for {
 				n, err := f.Read(buf)
 				if n > 0 {
@@ -56,6 +58,5 @@ func HashDirectory(root string) (uint64, error) {
 			}
 		}
 	}
-
 	return hasher.Sum64(), nil
 }
