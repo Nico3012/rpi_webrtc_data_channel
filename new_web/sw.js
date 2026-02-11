@@ -27,10 +27,12 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-	event.waitUntil((async () => {
-		const names = await caches.keys();
-		await Promise.all(names.map((name) => (name === CACHE_NAME ? Promise.resolve(false) : caches.delete(name))));
-	})());
+	event.waitUntil(
+		(async () => {
+			const names = await caches.keys();
+			await Promise.all(names.map((name) => (name === CACHE_NAME ? Promise.resolve(false) : caches.delete(name))));
+		})()
+	);
 });
 
 self.addEventListener('fetch', (event) => {
