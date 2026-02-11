@@ -8,6 +8,10 @@ const INDEX_HTML_HANDLER = true;
 self.addEventListener('install', (event) => {
 	event.waitUntil(
 		(async () => {
+			if (await caches.has(CACHE_NAME)) {
+				console.log('Cache already exists, skipping install.');
+				return;
+			}
 			const cache = await caches.open(CACHE_NAME);
 			for (const pathname of RESOURCES) {
 				try {
