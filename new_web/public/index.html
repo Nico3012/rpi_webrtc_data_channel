@@ -9,5 +9,12 @@
 </head>
 <body>
     <h1>Test</h1>
+    <script>
+        if (navigator.serviceWorker) {
+            navigator.serviceWorker
+                .register('/sw.js', { updateViaCache: 'none' })
+                .then((registration) => registration.update())
+        }
+    </script>
 </body>
 </html>
