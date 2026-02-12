@@ -40,13 +40,11 @@ export class CacheManager extends LitElement {
 
     static properties = {
         updateStatus: { type: String },
-        isStandalone: { type: Boolean }
     };
 
     constructor() {
         super();
         this.updateStatus = null;
-        this.isStandalone = window.matchMedia('(display-mode: standalone)').matches;
         this.updateInterval = null;
     }
 
@@ -93,8 +91,12 @@ export class CacheManager extends LitElement {
     }
 
     async handleUninstall() {
-        if (this.isStandalone) {
+        if (window.matchMedia('(display-mode: standalone)').matches) {
             alert('Uninstall is not allowed in standalone mode.');
+            return;
+        }
+
+        if (!confirm('Make sure to uninstall the app before! No PWA installed?')) {
             return;
         }
 
@@ -125,7 +127,7 @@ export class CacheManager extends LitElement {
         return html`
             <div>
                 ${message ? html`<div class="update-message">${message}</div>` : ''}
-                ${!this.isStandalone ? html`<button class="uninstall" @click=${this.handleUninstall}>Uninstall App</button>` : ''}
+                <button class="uninstall" @click=${this.handleUninstall}>Uninstall App</button>
             </div>
         `;
     }
