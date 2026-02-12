@@ -139,7 +139,7 @@ export class CacheManager extends LitElement {
         if (this.updateStatus === 'downloading') {
             message = 'Downloading Update...';
         } else if (this.updateStatus === 'installed') {
-            message = 'Installed. Close The app and re open it.';
+            message = 'Update Installed. Close The app and re open it to see the changes.';
         }
 
         return html`
