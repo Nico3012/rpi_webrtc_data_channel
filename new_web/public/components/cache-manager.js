@@ -6,12 +6,9 @@ export class CacheManager extends LitElement {
             display: block;
         }
 
-        .update-message {
-            background-color: #f0f0f0;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
+        div.state {
             text-align: center;
+            font-family: monospace;
         }
 
         button.uninstall {
@@ -30,87 +27,65 @@ export class CacheManager extends LitElement {
             }
         }
 
-        @media (display-mode: standalone) {
-            button.browser {
-                background-color: red;
-                color: white;
-            }
+        [hidden] {
+            display: none;
         }
     `;
 
     static properties = {
-        updateStatus: { type: String },
+        state: { type: String, attribute: false },
     };
 
     constructor() {
         super();
-        this.updateStatus = null;
-        this.updateInterval = null;
-    }
 
-    connectedCallback() {
-        super.connectedCallback();
-        this.registerServiceWorker();
-    }
+        /** @private @type {'stable' | 'updating' | 'deprecated'} */
+        this.state = 'stable';
 
-    disconnectedCallback() {
-        super.disconnectedCallback();
-        if (this.updateInterval) {
-            clearInterval(this.updateInterval);
-        }
-    }
+        (async () => {
+            // wether the current page was loaded through a service worker or not
+            const pageIsControlled = !!navigator.serviceWorker.controller;
 
-    async registerServiceWorker() {
-        if ('serviceWorker' in navigator) {
-            try {
-                const registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
-                this.setupServiceWorkerListeners(registration);
-                this.checkForWaitingWorker(registration);
+            const registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
 
-                // Start interval for periodic updates every 5 seconds
-                this.updateInterval = setInterval(async () => {
-                    // Check if service worker still exists before updating
-                    const currentReg = await navigator.serviceWorker.getRegistration(); // without clientURL it returns the current registration of this page, which is what we want
-                    if (currentReg) {
-                        currentReg.update();
-                    }
-                }, 5000); // 5 seconds
-            } catch (error) {
-                console.error('Service Worker registration failed:', error);
+            // register update interval
+            setInterval(async () => {
+                // without clientURL, getRegistration returns the current registration of this page, which is what we want
+                const currentRegistration = await navigator.serviceWorker.getRegistration();
+                if (currentRegistration) await currentRegistration.update();
+            }, 8000);
+
+            if (registration.waiting) {
+                this.state = 'deprecated';
             }
-        }
-    }
 
-    setupServiceWorkerListeners(registration) {
-        registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing;
-            if (newWorker) {
-                this.updateStatus = 'downloading';
-                newWorker.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed') {
-                        // navigator.serviceWorker.controller is the reference to the current active service-worker. If its the first installation, then this is null
-                        if (navigator.serviceWorker.controller) {
-                            // update ist ready
-                            this.updateStatus = 'installed';
+            registration.addEventListener('updatefound', () => {
+                // this event fires, when registration.installing has a new service worker.
+                const newRegistration = registration.installing;
+                if (!newRegistration) throw new Error('somehow registration.installing is null in updatefound event');
+
+                this.state = 'updating';
+
+                newRegistration.addEventListener('statechange', () => {
+                    if (newRegistration.state === 'installed') {
+                        if (pageIsControlled) {
+                            // New update is available
+                            this.state = 'deprecated';
                         } else {
-                            // first installation. Now we are offline available. But we are already on the latest version
-                            this.updateStatus = null;
+                            // The page is already up to date, because it originally fetched directly from the server
+                            this.state = 'stable';
                         }
+
                     }
                 });
-            }
-        });
+            });
+        })();
     }
 
-    checkForWaitingWorker(registration) {
-        if (registration.waiting) {
-            this.updateStatus = 'installed';
-        }
-    }
-
+    /** @private */
     async handleUninstall() {
         if (window.matchMedia('(display-mode: standalone)').matches) {
-            alert('Uninstall is not allowed in standalone mode.');
+            alert('Uninstall is not allowed in standalone mode. Please uninstall the app.');
             return;
         }
 
@@ -118,34 +93,22 @@ export class CacheManager extends LitElement {
             return;
         }
 
-        try {
-            // Unregister all service workers
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            await Promise.all(registrations.map(reg => reg.unregister()));
+        // Unregister all service workers
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map(reg => reg.unregister()));
 
-            // Delete all caches
-            const cacheNames = await caches.keys();
-            await Promise.all(cacheNames.map(name => caches.delete(name)));
+        // Delete all caches
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
 
-            alert('Uninstalled. You can close the page now.');
-        } catch (error) {
-            console.error('Uninstall failed:', error);
-            alert('Uninstall failed. Please try again.');
-        }
+        alert('Uninstalled. You can close the page now.');
     }
 
     render() {
-        let message = '';
-        if (this.updateStatus === 'downloading') {
-            message = 'Downloading Update...';
-        } else if (this.updateStatus === 'installed') {
-            message = 'Update Installed. Close The app and re open it to see the changes.';
-        }
-
         return html`
             <div>
-                ${message ? html`<div class="update-message">${message}</div>` : ''}
-                <button class="uninstall" @click=${this.handleUninstall}>Uninstall App</button>
+                <div class="state" ?hidden=${this.state === 'stable'}>${this.state === 'updating' ? 'Update available. Downloading...' : this.state === 'deprecated' ? 'Close this page/app and reopen it to see the latest version' : ''}</div>
+                <button class="uninstall" @click=${this.handleUninstall}>Uninstall</button>
             </div>
         `;
     }
