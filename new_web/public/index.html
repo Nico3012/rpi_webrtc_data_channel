@@ -5,14 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="/assets/favicon.png" type="image/png">
     <link rel="manifest" href="/manifest.json">
-    <script type="module" src="script.js"></script>
-    <title>Device Controller</title>
-    <script type="module">
-        const registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
-        await registration.update();
+    <script type="importmap">
+        {
+            "imports": {
+                "lit": "/lit@3.2.1/lit-core.min.js"
+            }
+        }
     </script>
+    <script type="module" src="script.js"></script>
+    <script type="module" src="components/cache-manager.js"></script>
+    <title>Device Controller</title>
 </head>
 <body>
+    <cache-manager></cache-manager>
     <h1>Hallo Welt!</h1>
+    <p>Test</p>
 </body>
 </html>
