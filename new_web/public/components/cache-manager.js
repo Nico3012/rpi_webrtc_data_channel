@@ -65,15 +65,16 @@ export class CacheManager extends LitElement {
             try {
                 const registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
                 this.setupServiceWorkerListeners(registration);
+                this.checkForWaitingWorker(registration);
 
-                // Start interval for periodic updates every 8 seconds
+                // Start interval for periodic updates every 5 seconds
                 this.updateInterval = setInterval(async () => {
                     // Check if service worker still exists before updating
                     const currentReg = await navigator.serviceWorker.getRegistration(); // without clientURL it returns the current registration of this page, which is what we want
                     if (currentReg) {
                         currentReg.update();
                     }
-                }, 8000); // 8 seconds
+                }, 5000); // 5 seconds
             } catch (error) {
                 console.error('Service Worker registration failed:', error);
             }
@@ -99,6 +100,12 @@ export class CacheManager extends LitElement {
                 });
             }
         });
+    }
+
+    checkForWaitingWorker(registration) {
+        if (registration.waiting) {
+            this.updateStatus = 'installed';
+        }
     }
 
     async handleUninstall() {
