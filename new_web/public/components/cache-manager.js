@@ -65,10 +65,14 @@ export class CacheManager extends LitElement {
             try {
                 const registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
                 this.setupServiceWorkerListeners(registration);
-                await registration.update();
-                // Start interval for periodic updates
-                this.updateInterval = setInterval(() => {
-                    registration.update();
+
+                // Start interval for periodic updates every 8 seconds
+                this.updateInterval = setInterval(async () => {
+                    // Check if service worker still exists before updating
+                    const currentReg = await navigator.serviceWorker.getRegistration(); // without clientURL it returns the current registration of this page, which is what we want
+                    if (currentReg) {
+                        currentReg.update();
+                    }
                 }, 8000); // 8 seconds
             } catch (error) {
                 console.error('Service Worker registration failed:', error);
@@ -82,8 +86,15 @@ export class CacheManager extends LitElement {
             if (newWorker) {
                 this.updateStatus = 'downloading';
                 newWorker.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        this.updateStatus = 'installed';
+                    if (newWorker.state === 'installed') {
+                        // navigator.serviceWorker.controller is the reference to the current active service-worker. If its the first installation, then this is null
+                        if (navigator.serviceWorker.controller) {
+                            // update ist ready
+                            this.updateStatus = 'installed';
+                        } else {
+                            // first installation. Now we are offline available. But we are already on the latest version
+                            this.updateStatus = null;
+                        }
                     }
                 });
             }
