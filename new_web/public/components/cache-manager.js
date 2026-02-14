@@ -12,8 +12,8 @@ export class CacheManager extends LitElement {
             line-height: 1.5;
             text-align: center;
             font-family: monospace;
-            background-color: red;
-            color: white;
+            background-color: white;
+            color: black;
         }
 
         [hidden] {
