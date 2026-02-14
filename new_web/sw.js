@@ -14,17 +14,9 @@ self.addEventListener('install', (event) => {
 			}
 			const cache = await caches.open(CACHE_NAME);
 			for (const pathname of RESOURCES) {
-				try {
-					const response = await fetch(pathname, { redirect: 'manual', cache: 'no-store' });
-					if (response.ok) {
-						await cache.put(pathname, response);
-						console.log(`Cached: ${pathname}`);
-					} else {
-						console.warn(`Failed to cache: ${pathname}, status: ${response.status}`);
-					}
-				} catch (error) {
-					console.error(`Error caching ${pathname}:`, error);
-				}
+				const response = await fetch(pathname, { redirect: 'manual' });
+				await cache.put(pathname, response.clone());
+				console.log(`Cached: ${pathname}`);
 			}
 		})()
 	);
