@@ -42,7 +42,11 @@ export class CacheManager extends LitElement {
             setInterval(async () => {
                 // without clientURL, getRegistration returns the current registration of this page, which is what we want
                 const currentRegistration = await navigator.serviceWorker.getRegistration();
-                if (currentRegistration) await currentRegistration.update();
+                if (currentRegistration) try {
+                    await currentRegistration.update();
+                } catch {
+                    console.log('failed to update registration. This is normal, if the server is not reachable');
+                }
             }, 8000);
 
             if (registration.waiting) {
