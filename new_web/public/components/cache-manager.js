@@ -6,24 +6,77 @@ export class CacheManager extends LitElement {
             display: block;
         }
 
+        div.container {
+            display: flex;
+            flex-direction: column;
+        }
+
         div.state {
+            padding: 8px;
+            font-size: 16px;
+            line-height: 1.5;
             text-align: center;
             font-family: monospace;
+            background-color: red;
+            color: white;
+        }
+
+        details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 8px;
+            font-family: sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        summary::marker {
+            content: '';
+        }
+
+        summary::after {
+            content: '+';
+            font-family: monospace;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        details[open] summary::after {
+            content: '-';
+        }
+
+        div.content {
+            display: flex;
+            flex-direction: column;
         }
 
         button.uninstall {
-            background-color: green;
-            color: white;
-            padding: 10px;
+            display: block;
+            appearance: none;
+            margin: 8px;
+            padding: 8px;
+            border-radius: 20px;
             border: none;
-            border-radius: 5px;
-            cursor: pointer;
+            outline: none;
+            background-color: black;
+            color: white;
+            text-decoration: none;
+            font-family: sans-serif;
+            font-size: 16px;
+            font-weight: normal;
+            line-height: 1.5;
+            text-align: center;
         }
 
         @media (display-mode: standalone) {
             button.uninstall {
                 background-color: red;
-                cursor: not-allowed;
             }
         }
 
@@ -106,9 +159,16 @@ export class CacheManager extends LitElement {
 
     render() {
         return html`
-            <div>
+            <div class="container">
                 <div class="state" ?hidden=${this.state === 'stable'}>${this.state === 'updating' ? 'Update available. Downloading...' : this.state === 'deprecated' ? 'Close this page/app and reopen it to see the latest version' : ''}</div>
-                <button class="uninstall" @click=${this.handleUninstall}>Uninstall</button>
+                <details>
+                    <summary>
+                        Cache Manager
+                    </summary>
+                    <div class="content">
+                        <button class="uninstall" @click=${this.handleUninstall}>Uninstall Cache</button>
+                    </div>
+                </details>
             </div>
         `;
     }
