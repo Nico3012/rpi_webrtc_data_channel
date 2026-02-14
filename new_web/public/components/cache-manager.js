@@ -34,6 +34,7 @@ export class CacheManager extends LitElement {
         (async () => {
             // wether the current page was loaded through a service worker or not
             const pageIsControlled = !!navigator.serviceWorker.controller;
+            let isFirstInstallation = !pageIsControlled;
 
             const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/', type: 'module', updateViaCache: 'none' });
 
@@ -57,14 +58,15 @@ export class CacheManager extends LitElement {
 
                 newRegistration.addEventListener('statechange', () => {
                     if (newRegistration.state === 'installed') {
-                        if (pageIsControlled) {
-                            // New update is available
-                            this.state = 'deprecated';
-                        } else {
+                        if (isFirstInstallation) {
+                            isFirstInstallation = false;
+
                             // The page is already up to date, because it originally fetched directly from the server
                             this.state = 'stable';
+                        } else {
+                            // New update is available
+                            this.state = 'deprecated';
                         }
-
                     }
                 });
             });
