@@ -59,6 +59,10 @@ export class UninstallManager extends LitElement {
             text-align: center;
         }
 
+        button.uninstall[disabled] {
+            opacity: 0.7;
+        }
+
         @media (display-mode: standalone) {
             button.uninstall {
                 background-color: red;
@@ -70,8 +74,15 @@ export class UninstallManager extends LitElement {
         }
     `;
 
+    static properties = {
+        uninstalled: { type: Boolean, attribute: false },
+    };
+
     constructor() {
         super();
+
+        /** @private @type {boolean} */
+        this.uninstalled = false;
     }
 
     /** @private */
@@ -94,6 +105,8 @@ export class UninstallManager extends LitElement {
         await Promise.all(cacheNames.map(name => caches.delete(name)));
 
         alert('Uninstalled. You can close the page now.');
+
+        this.uninstalled = true;
     }
 
     render() {
@@ -103,7 +116,7 @@ export class UninstallManager extends LitElement {
                     Cache Manager
                 </summary>
                 <div class="content">
-                    <button class="uninstall" @click=${this.handleUninstall}>Uninstall Cache</button>
+                    <button class="uninstall" ?disabled=${this.uninstalled} @click=${this.handleUninstall}>Uninstall Cache</button>
                 </div>
             </details>
         `;
