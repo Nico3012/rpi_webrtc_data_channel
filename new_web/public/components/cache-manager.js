@@ -46,7 +46,7 @@ export class CacheManager extends LitElement {
             // wether the current page was loaded through a service worker or not
             const pageIsControlled = !!navigator.serviceWorker.controller;
 
-            const registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
+            const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/', type: 'module', updateViaCache: 'none' });
 
             // register update interval
             setInterval(async () => {

@@ -6,29 +6,25 @@ const RESOURCES = {{ .ResourcesJSON }};
 const INDEX_HTML_HANDLER = true;
 
 self.addEventListener('install', (event) => {
-	event.waitUntil(
-		(async () => {
-			if (await caches.has(CACHE_NAME)) {
-				console.log('Cache already exists, skipping install.');
-				return;
-			}
-			const cache = await caches.open(CACHE_NAME);
-			for (const pathname of RESOURCES) {
-				const response = await fetch(pathname, { redirect: 'manual' });
-				await cache.put(pathname, response.clone());
-				console.log(`Cached: ${pathname}`);
-			}
-		})()
-	);
+	event.waitUntil((async () => {
+		if (await caches.has(CACHE_NAME)) {
+			console.log('Cache already exists, skipping install.');
+			return;
+		}
+		const cache = await caches.open(CACHE_NAME);
+		for (const pathname of RESOURCES) {
+			const response = await fetch(pathname, { redirect: 'manual' });
+			await cache.put(pathname, response.clone());
+			console.log(`Cached: ${pathname}`);
+		}
+	})());
 });
 
 self.addEventListener('activate', (event) => {
-	event.waitUntil(
-		(async () => {
-			const names = await caches.keys();
-			await Promise.all(names.map((name) => (name === CACHE_NAME ? Promise.resolve(false) : caches.delete(name))));
-		})()
-	);
+	event.waitUntil((async () => {
+		const names = await caches.keys();
+		await Promise.all(names.map((name) => (name === CACHE_NAME ? Promise.resolve(false) : caches.delete(name))));
+	})());
 });
 
 self.addEventListener('fetch', (event) => {
