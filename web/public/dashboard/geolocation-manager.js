@@ -173,7 +173,7 @@ export class GeolocationManager extends LitElement {
             ${this.heading === null ? null : html`
                 <div class="heading">
                     <img class="heading-background" src="${dirname}heading-background.svg" alt="heading-background">
-                    <img class="heading-foreground" src="${dirname}heading-foreground.svg" alt="heading-foreground" style="transform: rotate(-${this.heading.toFixed(0)}deg); transition: transform 0.2s linear;">
+                    <img class="heading-foreground" src="${dirname}heading-foreground.svg" alt="heading-foreground" style="transform: rotate(${this.heading.toFixed(0)}deg); transition: transform 0.2s linear;">
                 </div>
             `}
             ${this.latitude === null || this.longitude === null || this.accuracy === null ? null : html`

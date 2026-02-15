@@ -31,7 +31,7 @@ tiles.addTo(map);
         if (heading === null) {
             if (marker.options.icon !== defaultIcon) marker.setIcon(defaultIcon);
         } else {
-            img.style.transform = `rotate(-${heading.toString()}deg)`;
+            img.style.transform = `rotate(${heading.toString()}deg)`;
             if (marker.options.icon !== divIcon) marker.setIcon(divIcon);
         }
     };
@@ -76,7 +76,7 @@ tiles.addTo(map);
         const deltaTime = 0.1; // seconds (100ms interval)
         const deltaDist = speed * deltaTime; // meters
 
-        const headingRad = -(heading * Math.PI) / 180;
+        const headingRad = (heading * Math.PI) / 180;
         const latRad = (lat * Math.PI) / 180;
 
         // Approximate delta lat/lon
