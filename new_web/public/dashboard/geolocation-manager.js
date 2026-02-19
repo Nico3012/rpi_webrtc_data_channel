@@ -67,16 +67,7 @@ export class GeolocationManager extends LitElement {
         this.averageSpeed = null;
 
         /** @type {number | null} @private */
-        this.startTime = null;
-
-        /** @type {number | null} @private */
         this.totalDistance = null;
-
-        /** @type {number | null} @private */
-        this.lastLat = null;
-
-        /** @type {number | null} @private */
-        this.lastLon = null;
 
         // coords:
 
@@ -170,34 +161,27 @@ export class GeolocationManager extends LitElement {
 
         this.speed = pos.coords.speed;
 
-        // avg speed calculation:
-
-        if (this.startTime) {
-            const currentTime = Date.now();
-            this.totalDistance += this.calculateDistance(this.lastLat, this.lastLon, this.latitude, this.longitude); // m
-
-            this.lastLat = this.latitude;
-            this.lastLon = this.longitude;
-
-            // update average speed
-            const totalTime = currentTime - this.startTime; // ms
-            this.averageSpeed = 1000 * this.totalDistance / totalTime; // m/s
-        } else {
-            this.startTime = Date.now();
-            this.totalDistance = 0;
-
-            this.lastLat = this.latitude;
-            this.lastLon = this.longitude;
-        }
-
         // update data points
+
+        const currentTime = new Date();
 
         this.dataPoints.push({
             lat: this.latitude,
             lon: this.longitude,
             altitude: this.altitude,
-            time: new Date(),
+            time: currentTime,
         });
+
+        // calculate average speed
+        if (this.dataPoints.length > 1) {
+            const lastPoint = this.dataPoints[this.dataPoints.length - 2];
+            this.totalDistance += this.calculateDistance(lastPoint.lat, lastPoint.lon, this.latitude, this.longitude);
+            const startTime = this.dataPoints[0].time;
+            this.averageSpeed = 1000 * this.totalDistance / (currentTime.getTime() - startTime.getTime()); // m/s
+        } else {
+            // init totalDistance
+            this.totalDistance = 0;
+        }
 
         // update altitude chart
         if (!this.altitudeChart) throw new Error('somehow cannot find altitude chart in successCallback. successCallback must have run before firstUpdate');
@@ -239,10 +223,7 @@ export class GeolocationManager extends LitElement {
         this.dataPoints = [];
 
         // reset distance tracking
-        this.startTime = null;
         this.totalDistance = null;
-        this.lastLat = null;
-        this.lastLon = null;
         this.averageSpeed = null;
 
         // clear path on map
