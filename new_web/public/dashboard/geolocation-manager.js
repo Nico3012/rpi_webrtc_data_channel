@@ -5,7 +5,7 @@ import { FakeGeolocation } from './fake-geolocation.js';
 
 const dirname = import.meta.url.substring(0, import.meta.url.lastIndexOf('/') + 1);
 
-const LIVE = false; // Set to true for real geolocation, false for fake
+const LIVE = true; // Set to true for real geolocation, false for fake
 
 Chart.register(CategoryScale, LinearScale, LineController, LineElement, PointElement, Title, Tooltip, Legend, zoomPlugin);
 
