@@ -21,4 +21,5 @@ div.wrapper {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    min-width: min-content;
 }
