@@ -186,6 +186,7 @@ export class GeolocationManager extends LitElement {
         });
 
         // update altitude chart
+        if (!this.altitudeChart) throw new Error('somehow cannot find altitude chart in successCallback. successCallback must have run before firstUpdate');
         this.altitudeChart.data.labels = this.dataPoints.map(p => p.time.toLocaleTimeString());
         this.altitudeChart.data.datasets[0].data = this.dataPoints.map(p => p.altitude);
         this.altitudeChart.update();
