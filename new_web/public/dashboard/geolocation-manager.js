@@ -50,6 +50,14 @@ export class GeolocationManager extends LitElement {
         /** @type {number | null} @private */
         this.speed = null;
 
+        // coords:
+
+        /** @private @type {{ latitude: number; longitude: number; }[]} */
+        this.latLonArray = [];
+
+        /** @private @type {number[]} */
+        this.altitudeArray = [];
+
         // leaflet:
 
         /** @type {HTMLIFrameElement} @private */
@@ -80,15 +88,25 @@ export class GeolocationManager extends LitElement {
 
         this.speed = pos.coords.speed;
 
+        // update arrays
+
+        this.latLonArray.push({
+            latitude: this.latitude,
+            longitude: this.longitude,
+        });
+
+        this.altitudeArray.push(this.altitude);
+
         // updating leaflet map:
 
         const leafletWindow = await this.leafletWindow;
 
         leafletWindow.updateMarker(this.latitude, this.longitude, this.heading, this.speed);
+        leafletWindow.addToPath(this.latitude, this.longitude);
     }
 
     /** @private */
-    stopWatching = () => {
+    stopWatching = async () => {
         navigator.geolocation.clearWatch(this.watchingId);
         this.watching = false;
 
@@ -102,6 +120,17 @@ export class GeolocationManager extends LitElement {
         this.heading = null;
 
         this.speed = null;
+
+        // reset arrays
+
+        this.latLonArray = [];
+        this.altitudeArray = [];
+
+        // clear path on map
+
+        const leafletWindow = await this.leafletWindow;
+
+        leafletWindow.clearPath();
     }
 
     /** @private @param {GeolocationPositionError} err */
@@ -165,9 +194,13 @@ export class GeolocationManager extends LitElement {
                     <span>Geschwindigkeit: ${(this.speed * 3.6).toFixed(1)} km/h</span>
                 </div>
             `}
-            ${this.altitude === null ? null : html`
-                <div>
-                    <span>Höhe: ${this.altitude.toFixed(1)}${this.altitudeAccuracy === null ? null : ` ± ${this.altitudeAccuracy.toFixed(1)}`} m</span>
+            ${this.latitude === null || this.longitude === null || this.accuracy === null ? null : html`
+                <div class="map">
+                    <div><span>Latitude: ${this.latitude.toString()} deg</span></div>
+                    <div><span>Longitude: ${this.longitude.toString()} deg</span></div>
+                    <div><span>Genauigkeit: ${this.accuracy.toFixed(1)} m</span></div>
+                    <!-- Die leaflet Karte ist immer nach Norden ausgerichtet -->
+                    ${this.leafletIFrame}
                 </div>
             `}
             ${this.heading === null ? null : html`
@@ -176,13 +209,9 @@ export class GeolocationManager extends LitElement {
                     <img class="heading-foreground" src="${dirname}heading-foreground.svg" alt="heading-foreground" style="transform: rotate(${this.heading.toFixed(0)}deg); transition: transform 0.2s linear;">
                 </div>
             `}
-            ${this.latitude === null || this.longitude === null || this.accuracy === null ? null : html`
-                <div class="map">
-                    <div><span>Latitude: ${this.latitude.toString()} deg</span></div>
-                    <div><span>Longitude: ${this.longitude.toString()} deg</span></div>
-                    <div><span>Genauigkeit: ${this.accuracy.toFixed(1)} m</span></div>
-                    <!-- Die leaflet Karte ist immer nach Norden ausgerichtet -->
-                    ${this.leafletIFrame}
+            ${this.altitude === null ? null : html`
+                <div>
+                    <span>Höhe: ${this.altitude.toFixed(1)}${this.altitudeAccuracy === null ? null : ` ± ${this.altitudeAccuracy.toFixed(1)}`} m</span>
                 </div>
             `}
         `;

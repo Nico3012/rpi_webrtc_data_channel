@@ -13,6 +13,11 @@ const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 tiles.addTo(map);
 
+// @ts-expect-error
+const path = L.polyline([], {color: 'red'});
+
+path.addTo(map);
+
 { // sample data injection
     /** @type {number | null} */
     let speed = null; // m/s
@@ -65,6 +70,18 @@ tiles.addTo(map);
         heading = newHeading;
         speed = newSpeed;
         setMarkerHeading(newHeading);
+    };
+
+    /**
+     * @param {number} lat
+     * @param {number} lon
+     */
+    window.addToPath = (lat, lon) => {
+        path.addLatLng([lat, lon]);
+    };
+
+    window.clearPath = () => {
+        path.setLatLngs([]);
     };
 
     // Function to update position based on speed and heading
