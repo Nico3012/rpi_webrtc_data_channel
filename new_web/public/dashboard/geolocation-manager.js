@@ -231,6 +231,12 @@ export class GeolocationManager extends LitElement {
         const leafletWindow = await this.leafletWindow;
 
         leafletWindow.clearPath();
+
+        // reset altitude chart
+        if (!this.altitudeChart) throw new Error('somehow cannot find altitude chart in stopWatching. stopWatching must have run before firstUpdate');
+        this.altitudeChart.data.labels = [];
+        this.altitudeChart.data.datasets[0].data = [];
+        this.altitudeChart.update();
     }
 
     /** @private @param {GeolocationPositionError} err */
@@ -301,12 +307,12 @@ export class GeolocationManager extends LitElement {
             <button @click=${this.toggleWatching}>${this.watching ? 'Ausschalten' : 'Einschalten'}</button>
             ${this.speed === null ? null : html`
                 <div>
-                    <span>Geschwindigkeit: ${(this.speed * 3.6).toFixed(1)} km/h</span>
+                    <span>Geschwindigkeit (horizontal): ${(this.speed * 3.6).toFixed(1)} km/h</span>
                 </div>
             `}
             ${this.averageSpeed === null ? null : html`
                 <div>
-                    <span>Durchschnittsgeschwindigkeit: ${(this.averageSpeed * 3.6).toFixed(1)} km/h</span>
+                    <span>Durchschnittsgeschwindigkeit (horizontal): ${(this.averageSpeed * 3.6).toFixed(1)} km/h</span>
                 </div>
             `}
             ${this.latitude === null || this.longitude === null || this.accuracy === null ? null : html`
@@ -318,18 +324,18 @@ export class GeolocationManager extends LitElement {
                     ${this.leafletIFrame}
                 </div>
             `}
-            <div class="altitude-chart">
+            ${this.altitude === null ? null : html`
+                <div>
+                    <span>Höhe: ${this.altitude.toFixed(1)}${this.altitudeAccuracy === null ? null : ` ± ${this.altitudeAccuracy.toFixed(1)}`} m</span>
+                </div>
+            `}
+            <div class="altitude-chart" ?hidden=${!this.watching}>
                 ${this.canvas}
             </div>
             ${this.heading === null ? null : html`
                 <div class="heading">
                     <img class="heading-background" src="${dirname}heading-background.svg" alt="heading-background">
                     <img class="heading-foreground" src="${dirname}heading-foreground.svg" alt="heading-foreground" style="transform: rotate(${this.heading.toFixed(0)}deg); transition: transform 0.2s linear;">
-                </div>
-            `}
-            ${this.altitude === null ? null : html`
-                <div>
-                    <span>Höhe: ${this.altitude.toFixed(1)}${this.altitudeAccuracy === null ? null : ` ± ${this.altitudeAccuracy.toFixed(1)}`} m</span>
                 </div>
             `}
         `;
