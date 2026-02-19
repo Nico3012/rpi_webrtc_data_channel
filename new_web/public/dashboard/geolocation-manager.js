@@ -59,7 +59,7 @@ export class GeolocationManager extends LitElement {
         this.heading = null;
 
         /** @type {number | null} @private */
-        this.speed = null;
+        this.speed = null; // represents the horizontal speed
 
         // average speed calculation:
 
