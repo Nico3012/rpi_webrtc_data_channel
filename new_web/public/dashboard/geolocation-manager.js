@@ -181,6 +181,7 @@ export class GeolocationManager extends LitElement {
                     <div><span>Latitude: ${this.latitude.toString()} deg</span></div>
                     <div><span>Longitude: ${this.longitude.toString()} deg</span></div>
                     <div><span>Genauigkeit: ${this.accuracy.toFixed(1)} m</span></div>
+                    <!-- Die leaflet Karte ist immer nach Norden ausgerichtet -->
                     ${this.leafletIFrame}
                 </div>
             `}
