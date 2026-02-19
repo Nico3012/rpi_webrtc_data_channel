@@ -19,6 +19,8 @@ export class GeolocationManager extends LitElement {
         heading: { type: Number, attribute: false },
 
         speed: { type: Number, attribute: false },
+
+        averageSpeed: { type: Number, attribute: false },
     };
 
     constructor() {
@@ -50,6 +52,23 @@ export class GeolocationManager extends LitElement {
         /** @type {number | null} @private */
         this.speed = null;
 
+        // average speed calculation:
+
+        /** @type {number | null} @private */
+        this.averageSpeed = null;
+
+        /** @type {number | null} @private */
+        this.startTime = null;
+
+        /** @type {number | null} @private */
+        this.totalDistance = null;
+
+        /** @type {number | null} @private */
+        this.lastLat = null;
+
+        /** @type {number | null} @private */
+        this.lastLon = null;
+
         // coords:
 
         /** @private @type {{ latitude: number; longitude: number; }[]} */
@@ -75,6 +94,20 @@ export class GeolocationManager extends LitElement {
         });
     }
 
+    /** @private @param {number} lat1 @param {number} lon1 @param {number} lat2 @param {number} lon2 */
+    calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371e3; // metres
+        const φ1 = lat1 * Math.PI / 180;
+        const φ2 = lat2 * Math.PI / 180;
+        const Δφ = (lat2 - lat1) * Math.PI / 180;
+        const Δλ = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                  Math.cos(φ1) * Math.cos(φ2) *
+                  Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
     /** @private @param {GeolocationPosition} pos */
     successCallback = async (pos) => {
         this.latitude = pos.coords.latitude;
@@ -87,6 +120,26 @@ export class GeolocationManager extends LitElement {
         this.heading = pos.coords.heading;
 
         this.speed = pos.coords.speed;
+
+        // avg speed calculation:
+
+        if (this.startTime) {
+            const currentTime = Date.now();
+            this.totalDistance += this.calculateDistance(this.lastLat, this.lastLon, this.latitude, this.longitude); // m
+
+            this.lastLat = this.latitude;
+            this.lastLon = this.longitude;
+
+            // update average speed
+            const totalTime = currentTime - this.startTime; // ms
+            this.averageSpeed = 1000 * this.totalDistance / totalTime; // m/s
+        } else {
+            this.startTime = Date.now();
+            this.totalDistance = 0;
+
+            this.lastLat = this.latitude;
+            this.lastLon = this.longitude;
+        }
 
         // update arrays
 
@@ -125,6 +178,13 @@ export class GeolocationManager extends LitElement {
 
         this.latLonArray = [];
         this.altitudeArray = [];
+
+        // reset distance tracking
+        this.startTime = null;
+        this.totalDistance = null;
+        this.lastLat = null;
+        this.lastLon = null;
+        this.averageSpeed = null;
 
         // clear path on map
 
@@ -192,6 +252,11 @@ export class GeolocationManager extends LitElement {
             ${this.speed === null ? null : html`
                 <div>
                     <span>Geschwindigkeit: ${(this.speed * 3.6).toFixed(1)} km/h</span>
+                </div>
+            `}
+            ${this.averageSpeed === null ? null : html`
+                <div>
+                    <span>Durchschnittsgeschwindigkeit: ${(this.averageSpeed * 3.6).toFixed(1)} km/h</span>
                 </div>
             `}
             ${this.latitude === null || this.longitude === null || this.accuracy === null ? null : html`
