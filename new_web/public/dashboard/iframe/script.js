@@ -70,6 +70,7 @@ path.addTo(map);
         heading = newHeading;
         speed = newSpeed;
         setMarkerHeading(newHeading);
+        marker.setLatLng([lat, lon]);
     };
 
     /**
