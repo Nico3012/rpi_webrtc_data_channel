@@ -1,12 +1,13 @@
 import { LitElement, html, css } from 'lit';
-import { Chart, CategoryScale, LinearScale, LineController, LineElement, PointElement, Title, Tooltip, Legend } from 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/+esm';
+import { Chart, CategoryScale, LinearScale, LineController, LineElement, PointElement, Title, Tooltip, Legend } from 'chart.js';
+import zoomPlugin from 'chartjs-plugin-zoom';
 import { FakeGeolocation } from './fake-geolocation.js';
 
 const dirname = import.meta.url.substring(0, import.meta.url.lastIndexOf('/') + 1);
 
 const LIVE = false; // Set to true for real geolocation, false for fake
 
-Chart.register(CategoryScale, LinearScale, LineController, LineElement, PointElement, Title, Tooltip, Legend);
+Chart.register(CategoryScale, LinearScale, LineController, LineElement, PointElement, Title, Tooltip, Legend, zoomPlugin);
 
 const fakeGeo = new FakeGeolocation();
 
@@ -124,7 +125,20 @@ export class GeolocationManager extends LitElement {
                 scales: {
                     x: { title: { display: true, text: 'Zeit' } },
                     y: { title: { display: true, text: 'Höhe (m)' } }
-                }
+                },
+                // plugins: {
+                //     zoom: {
+                //         zoom: {
+                //             wheel: {
+                //                 enabled: true,
+                //             },
+                //             pinch: {
+                //                 enabled: true
+                //             },
+                //             mode: 'xy',
+                //         }
+                //     }
+                // }
             }
         });
     }
@@ -137,8 +151,8 @@ export class GeolocationManager extends LitElement {
         const Δφ = (lat2 - lat1) * Math.PI / 180;
         const Δλ = (lon2 - lon1) * Math.PI / 180;
         const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-                  Math.cos(φ1) * Math.cos(φ2) *
-                  Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
     }
