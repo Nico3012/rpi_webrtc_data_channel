@@ -330,6 +330,7 @@ export class GeolocationManager extends LitElement {
                 </div>
             `}
             <div class="altitude-chart" ?hidden=${!this.watching}>
+                <!-- the canvas must be in the dom. Therefore use hidden on the parent instead of adding/removing it from the dom -->
                 ${this.canvas}
             </div>
             ${this.heading === null ? null : html`
