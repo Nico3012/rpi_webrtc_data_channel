@@ -1,6 +1,14 @@
 import { LitElement, html, css } from 'lit';
+import { Chart, CategoryScale, LinearScale, LineController, LineElement, PointElement, Title, Tooltip, Legend } from 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/+esm';
+import { FakeGeolocation } from './fake-geolocation.js';
 
 const dirname = import.meta.url.substring(0, import.meta.url.lastIndexOf('/') + 1);
+
+const LIVE = false; // Set to true for real geolocation, false for fake
+
+Chart.register(CategoryScale, LinearScale, LineController, LineElement, PointElement, Title, Tooltip, Legend);
+
+const fakeGeo = new FakeGeolocation();
 
 export class GeolocationManager extends LitElement {
     static properties = {
@@ -71,11 +79,8 @@ export class GeolocationManager extends LitElement {
 
         // coords:
 
-        /** @private @type {{ latitude: number; longitude: number; }[]} */
-        this.latLonArray = [];
-
-        /** @private @type {number[]} */
-        this.altitudeArray = [];
+        /** @private @type {{ lat: number; lon: number; altitude: number; time: Date; }[]} */
+        this.dataPoints = [];
 
         // leaflet:
 
@@ -91,6 +96,36 @@ export class GeolocationManager extends LitElement {
                 if (!contentWindow) throw new Error('somehow contentWindow null on load event');
                 resolve(contentWindow);
             });
+        });
+
+        // initialize altitude chart
+
+        /** @type {HTMLCanvasElement} @private */
+        this.canvas = document.createElement('canvas');
+    }
+
+    firstUpdated() {
+        // initialize chart after canvas is in DOM
+        const ctx = this.canvas.getContext('2d');
+        this.altitudeChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Höhe (m)',
+                    data: [],
+                    borderColor: 'blue',
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true, // ensure, this completely follows its parents sizing
+                maintainAspectRatio: false, // ensure, this completely follows its parents sizing
+                scales: {
+                    x: { title: { display: true, text: 'Zeit' } },
+                    y: { title: { display: true, text: 'Höhe (m)' } }
+                }
+            }
         });
     }
 
@@ -141,14 +176,19 @@ export class GeolocationManager extends LitElement {
             this.lastLon = this.longitude;
         }
 
-        // update arrays
+        // update data points
 
-        this.latLonArray.push({
-            latitude: this.latitude,
-            longitude: this.longitude,
+        this.dataPoints.push({
+            lat: this.latitude,
+            lon: this.longitude,
+            altitude: this.altitude,
+            time: new Date(),
         });
 
-        this.altitudeArray.push(this.altitude);
+        // update altitude chart
+        this.altitudeChart.data.labels = this.dataPoints.map(p => p.time.toLocaleTimeString());
+        this.altitudeChart.data.datasets[0].data = this.dataPoints.map(p => p.altitude);
+        this.altitudeChart.update();
 
         // updating leaflet map:
 
@@ -160,7 +200,12 @@ export class GeolocationManager extends LitElement {
 
     /** @private */
     stopWatching = async () => {
-        navigator.geolocation.clearWatch(this.watchingId);
+        if (LIVE) {
+            navigator.geolocation.clearWatch(this.watchingId);
+        } else {
+            fakeGeo.clearWatch(this.watchingId);
+        }
+
         this.watching = false;
 
         this.latitude = null;
@@ -176,8 +221,7 @@ export class GeolocationManager extends LitElement {
 
         // reset arrays
 
-        this.latLonArray = [];
-        this.altitudeArray = [];
+        this.dataPoints = [];
 
         // reset distance tracking
         this.startTime = null;
@@ -204,16 +248,26 @@ export class GeolocationManager extends LitElement {
         if (this.watching) {
             this.stopWatching();
         } else {
-            this.watchingId = navigator.geolocation.watchPosition(this.successCallback, this.errorCallback, {
-                enableHighAccuracy: true,
-                timeout: 15000,
-                maximumAge: 0,
-            });
+            if (LIVE) {
+                this.watchingId = navigator.geolocation.watchPosition(this.successCallback, this.errorCallback, {
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 0,
+                });
+            } else {
+                this.watchingId = fakeGeo.watchPosition(this.successCallback, this.errorCallback, {});
+            }
+
             this.watching = true;
         }
     }
 
     static styles = css`
+        .altitude-chart {
+            width: 384px;
+            height: 192px;
+        }
+
         .heading {
             display: grid;
             justify-items: center;
@@ -268,6 +322,9 @@ export class GeolocationManager extends LitElement {
                     ${this.leafletIFrame}
                 </div>
             `}
+            <div class="altitude-chart">
+                ${this.canvas}
+            </div>
             ${this.heading === null ? null : html`
                 <div class="heading">
                     <img class="heading-background" src="${dirname}heading-background.svg" alt="heading-background">
