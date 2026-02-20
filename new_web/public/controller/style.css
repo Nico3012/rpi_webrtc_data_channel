@@ -46,13 +46,29 @@ details[open] summary::after {
     font-family: monospace;
 }
 
-/* .position {
+#wifi-manager {
+    display: block;
+    margin: 8px;
+    font-family: sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    color: blue;
+    text-decoration: none;
+    font-weight: normal;
+    text-align: center;
+}
+
+#wifi-manager[hidden] {
+    display: none !important;
+}
+
+.position {
     margin: 8px;
     text-align: center;
     font-size: 16px;
     font-family: monospace;
     line-height: 1.5;
-} */
+}
 
 .controller {
     flex-grow: 1;

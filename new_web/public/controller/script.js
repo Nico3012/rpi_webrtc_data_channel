@@ -1,4 +1,5 @@
 const webrtcConnection = document.querySelector('webrtc-connection');
+const wifiManager = document.getElementById('wifi-manager');
 const cameraElement = document.getElementById('camera');
 const microphoneElement = document.getElementById('microphone');
 const leftJoystick = document.getElementById('left-joystick');
@@ -12,6 +13,8 @@ webrtcConnection.addEventListener('connection-update', () => {
     // Update audio element with current stream (or null when disconnected)
     const audioStream = webrtcConnection.getAudioStream();
     microphoneElement.srcObject = audioStream;
+
+    wifiManager.hidden = !webrtcConnection.isConnected();
 });
 
 // webrtcConnection.addEventListener('message-received', (event) => {
