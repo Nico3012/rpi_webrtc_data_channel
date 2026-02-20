@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/assets/favicon.png" type="image/png">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <script type="importmap">
+        {
+            "imports": {
+                "lit": "/lit@3.2.1/lit-core.min.js"
+            }
+        }
+    </script>
+    <script type="module" src="/components/pwa-guide.js"></script>
+    <script type="module" src="/components/uninstall-manager.js"></script>
+    <script type="module" src="/components/cache-manager.js"></script>
+    <script type="module" src="/components/webrtc-connection.js"></script>
+    <script type="module" src="/components/digital-joystick.js"></script>
+    <script type="module" src="position.js"></script>
+    <script type="module" src="script.js"></script>
+    <script type="module" src="style.js"></script>
+    <title>Device Controller</title>
+</head>
+<body>
+    <div class="container">
+        <pwa-guide app-name="Device Controller" app-icon-src="/assets/icon-192.png"></pwa-guide>
+        <cache-manager></cache-manager>
+        <div class="wrapper">
+            <uninstall-manager></uninstall-manager>
+            <details>
+                <summary>Connection</summary>
+                <webrtc-connection target-origin="http://device-controller.net:8080" request-video request-audio></webrtc-connection>
+            </details>
+            <div class="position">
+                <button id="start-position">Start</button>
+                <span id="position">x: Unknown; y: Unknown; z: Unknown</span>
+                <button id="stop-position">Stop</button>
+            </div>
+            <div class="controller">
+                <digital-joystick id="left-joystick" precise stick-y default-y="-1"></digital-joystick>
+                <div class="media">
+                    <div class="video">
+                        <video id="camera" autoplay playsinline muted></video>
+                    </div>
+                    <audio id="microphone" autoplay></audio>
+                </div>
+                <digital-joystick id="right-joystick" precise></digital-joystick>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
