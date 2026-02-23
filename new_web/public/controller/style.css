@@ -113,3 +113,18 @@ details[open] summary::after {
     top: 50%;
     background-color: black;
 }
+
+.navigation {
+    background-color: #2c2d2e;
+    padding: 4px;
+}
+
+.navigation a {
+    font-family: monospace;
+    font-size: 16px;
+    line-height: 1.5;
+    color: white;
+    text-decoration: none;
+    font-weight: normal;
+    margin: 4px;
+}
