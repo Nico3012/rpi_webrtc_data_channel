@@ -41,11 +41,12 @@ export class WifiLabel extends LitElement {
     createQRCode = async (data) => {
         const iFrameWindow = await this.iFrameWindow;
 
-        return iFrameWindow.createQRCode(data);
+        return await iFrameWindow.createQRCode(data);
     };
 
     render() {
         return html`
+            <!-- This iframe does not show anything in the dom but to load, its required, to be placed in the dom -->
             ${this.iFrame}
         `;
     }

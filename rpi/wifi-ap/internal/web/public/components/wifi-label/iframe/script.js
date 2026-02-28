@@ -1,5 +1,13 @@
+const qrCodeIcon = fetch('./assets/qr-code-icon.png').then(res => res.blob()).then(blob => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onerror = reject;
+    reader.onloadend = () => resolve(reader.result); // enthält data:image/png;base64,...
+    reader.readAsDataURL(blob);
+}));
+
 /** @param {string} data */
-window.createQRCode = (data) => {
+window.createQRCode = async (data) => {
     const container = document.createElement('div');
 
     qrCode = new QRCodeStyling({
@@ -29,7 +37,7 @@ window.createQRCode = (data) => {
             "round": 0,
             "color": "#ffffff"
         },
-        "image": qrCodeIconBase64,
+        "image": await qrCodeIcon,
         "dotsOptionsHelper": {
             "colorType": {
                 "single": true,
