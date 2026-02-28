@@ -8,8 +8,25 @@ export class WifiLabel extends LitElement {
             display: block;
         }
 
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
         iframe {
+            margin: 0;
+            padding: 0;
             border: none;
+            outline: none;
+            width: 0;
+            height: 0;
+        }
+
+        @media print {
+            img {
+                width: 5cm;
+            }
         }
 
         [hidden] {
@@ -35,19 +52,34 @@ export class WifiLabel extends LitElement {
                 resolve(contentWindow);
             });
         });
+
+        this.image = document.createElement('img');
+        this.image.alt = 'qr-code';
     }
 
-    /** @param {string} data @public */
-    createQRCode = async (data) => {
+    /** @param {string} ssid @param {string} password @public */
+    createQRCode = async (ssid, password) => {
         const iFrameWindow = await this.iFrameWindow;
 
-        return await iFrameWindow.createQRCode(data);
+        /** @type {string} */
+        const base64 = await iFrameWindow.createQRCode(`WIFI:T:WPA;S:${ssid};P:${password};;`);
+
+        this.image.src = base64;
     };
+
+    /** @private */
+    handlePrintClick = () => {
+        window.print();
+    }
 
     render() {
         return html`
-            <!-- This iframe does not show anything in the dom but to load, its required, to be placed in the dom -->
-            ${this.iFrame}
+            <div class="container">
+                <!-- This iframe does not show anything in the dom but to load, its required, to be placed in the dom -->
+                ${this.iFrame}
+                ${this.image}
+                <button class="print" @click=${this.handlePrintClick}>Drucken</button>
+            </div>
         `;
     }
 }

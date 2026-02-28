@@ -1,3 +1,5 @@
+'use strict';
+
 const qrCodeIcon = fetch('./assets/qr-code-icon.png').then(res => res.blob()).then(blob => new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -8,9 +10,7 @@ const qrCodeIcon = fetch('./assets/qr-code-icon.png').then(res => res.blob()).th
 
 /** @param {string} data */
 window.createQRCode = async (data) => {
-    const container = document.createElement('div');
-
-    qrCode = new QRCodeStyling({
+    const qrCode = new QRCodeStyling({
         "type": "canvas",
         "shape": "square",
         "width": 1024,
@@ -100,13 +100,13 @@ window.createQRCode = async (data) => {
         }
     });
 
-    qrCode.append(container);
+    const base64 = await qrCode.getRawData('png').then(blob => new Promise((resolve, reject) => {
+        const reader = new FileReader();
 
-    const canvas = container.querySelector('canvas');
-
-    const base64 = canvas.toDataURL('image/png');
-
-    container.remove();
+        reader.onerror = reject;
+        reader.onloadend = () => resolve(reader.result); // enthält data:image/png;base64,...
+        reader.readAsDataURL(blob);
+    }));
 
     return base64;
 };
