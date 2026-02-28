@@ -23,9 +23,54 @@ export class WifiLabel extends LitElement {
             height: 0;
         }
 
+        .label {
+            padding: 1mm;
+            display: none;
+            border: 0.4mm solid black;
+        }
+
+        .label img {
+            margin: 1mm;
+            width: 15mm;
+            height: 15mm;
+        }
+
+        .label .details {
+            margin: 1mm;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .label .details span {
+            font-size: 4mm;
+            line-height: 1.25;
+        }
+
+        button {
+            display: block;
+            appearance: none;
+            margin: 8px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: none;
+            outline: none;
+            background-color: black;
+            color: white;
+            text-decoration: none;
+            font-family: sans-serif;
+            font-size: 16px;
+            font-weight: normal;
+            line-height: 1.5;
+            text-align: center;
+        }
+
         @media print {
-            img {
-                width: 5cm;
+            .label {
+                display: flex;
+            }
+
+            .controls {
+                display: none;
             }
         }
 
@@ -34,8 +79,11 @@ export class WifiLabel extends LitElement {
         }
     `;
 
-    // static properties = {
-    // };
+    static properties = {
+        ssid: { type: String, attribute: false },
+        password: { type: String, attribute: false },
+        devicePassword: { type: String, attribute: false },
+    };
 
     constructor() {
         super();
@@ -53,18 +101,32 @@ export class WifiLabel extends LitElement {
             });
         });
 
+        /** @type {HTMLImageElement} @private */
         this.image = document.createElement('img');
-        this.image.alt = 'qr-code';
+        this.image.alt = 'QR Code';
+
+        /** @type {string} @private */ // wifi ssid
+        this.ssid = '';
+
+        /** @type {string} @private */ // wifi password
+        this.password = '';
+
+        /** @type {string} @private */ // device password, to make changes in the user interface
+        this.devicePassword = '';
     }
 
-    /** @param {string} ssid @param {string} password @public */
-    createQRCode = async (ssid, password) => {
+    /** @param {string} ssid @param {string} password @param {string} devicePassword @public */
+    setDetails = async (ssid, password, devicePassword) => {
         const iFrameWindow = await this.iFrameWindow;
 
         /** @type {string} */
         const base64 = await iFrameWindow.createQRCode(`WIFI:T:WPA;S:${ssid};P:${password};;`);
 
         this.image.src = base64;
+
+        this.ssid = ssid;
+        this.password = password;
+        this.devicePassword = devicePassword;
     };
 
     /** @private */
@@ -77,8 +139,17 @@ export class WifiLabel extends LitElement {
             <div class="container">
                 <!-- This iframe does not show anything in the dom but to load, its required, to be placed in the dom -->
                 ${this.iFrame}
-                ${this.image}
-                <button class="print" @click=${this.handlePrintClick}>Drucken</button>
+                <div class="label">
+                    ${this.image}
+                    <div class="details">
+                        <span><strong>SSID:</strong> ${this.ssid}</span>
+                        <span><strong>Passwort:</strong> ${this.password}</span>
+                        <span><strong>Gerätepasswort:</strong> ${this.devicePassword}</span>
+                    </div>
+                </div>
+                <div class="controls">
+                    <button class="print" @click=${this.handlePrintClick}>Drucken</button>
+                </div>
             </div>
         `;
     }
