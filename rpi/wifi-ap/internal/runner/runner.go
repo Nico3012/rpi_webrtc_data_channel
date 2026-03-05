@@ -10,6 +10,13 @@ import (
 // New starts the startCommand in the background and returns a stop function.
 // The stop function gracefully stops the command if it's still running.
 func New(startCommand string) func() {
+	if os.Getenv("CMD_TEST") == "true" {
+		log.Printf("[RUNNER]: TEST MODE - Would start command: %s", startCommand)
+		return func() {
+			log.Printf("[RUNNER]: TEST MODE - Would stop command")
+		}
+	}
+
 	log.Printf("[RUNNER]: Starting command")
 	cmd := exec.Command("sh", "-c", startCommand)
 	cmd.Stdout = os.Stdout
