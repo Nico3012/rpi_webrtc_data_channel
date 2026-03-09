@@ -12,6 +12,7 @@ export class WifiLabel extends LitElement {
             display: flex;
             flex-direction: column;
             align-items: center;
+            padding: 8px;
         }
 
         iframe {
@@ -24,6 +25,8 @@ export class WifiLabel extends LitElement {
         }
 
         .label {
+            /* margin should be in px to be consistent with the rest of the page */
+            margin: 8px;
             padding: 1mm;
             display: flex;
             border: 0.4mm solid black;
