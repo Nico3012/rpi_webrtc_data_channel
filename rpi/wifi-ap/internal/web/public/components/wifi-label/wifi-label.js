@@ -25,7 +25,7 @@ export class WifiLabel extends LitElement {
 
         .label {
             padding: 1mm;
-            display: none;
+            display: flex;
             border: 0.4mm solid black;
         }
 
@@ -65,10 +65,6 @@ export class WifiLabel extends LitElement {
         }
 
         @media print {
-            .label {
-                display: flex;
-            }
-
             .controls {
                 display: none;
             }
