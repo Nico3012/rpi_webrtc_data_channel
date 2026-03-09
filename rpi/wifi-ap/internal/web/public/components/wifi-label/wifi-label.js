@@ -31,14 +31,15 @@ export class WifiLabel extends LitElement {
 
         .label img {
             margin: 1mm;
-            width: 15mm;
-            height: 15mm;
+            width: 25mm;
+            height: 25mm;
         }
 
         .label .details {
             margin: 1mm;
             display: flex;
             flex-direction: column;
+            justify-content: center;
         }
 
         .label .details span {
