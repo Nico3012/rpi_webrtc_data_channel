@@ -6,14 +6,16 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"strings"
 )
 
 //go:embed public
 var embedFS embed.FS
 
 type Config struct {
-	SSID     string `json:"ssid"`
-	Password string `json:"password"`
+	SSID           string `json:"ssid"`
+	Password       string `json:"password"`
+	DevicePassword string `json:"devicePassword"`
 }
 
 type GetConfigFunc func() (Config, error)
@@ -66,9 +68,19 @@ func (s *Server) handleGetConfig(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "getConfig not configured", http.StatusInternalServerError)
 		return
 	}
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	providedPassword := strings.TrimPrefix(authHeader, "Bearer ")
 	cfg, err := s.getConfig()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if providedPassword != cfg.DevicePassword {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -82,6 +94,21 @@ func (s *Server) handleSetConfig(w http.ResponseWriter, r *http.Request) {
 	}
 	if s.setConfig == nil {
 		http.Error(w, "setConfig not configured", http.StatusInternalServerError)
+		return
+	}
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	providedPassword := strings.TrimPrefix(authHeader, "Bearer ")
+	currentCfg, err := s.getConfig()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if providedPassword != currentCfg.DevicePassword {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 	var req Config

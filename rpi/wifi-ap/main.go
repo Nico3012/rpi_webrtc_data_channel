@@ -13,8 +13,9 @@ import (
 )
 
 type Config struct {
-	SSID     string `json:"ssid"`
-	Password string `json:"password"`
+	SSID           string `json:"ssid"`
+	Password       string `json:"password"`
+	DevicePassword string `json:"devicePassword"`
 }
 
 const (
@@ -56,10 +57,10 @@ func main() {
 	// Start web server (embedded).
 	getConfig := func() (web.Config, error) {
 		cfg := loadWiFiConfig(configPath)
-		return web.Config{SSID: cfg.SSID, Password: cfg.Password}, nil
+		return web.Config{SSID: cfg.SSID, Password: cfg.Password, DevicePassword: cfg.DevicePassword}, nil
 	}
 	setConfig := func(cfg web.Config) error {
-		saveWiFiConfig(configPath, Config{SSID: cfg.SSID, Password: cfg.Password})
+		saveWiFiConfig(configPath, Config{SSID: cfg.SSID, Password: cfg.Password, DevicePassword: cfg.DevicePassword})
 		// Trigger restart
 		go func() {
 			stop()
