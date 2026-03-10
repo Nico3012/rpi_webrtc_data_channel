@@ -15,5 +15,5 @@ void loop() {
   lego.SingleOutput(0, PWM_FWD2, BLUE, CH1); // stufe 4/7 forwärts
   delay(4000);
   lego.SingleOutput(0, PWM_FLT, BLUE, CH1); // strom weg -> ausrollen
-  delay(2000);
+  delay(8000);
 }
