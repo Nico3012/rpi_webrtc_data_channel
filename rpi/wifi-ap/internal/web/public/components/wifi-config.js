@@ -25,7 +25,7 @@ export class WifiConfig extends LitElement {
     constructor() {
         super();
 
-        /** @private @type {'login' | 'login-failed' | 'config'} */
+        /** @private @type {'login' | 'login-failed' | 'config' | 'config-failed' | 'updating'} */
         this.state = 'login';
 
         /** @private @type {{ ssid: string; password: string; devicePassword: string; } | null} */
@@ -62,7 +62,7 @@ export class WifiConfig extends LitElement {
     }
 
     /** @private */
-    async handleUpdateSubmit(event) {
+    async handleWiFiConfigUpdateSubmit(event) {
         event.preventDefault();
 
         const formData = new FormData(event.target);
@@ -75,12 +75,62 @@ export class WifiConfig extends LitElement {
         const password = formData.get('password');
         if (password === null) throw new Error('cannot find password in form data');
 
-        /** @type {string | null} */
-        const newDevicePassword = formData.get('device-password');
-        if (newDevicePassword === null) throw new Error('cannot find device-password in form data');
+        const devicePassword = this.config?.devicePassword;
+        if (!devicePassword) throw new Error('cannot find devicePassword in config');
 
-        if (this.config === null) throw new Error('config is null on handleUpdateSubmit. This should not be possible');
-        const currentDevicePassword = this.config.devicePassword;
+        const response = await fetch('/set-config', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${devicePassword}`,
+            },
+            body: JSON.stringify({
+                ssid: ssid,
+                password: password,
+                devicePassword: devicePassword,
+            }),
+        });
+
+        if (!response.ok) {
+            // unexpected error. e.g. due to changed password on another page after login here
+            this.state = 'config-failed';
+            this.config = null;
+            return;
+        }
+
+        // wifi ap will restart now
+
+        this.state = 'updating';
+        this.config = null;
+    }
+
+    /** @private */
+    async handleDevicePasswordUpdateSubmit(event) {
+        event.preventDefault();
+
+        const formData = new FormData(event.target);
+
+        /** @type {string | null} */
+        const currentDevicePassword = formData.get('current-device-password');
+        if (currentDevicePassword === null) throw new Error('cannot find current-device-password in form data');
+
+        /** @type {string | null} */
+        const newDevicePassword = formData.get('new-device-password');
+        if (newDevicePassword === null) throw new Error('cannot find new-device-password in form data');
+
+        const ssid = this.config?.ssid;
+        if (!ssid) throw new Error('cannot find ssid in config');
+
+        const password = this.config?.password;
+        if (!password) throw new Error('cannot find password in config');
+
+        const devicePassword = this.config?.devicePassword;
+        if (!devicePassword) throw new Error('cannot find devicePassword in config');
+
+        if (currentDevicePassword !== devicePassword) {
+            alert('Das angegebene Gerätepasswort ist nicht korrekt.');
+            return;
+        }
 
         const response = await fetch('/set-config', {
             method: 'POST',
@@ -96,20 +146,20 @@ export class WifiConfig extends LitElement {
         });
 
         if (!response.ok) {
-            this.state = 'login-failed';
+            // unexpected error. e.g. due to changed password on another page after login here
+            this.state = 'config-failed';
             this.config = null;
             return;
         }
 
-        this.config = {
-            ssid: ssid,
-            password: password,
-            devicePassword: newDevicePassword,
-        };
+        // wifi ap will restart now
+
+        this.state = 'updating';
+        this.config = null;
     }
 
     /** @private */
-    handleLoginFailed() {
+    handleBackToLogin() {
         // reset login
         this.state = 'login';
         this.config = null;
@@ -118,6 +168,7 @@ export class WifiConfig extends LitElement {
     render() {
         if (this.state === 'login') return html`
             <div class="container">
+                <p class="info">Login</p>
                 <form @submit=${this.handleLoginSubmit}>
                     <input name="device-password" type="password" required>
                     <button type="submit">Login</button>
@@ -127,19 +178,54 @@ export class WifiConfig extends LitElement {
 
         if (this.state === 'login-failed') return html`
             <div class="container">
-                <button @click=${this.handleLoginFailed}>Anmeldung erneut versuchen</button>
+                <p class="info">Login fehlgeschlagen</p>
+                <button @click=${this.handleBackToLogin}>Zurück zur Anmeldung</button>
             </div>
         `;
 
         if (this.state === 'config') return html`
             <div class="container">
-                <form @submit=${this.handleUpdateSubmit}>
-                    <input name="ssid" type="text" value=${this.config.ssid} required>
-                    <input name="password" type="text" value=${this.config.password} required>
-                    <input name="device-password" type="text" value=${this.config.devicePassword} required>
+
+                <p class="info">WiFi Konfiguration</p>
+                <form @submit=${this.handleWiFiConfigUpdateSubmit}>
+                    <label>
+                        SSID:
+                        <input name="ssid" type="text" value=${this.config?.ssid || ''} required>
+                    </label>
+                    <label>
+                        Password:
+                        <input name="password" type="text" value=${this.config?.password || ''} required>
+                    </label>
                     <button type="submit">Aktualisieren</button>
                 </form>
+
+                <p class="info">Gerätepasswort ändern</p>
+                <form @submit=${this.handleDevicePasswordUpdateSubmit}>
+                    <label>
+                        Bisheriges Passwort:
+                        <input name="current-device-password" type="password" required>
+                    </label>
+                    <label>
+                        Neues Passwort:
+                        <input name="new-device-password" type="password" required>
+                    </label>
+                    <button type="submit">Aktualisieren</button>
+                </form>
+
                 <a target="_blank" href="/wifi-label/?${new URLSearchParams(this.config).toString()}">Drucken</a>
+            </div>
+        `;
+
+        if (this.state === 'config-failed') return html`
+            <div class="container">
+                <p class="info">Konfiguration fehlgeschlagen</p>
+                <button @click=${this.handleBackToLogin}>Zurück zur Anmeldung</button>
+            </div>
+        `;
+
+        if (this.state === 'updating') return html`
+            <div class="container">
+                <p class="info">Konfiguration wird durchgeführt. Verbinden Sie sich ernet mit dem WiFi und aktualisieren die Seite.</p>
             </div>
         `;
 
