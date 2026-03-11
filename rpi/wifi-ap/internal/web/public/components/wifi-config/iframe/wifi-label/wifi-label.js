@@ -12,7 +12,6 @@ export class WifiLabel extends LitElement {
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 8px;
         }
 
         iframe {
@@ -25,10 +24,8 @@ export class WifiLabel extends LitElement {
         }
 
         .label {
-            /* margin should be in px to be consistent with the rest of the page */
-            margin: 8px;
             padding: 1mm;
-            display: flex;
+            display: none;
             border: 0.4mm solid black;
         }
 
@@ -50,10 +47,15 @@ export class WifiLabel extends LitElement {
             line-height: 1.25;
         }
 
-        button {
+        .controls {
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        .controls button {
             display: block;
             appearance: none;
-            margin: 8px;
+            margin: 0;
             padding: 8px 12px;
             border-radius: 20px;
             border: none;
@@ -66,9 +68,15 @@ export class WifiLabel extends LitElement {
             font-weight: normal;
             line-height: 1.5;
             text-align: center;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         @media print {
+            .label {
+                display: flex;
+            }
+
             .controls {
                 display: none;
             }

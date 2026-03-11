@@ -1,4 +1,4 @@
-import { WifiLabel } from "../components/wifi-label/wifi-label.js";
+import { WifiLabel } from "./wifi-label/wifi-label.js";
 
 const params = new URLSearchParams(window.location.search);
 

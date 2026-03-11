@@ -1,5 +1,7 @@
 import { LitElement, html, css } from 'lit';
 
+const dirname = import.meta.url.substring(0, import.meta.url.lastIndexOf('/') + 1);
+
 export class WifiConfig extends LitElement {
     static styles = css`
         :host {
@@ -13,6 +15,16 @@ export class WifiConfig extends LitElement {
             padding: 8px;
         }
 
+        iframe {
+            margin: 0;
+            padding: 0;
+            border: none;
+            outline: none;
+            height: 40px;
+            box-sizing: content-box;
+            width: 108px;
+        }
+
         [hidden] {
             display: none;
         }
@@ -20,6 +32,7 @@ export class WifiConfig extends LitElement {
 
     static properties = {
         state: { type: String, attribute: false },
+        iFrameSrc: { type: String, attribute: false },
     };
 
     constructor() {
@@ -30,6 +43,9 @@ export class WifiConfig extends LitElement {
 
         /** @private @type {{ ssid: string; password: string; devicePassword: string; } | null} */
         this.config = null;
+
+        /** @private @type {string} */
+        this.iFrameSrc = '';
     }
 
     /** @private */
@@ -159,6 +175,26 @@ export class WifiConfig extends LitElement {
     }
 
     /** @private */
+    handleLabelGenerationSubmit(event) {
+        event.preventDefault();
+
+        const formData = new FormData(event.target);
+
+        /** @type {string | null} */
+        const devicePassword = formData.get('device-password');
+        if (devicePassword === null) throw new Error('cannot find device-password in form data');
+
+        if (!this.config) throw new Error('somehow handleLabelGenerationSubmit get called but this.config is null');
+
+        if (devicePassword !== this.config.devicePassword) {
+            alert('Das angegebene Gerätepasswort ist nicht korrekt.');
+            return;
+        }
+
+        this.iFrameSrc = `${dirname}iframe/?${new URLSearchParams(this.config).toString()}`;
+    }
+
+    /** @private */
     handleBackToLogin() {
         // reset login
         this.state = 'login';
@@ -202,17 +238,25 @@ export class WifiConfig extends LitElement {
                 <p class="info">Gerätepasswort ändern</p>
                 <form @submit=${this.handleDevicePasswordUpdateSubmit}>
                     <label>
-                        Bisheriges Passwort:
+                        Bisheriges Gerätepasswort:
                         <input name="current-device-password" type="password" required>
                     </label>
                     <label>
-                        Neues Passwort:
+                        Neues Gerätepasswort:
                         <input name="new-device-password" type="password" required>
                     </label>
                     <button type="submit">Aktualisieren</button>
                 </form>
 
-                <a target="_blank" href="/wifi-label/?${new URLSearchParams(this.config).toString()}">Drucken</a>
+                <p class="info">Label erstellen</p>
+                <form @submit=${this.handleLabelGenerationSubmit} ?hidden=${!!this.iFrameSrc}>
+                    <label>
+                        Gerätepasswort:
+                        <input name="device-password" type="password" required>
+                    </label>
+                    <button type="submit">Label erstellen</button>
+                </form>
+                <iframe src=${this.iFrameSrc} ?hidden=${!this.iFrameSrc}></iframe>
             </div>
         `;
 
