@@ -1,6 +1,6 @@
 #include <legopowerfunctions.h>
 
-LEGOPowerFunctions lego(13);
+LEGOPowerFunctions lego(3);
 
 void setup() {
   // nothing needed here
