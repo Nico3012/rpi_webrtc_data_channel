@@ -67,6 +67,7 @@ export class WifiConfig extends LitElement {
         if (!response.ok) {
             this.state = 'login-failed';
             this.config = null;
+            this.iFrameSrc = '';
             return;
         }
 
@@ -75,6 +76,7 @@ export class WifiConfig extends LitElement {
 
         this.state = 'config';
         this.config = data;
+        this.iFrameSrc = '';
     }
 
     /** @private */
@@ -111,6 +113,7 @@ export class WifiConfig extends LitElement {
             // unexpected error. e.g. due to changed password on another page after login here
             this.state = 'config-failed';
             this.config = null;
+            this.iFrameSrc = '';
             return;
         }
 
@@ -118,6 +121,7 @@ export class WifiConfig extends LitElement {
 
         this.state = 'updating';
         this.config = null;
+        this.iFrameSrc = '';
     }
 
     /** @private */
@@ -165,6 +169,7 @@ export class WifiConfig extends LitElement {
             // unexpected error. e.g. due to changed password on another page after login here
             this.state = 'config-failed';
             this.config = null;
+            this.iFrameSrc = '';
             return;
         }
 
@@ -172,6 +177,7 @@ export class WifiConfig extends LitElement {
 
         this.state = 'updating';
         this.config = null;
+        this.iFrameSrc = '';
     }
 
     /** @private */
@@ -199,6 +205,12 @@ export class WifiConfig extends LitElement {
         // reset login
         this.state = 'login';
         this.config = null;
+        this.iFrameSrc = '';
+    }
+
+    /** @private */
+    handleReload() {
+        window.location.reload();
     }
 
     render() {
@@ -257,6 +269,8 @@ export class WifiConfig extends LitElement {
                     <button type="submit">Label erstellen</button>
                 </form>
                 <iframe src=${this.iFrameSrc} ?hidden=${!this.iFrameSrc}></iframe>
+
+                <button type="button" @click=${this.handleBackToLogin}>Logout</button>
             </div>
         `;
 
@@ -270,6 +284,7 @@ export class WifiConfig extends LitElement {
         if (this.state === 'updating') return html`
             <div class="container">
                 <p class="info">Konfiguration wird durchgeführt. Verbinden Sie sich ernet mit dem WiFi und aktualisieren die Seite.</p>
+                <button @click=${this.handleReload}>Seite neu laden</button>
             </div>
         `;
 
