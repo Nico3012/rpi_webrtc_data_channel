@@ -7,6 +7,9 @@ services:
     privileged: true
     environment:
       - DEVICE=linux-work
+      - CONFIG_PATH=/srv/wifi-ap-production-config.json
+    volumes:
+      - ./wifi-ap-production-config.json:/srv/wifi-ap-production-config.json:rw
     stop_grace_period: 60s # Wait 60 seconds before killing the container. The container performs cleanup actions
     restart: always
   hello-world:

@@ -1,5 +1,9 @@
 package main
 
+// set CONFIG_PATH=wifi-ap-testing-config.json
+// set CMD_TEST=true # set this, if the command should not be executed in runner package
+// set DEVICE=linux
+
 import (
 	"encoding/json"
 	"log"
@@ -17,10 +21,6 @@ type Config struct {
 	Password       string `json:"password"`
 	DevicePassword string `json:"devicePassword"`
 }
-
-const (
-	configPath = "config.json"
-)
 
 func loadWiFiConfig(path string) Config {
 	b, err := os.ReadFile(path)
@@ -45,6 +45,12 @@ func saveWiFiConfig(path string, cfg Config) {
 }
 
 func main() {
+	// Load config path from environment variable
+	configPath := os.Getenv("CONFIG_PATH")
+	if configPath == "" {
+		log.Fatalln("CONFIG_PATH env not set. Provide the path to config file")
+	}
+
 	// Load wifi config (must exist)
 	wifiCfg := loadWiFiConfig(configPath)
 
