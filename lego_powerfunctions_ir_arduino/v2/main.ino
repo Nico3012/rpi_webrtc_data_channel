@@ -136,3 +136,13 @@ void loop()
         }
     }
 }
+
+// Serial monitor commands:
+
+// SINGLE <channel> <port> <value>
+// COMBO <channel> <blueValue> <redValue>
+
+// Serial monitor examples:
+
+// SINGLE 0 0 0.5
+// COMBO 1 0.3 -0.6
