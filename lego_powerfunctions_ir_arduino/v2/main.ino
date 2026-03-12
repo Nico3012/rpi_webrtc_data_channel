@@ -30,6 +30,7 @@
 #define PWM_REV2 0xE
 #define PWM_REV1 0xf
 
+// this function must be recalled e.g. every 100ms, because Timeout mode requires a series of commands
 void sendSinglePWM(IRsend &ir, uint8_t channel, uint8_t port, uint8_t pwm) {
     // Telegramm bauen: (Port << 4) | PWM
     uint8_t tCommand = ((port & 0x1) << 4) | (pwm & 0xF);
@@ -38,6 +39,7 @@ void sendSinglePWM(IRsend &ir, uint8_t channel, uint8_t port, uint8_t pwm) {
     ir.sendLegoPowerFunctions(channel, tCommand, 3, false); // void sendLegoPowerFunctions (uint8_t aChannel, uint8_t tCommand, uint8_t aMode, bool aDoSend5Times=true)
 }
 
+// this function must be recalled e.g. every 100ms, because Timeout mode requires a series of commands
 void sendComboPWM(IRsend &ir, uint8_t channel, uint8_t bluePWM, uint8_t redPWM) {
     // Nibble1 = 0x4 | channel
     uint8_t nib1 = 0x4 | (channel & 0x3);
@@ -53,6 +55,39 @@ void sendComboPWM(IRsend &ir, uint8_t channel, uint8_t bluePWM, uint8_t redPWM) 
 
     // Senden über IRremote (Es wird immer im Timeout mode gesendet)
     ir.sendLegoPowerFunctions(rawData, channel, false); // void sendLegoPowerFunctions (uint16_t aRawData, uint8_t aChannel, bool aDoSend5Times=true)
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// internal helper array
+uint8_t pwmValues[15] = {
+    PWM_REV7, PWM_REV6, PWM_REV5, PWM_REV4, PWM_REV3, PWM_REV2, PWM_REV1,
+    PWM_FLT,
+    PWM_FWD1, PWM_FWD2, PWM_FWD3, PWM_FWD4, PWM_FWD5, PWM_FWD6, PWM_FWD7
+};
+
+// internal helper function
+uint8_t calculatePWM(float value) {
+    int strength = round(value * 7.0f);
+    if (strength < -7) strength = -7;
+    if (strength > 7) strength = 7;
+    int index = strength + 7;
+    return pwmValues[index];
+}
+
+// value is element of [-1, 1]
+// this function must be recalled e.g. every 100ms, because Timeout mode requires a series of commands
+void sendSinglePWMFloat(IRsend &ir, uint8_t channel, uint8_t port, float value) {
+    uint8_t pwm = calculatePWM(value);
+    sendSinglePWM(ir, channel, port, pwm);
+}
+
+// blueValue, redValue are element of [-1, 1]
+// this function must be recalled e.g. every 100ms, because Timeout mode requires a series of commands
+void sendComboPWMFloat(IRsend &ir, uint8_t channel, float blueValue, float redValue) {
+    uint8_t bluePWM = calculatePWM(blueValue);
+    uint8_t redPWM = calculatePWM(redValue);
+    sendComboPWM(ir, channel, bluePWM, redPWM);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
