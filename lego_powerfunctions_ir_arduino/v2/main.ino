@@ -110,6 +110,7 @@ void loop()
     if (Serial.available())
     {
         String input = Serial.readStringUntil('\n');
+        input.trim(); // Entfernt \r falls vorhanden, für Kompatibilität mit Arduino IDE Serial Monitor
         char buf[50];
         input.toCharArray(buf, 50);
         char cmd[10];
