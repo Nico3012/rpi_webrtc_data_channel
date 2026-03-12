@@ -111,28 +111,56 @@ void loop()
     {
         String input = Serial.readStringUntil('\n');
         input.trim(); // Entfernt \r falls vorhanden, für Kompatibilität mit Arduino IDE Serial Monitor
-        char buf[50];
-        input.toCharArray(buf, 50);
-        char cmd[10];
-        int ch, port;
-        float val1, val2;
 
-        // Parse for SINGLE command: SINGLE <channel> <port> <value>
-        if (sscanf(buf, "%s %d %d %f", cmd, &ch, &port, &val1) == 4)
+        if (input.startsWith("SINGLE "))
         {
-            if (strcmp(cmd, "SINGLE") == 0)
+            // Parse SINGLE command: SINGLE <channel> <port> <value>
+            int firstSpace = input.indexOf(' ', 7); // Nach "SINGLE "
+            if (firstSpace != -1)
             {
-                sendSinglePWMFloat(irsend, ch, port, val1);
-                Serial.println("SINGLE command executed");
+                int secondSpace = input.indexOf(' ', firstSpace + 1);
+                if (secondSpace != -1)
+                {
+                    int thirdSpace = input.indexOf(' ', secondSpace + 1);
+                    if (thirdSpace == -1) // Kein weiteres Leerzeichen erwartet
+                    {
+                        String chStr = input.substring(7, firstSpace);
+                        String portStr = input.substring(firstSpace + 1, secondSpace);
+                        String valStr = input.substring(secondSpace + 1);
+
+                        int ch = chStr.toInt();
+                        int port = portStr.toInt();
+                        float val1 = valStr.toFloat();
+
+                        sendSinglePWMFloat(irsend, ch, port, val1);
+                    }
+                }
             }
         }
-        // Parse for COMBO command: COMBO <channel> <blueValue> <redValue>
-        else if (sscanf(buf, "%s %d %f %f", cmd, &ch, &val1, &val2) == 4)
+
+        if (input.startsWith("COMBO "))
         {
-            if (strcmp(cmd, "COMBO") == 0)
+            // Parse COMBO command: COMBO <channel> <blueValue> <redValue>
+            int firstSpace = input.indexOf(' ', 6); // Nach "COMBO "
+            if (firstSpace != -1)
             {
-                sendComboPWMFloat(irsend, ch, val1, val2);
-                Serial.println("COMBO command executed");
+                int secondSpace = input.indexOf(' ', firstSpace + 1);
+                if (secondSpace != -1)
+                {
+                    int thirdSpace = input.indexOf(' ', secondSpace + 1);
+                    if (thirdSpace == -1) // Kein weiteres Leerzeichen erwartet
+                    {
+                        String chStr = input.substring(6, firstSpace);
+                        String blueStr = input.substring(firstSpace + 1, secondSpace);
+                        String redStr = input.substring(secondSpace + 1);
+
+                        int ch = chStr.toInt();
+                        float val1 = blueStr.toFloat(); // blueValue
+                        float val2 = redStr.toFloat(); // redValue
+
+                        sendComboPWMFloat(irsend, ch, val1, val2);
+                    }
+                }
             }
         }
     }
