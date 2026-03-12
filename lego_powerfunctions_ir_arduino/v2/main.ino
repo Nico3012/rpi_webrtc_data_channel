@@ -99,8 +99,8 @@ void setup() {
 }
 
 void loop() {
-  sendSinglePWM(irsend, CH1, BLUE, PWM_FWD2);
-  sendSinglePWM(irsend, CH1, RED, PWM_REV4);
-  sendComboPWM(irsend, CH2, PWM_FWD2, PWM_REV2);
+  sendSinglePWMFloat(irsend, CH1, BLUE, 0.3);
+  sendSinglePWMFloat(irsend, CH1, RED, -0.6);
+  sendComboPWMFloat(irsend, CH2, 0.3, 0.3);
   delay(100); // wait 100ms and then send again
 }
