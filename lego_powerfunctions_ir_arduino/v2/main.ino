@@ -21,7 +21,7 @@
 #define PWM_FWD5 0x5
 #define PWM_FWD6 0x6
 #define PWM_FWD7 0x7
-//#define PWM_BRK 0x8 - should not be used, because it may cause physical damage to the engine
+// #define PWM_BRK 0x8 - should not be used, because it may cause physical damage to the engine
 #define PWM_REV7 0x9
 #define PWM_REV6 0xA
 #define PWM_REV5 0xB
@@ -31,7 +31,8 @@
 #define PWM_REV1 0xf
 
 // this function must be recalled e.g. every 100ms, because Timeout mode requires a series of commands
-void sendSinglePWM(IRsend &ir, uint8_t channel, uint8_t port, uint8_t pwm) {
+void sendSinglePWM(IRsend &ir, uint8_t channel, uint8_t port, uint8_t pwm)
+{
     // Telegramm bauen: (Port << 4) | PWM
     uint8_t tCommand = ((port & 0x1) << 4) | (pwm & 0xF);
 
@@ -40,7 +41,8 @@ void sendSinglePWM(IRsend &ir, uint8_t channel, uint8_t port, uint8_t pwm) {
 }
 
 // this function must be recalled e.g. every 100ms, because Timeout mode requires a series of commands
-void sendComboPWM(IRsend &ir, uint8_t channel, uint8_t bluePWM, uint8_t redPWM) {
+void sendComboPWM(IRsend &ir, uint8_t channel, uint8_t bluePWM, uint8_t redPWM)
+{
     // Nibble1 = 0x4 | channel
     uint8_t nib1 = 0x4 | (channel & 0x3);
     // Nibble2 = Blue PWM
@@ -67,7 +69,8 @@ uint8_t pwmValues[15] = {
 };
 
 // internal helper function
-uint8_t calculatePWM(float value) {
+uint8_t calculatePWM(float value)
+{
     int strength = round(value * 7.0f);
     if (strength < -7) strength = -7;
     if (strength > 7) strength = 7;
@@ -77,14 +80,16 @@ uint8_t calculatePWM(float value) {
 
 // value is element of [-1, 1]
 // this function must be recalled e.g. every 100ms, because Timeout mode requires a series of commands
-void sendSinglePWMFloat(IRsend &ir, uint8_t channel, uint8_t port, float value) {
+void sendSinglePWMFloat(IRsend &ir, uint8_t channel, uint8_t port, float value)
+{
     uint8_t pwm = calculatePWM(value);
     sendSinglePWM(ir, channel, port, pwm);
 }
 
 // blueValue, redValue are element of [-1, 1]
 // this function must be recalled e.g. every 100ms, because Timeout mode requires a series of commands
-void sendComboPWMFloat(IRsend &ir, uint8_t channel, float blueValue, float redValue) {
+void sendComboPWMFloat(IRsend &ir, uint8_t channel, float blueValue, float redValue)
+{
     uint8_t bluePWM = calculatePWM(blueValue);
     uint8_t redPWM = calculatePWM(redValue);
     sendComboPWM(ir, channel, bluePWM, redPWM);
@@ -94,13 +99,40 @@ void sendComboPWMFloat(IRsend &ir, uint8_t channel, float blueValue, float redVa
 
 IRsend irsend;
 
-void setup() {
-  irsend.begin(3); // arduino pin 3
+void setup()
+{
+    Serial.begin(9600);
+    irsend.begin(3); // arduino pin 3
 }
 
-void loop() {
-  sendSinglePWMFloat(irsend, CH1, BLUE, 0.3);
-  sendSinglePWMFloat(irsend, CH1, RED, -0.6);
-  sendComboPWMFloat(irsend, CH2, 0.3, 0.3);
-  delay(100); // wait 100ms and then send again
+void loop()
+{
+    if (Serial.available())
+    {
+        String input = Serial.readStringUntil('\n');
+        char buf[50];
+        input.toCharArray(buf, 50);
+        char cmd[10];
+        int ch, port;
+        float val1, val2;
+
+        // Parse for SINGLE command: SINGLE <channel> <port> <value>
+        if (sscanf(buf, "%s %d %d %f", cmd, &ch, &port, &val1) == 4)
+        {
+            if (strcmp(cmd, "SINGLE") == 0)
+            {
+                sendSinglePWMFloat(irsend, ch, port, val1);
+                Serial.println("SINGLE command executed");
+            }
+        }
+        // Parse for COMBO command: COMBO <channel> <blueValue> <redValue>
+        else if (sscanf(buf, "%s %d %f %f", cmd, &ch, &val1, &val2) == 4)
+        {
+            if (strcmp(cmd, "COMBO") == 0)
+            {
+                sendComboPWMFloat(irsend, ch, val1, val2);
+                Serial.println("COMBO command executed");
+            }
+        }
+    }
 }
