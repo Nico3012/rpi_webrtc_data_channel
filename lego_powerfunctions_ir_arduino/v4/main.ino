@@ -2,6 +2,20 @@
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Struktur für Pin und Channel Konfiguration
+struct PfConfig {
+    int pin;
+    int channel;
+};
+
+// Hardcoded Array mit Konfigurationen (Pin, Channel)
+PfConfig configs[] = {
+    {3, 0},  // Pin 3, Channel 0
+    {5, 1}   // Pin 4, Channel 1
+};
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void sendComboPWM(LegoIr &pf, uint8_t bluePWM, uint8_t redPWM)
 {
     pf.combo_pwm(bluePWM, redPWM);
@@ -36,12 +50,18 @@ void sendComboPWMFloat(LegoIr &pf, float blueValue, float redValue)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-LegoIr pf;
+// Anzahl der Kanäle basierend auf Array-Größe
+const int numChannels = sizeof(configs) / sizeof(configs[0]);
+
+// Array von LegoIr Objekten
+LegoIr pf[numChannels];
 
 void setup()
 {
     Serial.begin(9600);
-    pf.begin(3, 0); // arduino pin 3, channel 0 (0 - 3)
+    for (int i = 0; i < numChannels; i++) {
+        pf[i].begin(configs[i].pin, configs[i].channel);
+    }
 }
 
 void loop()
@@ -71,8 +91,9 @@ void loop()
                         float val1 = blueStr.toFloat(); // blueValue
                         float val2 = redStr.toFloat(); // redValue
 
-                        // ch
-                        sendComboPWMFloat(pf, val1, val2);
+                        if (ch >= 0 && ch < numChannels) {
+                            sendComboPWMFloat(pf[ch], val1, val2);
+                        }
                     }
                 }
             }
@@ -83,9 +104,7 @@ void loop()
 }
 
 // Serial monitor commands:
-
 // COMBO <channel> <blueValue> <redValue>
 
 // Serial monitor examples:
-
 // COMBO 1 0.3 -0.6
