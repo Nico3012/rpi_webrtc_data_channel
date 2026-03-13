@@ -2,11 +2,6 @@
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void sendSinglePWM(LegoIr &pf, uint8_t port, uint8_t pwm)
-{
-    pf.single_pwm(port, pwm);
-}
-
 void sendComboPWM(LegoIr &pf, uint8_t bluePWM, uint8_t redPWM)
 {
     pf.combo_pwm(bluePWM, redPWM);
@@ -29,13 +24,6 @@ uint8_t calculatePWM(float value)
     if (strength > 7) strength = 7;
     int index = strength + 7;
     return pwmValues[index];
-}
-
-// value is element of [-1, 1]
-void sendSinglePWMFloat(LegoIr &pf, uint8_t port, float value)
-{
-    uint8_t pwm = calculatePWM(value);
-    sendSinglePWM(pf, port, pwm);
 }
 
 // blueValue, redValue are element of [-1, 1]
@@ -63,33 +51,6 @@ void loop()
         String input = Serial.readStringUntil('\n');
         input.trim(); // Entfernt \r falls vorhanden, für Kompatibilität mit Arduino IDE Serial Monitor
 
-        if (input.startsWith("SINGLE "))
-        {
-            // Parse SINGLE command: SINGLE <channel> <port> <value>
-            int firstSpace = input.indexOf(' ', 7); // Nach "SINGLE "
-            if (firstSpace != -1)
-            {
-                int secondSpace = input.indexOf(' ', firstSpace + 1);
-                if (secondSpace != -1)
-                {
-                    int thirdSpace = input.indexOf(' ', secondSpace + 1);
-                    if (thirdSpace == -1) // Kein weiteres Leerzeichen erwartet
-                    {
-                        String chStr = input.substring(7, firstSpace);
-                        String portStr = input.substring(firstSpace + 1, secondSpace);
-                        String valStr = input.substring(secondSpace + 1);
-
-                        int ch = chStr.toInt();
-                        int port = portStr.toInt();
-                        float val1 = valStr.toFloat();
-
-                        // ch
-                        sendSinglePWMFloat(pf, port, val1);
-                    }
-                }
-            }
-        }
-
         if (input.startsWith("COMBO "))
         {
             // Parse COMBO command: COMBO <channel> <blueValue> <redValue>
@@ -116,15 +77,15 @@ void loop()
                 }
             }
         }
+
+        // other commands
     }
 }
 
 // Serial monitor commands:
 
-// SINGLE <channel> <port> <value>
 // COMBO <channel> <blueValue> <redValue>
 
 // Serial monitor examples:
 
-// SINGLE 0 0 0.5
 // COMBO 1 0.3 -0.6
