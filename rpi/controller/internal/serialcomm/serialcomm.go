@@ -61,20 +61,6 @@ func New(name string, baud int) (*Port, error) {
 	return p, nil
 }
 
-// NewAuto initializes and returns a Port using the first available serial port at the given baud rate.
-// It queries the list of connected ports and picks the first one.
-// Example: p, err := serialcomm.NewAuto(9600)
-func NewAuto(baud int) (*Port, error) {
-	ports, err := serial.GetPortsList()
-	if err != nil {
-		return nil, fmt.Errorf("listing serial ports: %w", err)
-	}
-	if len(ports) == 0 {
-		return nil, fmt.Errorf("no serial ports found")
-	}
-	return New(ports[0], baud)
-}
-
 // NewByVIDPID initializes and returns a Port using the serial port with the specified VID and PID at the given baud rate.
 // It queries the list of connected ports and picks the one matching the VID and PID.
 // Example: p, err := serialcomm.NewByVIDPID("2341", "0043", 9600)
