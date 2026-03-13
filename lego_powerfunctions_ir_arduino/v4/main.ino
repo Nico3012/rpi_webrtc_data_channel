@@ -107,4 +107,4 @@ void loop()
 // COMBO <channel> <blueValue> <redValue>
 
 // Serial monitor examples:
-// COMBO 1 0.3 -0.6
+// COMBO 0 0.3 -0.6

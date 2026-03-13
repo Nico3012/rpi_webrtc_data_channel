@@ -28,7 +28,8 @@ leftJoystick.addEventListener('stick-move', (event) => {
     speed = (event.detail.y + 1) / 2; // assign speed
 
     if (webrtcConnection.isConnected()) {
-        webrtcConnection.sendData(`COMBO 0 ${speed.toFixed(2)} ${angle.toFixed(2)}`);
+        // do not send every time, to ensure ir led is not waiting for cmd stack
+        // webrtcConnection.sendData(`COMBO 0 ${speed.toFixed(2)} ${angle.toFixed(2)}`);
     }
 });
 
@@ -36,7 +37,8 @@ rightJoystick.addEventListener('stick-move', (event) => {
     angle = event.detail.x; // assign angle
 
     if (webrtcConnection.isConnected()) {
-        webrtcConnection.sendData(`COMBO 0 ${speed.toFixed(2)} ${angle.toFixed(2)}`);
+        // do not send every time, to ensure ir led is not waiting for cmd stack
+        // webrtcConnection.sendData(`COMBO 0 ${speed.toFixed(2)} ${angle.toFixed(2)}`);
     }
 });
 
@@ -44,6 +46,6 @@ setInterval(() => {
     if (webrtcConnection.isConnected()) {
         webrtcConnection.sendData(`COMBO 0 ${speed.toFixed(2)} ${angle.toFixed(2)}`);
     }
-}, 100);
+}, 200);
 
 export { };
