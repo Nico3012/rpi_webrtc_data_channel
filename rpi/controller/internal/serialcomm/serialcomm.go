@@ -90,8 +90,8 @@ func (p *Port) SendData(data string) error {
 	return err
 }
 
-// InitDataCallback sets a handler function that will be called whenever data is received.
-func (p *Port) InitDataCallback(cb func(string)) {
+// SetDataCallback sets a handler function that will be called whenever data is received.
+func (p *Port) SetDataCallback(cb func(string)) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.callback = cb
