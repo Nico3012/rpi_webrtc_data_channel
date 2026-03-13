@@ -17,6 +17,36 @@ type Port struct {
 	mu       sync.RWMutex
 }
 
+// PortInfo represents detailed information about a serial port.
+type PortInfo struct {
+	VID          string
+	PID          string
+	SerialNumber string
+	Product      string
+	IsUSB        bool
+	Name         string
+}
+
+// GetDetailedPorts returns a list of detailed information about all available serial ports.
+func GetPorts() ([]PortInfo, error) {
+	ports, err := enumerator.GetDetailedPortsList()
+	if err != nil {
+		return nil, fmt.Errorf("listing detailed serial ports: %w", err)
+	}
+	var result []PortInfo
+	for _, port := range ports {
+		result = append(result, PortInfo{
+			VID:          port.VID,
+			PID:          port.PID,
+			SerialNumber: port.SerialNumber,
+			Product:      port.Product,
+			IsUSB:        port.IsUSB,
+			Name:         port.Name,
+		})
+	}
+	return result, nil
+}
+
 // New initializes and returns a Port connected to the specified serial port at the given baud rate.
 // Example: p, err := serialcomm.New("/dev/ttyACM0", 9600)
 func New(name string, baud int) (*Port, error) {
@@ -47,18 +77,18 @@ func NewAuto(baud int) (*Port, error) {
 
 // NewByVIDPID initializes and returns a Port using the serial port with the specified VID and PID at the given baud rate.
 // It queries the list of connected ports and picks the one matching the VID and PID.
-// Example: p, err := serialcomm.NewByVIDPID(0x2341, 0x0043, 9600)
-func NewByVIDPID(vid, pid uint16, baud int) (*Port, error) {
+// Example: p, err := serialcomm.NewByVIDPID("2341", "0043", 9600)
+func NewByVIDPID(vid, pid string, baud int) (*Port, error) {
 	ports, err := enumerator.GetDetailedPortsList()
 	if err != nil {
 		return nil, fmt.Errorf("listing detailed serial ports: %w", err)
 	}
 	for _, port := range ports {
-		if port.IsUSB && fmt.Sprintf("%04x", vid) == port.VID && fmt.Sprintf("%04x", pid) == port.PID {
+		if vid == port.VID && pid == port.PID {
 			return New(port.Name, baud)
 		}
 	}
-	return nil, fmt.Errorf("no serial port found with VID %04x and PID %04x", vid, pid)
+	return nil, fmt.Errorf("no serial port found with VID %s and PID %s", vid, pid)
 }
 
 // SendData writes a string plus a single '\n' to the serial port.
