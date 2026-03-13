@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"go.bug.st/serial"
+	"go.bug.st/serial/enumerator"
 )
 
 // Port wraps a serial connection to an Arduino.
@@ -42,6 +43,22 @@ func NewAuto(baud int) (*Port, error) {
 		return nil, fmt.Errorf("no serial ports found")
 	}
 	return New(ports[0], baud)
+}
+
+// NewByVIDPID initializes and returns a Port using the serial port with the specified VID and PID at the given baud rate.
+// It queries the list of connected ports and picks the one matching the VID and PID.
+// Example: p, err := serialcomm.NewByVIDPID(0x2341, 0x0043, 9600)
+func NewByVIDPID(vid, pid uint16, baud int) (*Port, error) {
+	ports, err := enumerator.GetDetailedPortsList()
+	if err != nil {
+		return nil, fmt.Errorf("listing detailed serial ports: %w", err)
+	}
+	for _, port := range ports {
+		if port.IsUSB && fmt.Sprintf("%04x", vid) == port.VID && fmt.Sprintf("%04x", pid) == port.PID {
+			return New(port.Name, baud)
+		}
+	}
+	return nil, fmt.Errorf("no serial port found with VID %04x and PID %04x", vid, pid)
 }
 
 // SendData writes a string plus a single '\n' to the serial port.
