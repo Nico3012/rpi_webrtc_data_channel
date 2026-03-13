@@ -56,6 +56,11 @@ func main() {
 				log.Printf("Error sending to server: %v", err)
 			}
 		})
+	} else {
+		// Log messages from server to console
+		server.OnMessage(func(msg string) {
+			log.Printf("Received message: %s", msg)
+		})
 	}
 
 	select {}
