@@ -4,8 +4,8 @@ package main
 
 // set VID=2341 # can also be empty, then output is logged to console
 // set PID=0069 # can also be empty, then output is logged to console
-// set VIDEO_MODE=windows-privat # can also be empty, then dummy video is used
-// set AUDIO_MODE=windows-privat # can also be empty, then dummy audio is used
+// set VIDEO_MODE=windows-privat # can also be empty or set to unknown, then dummy video is used
+// set AUDIO_MODE=windows-privat # can also be empty or set to unknown, then dummy audio is used
 
 import (
 	"fmt"
