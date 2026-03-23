@@ -260,9 +260,16 @@ export class PwaGuide extends LitElement {
     constructor() {
         super();
 
+        // this.closed indicates, that the large popup guide is closed
+        // this.info indicates, if the info element on top is shown or not.
+
+        // pwa-guide-close-immediately variable in localstorage remembers, if we show the guide or the info panel
+        // pwa-guide-shown variable in sessionstorage remembers, if the user has already closed either the guide or the info in the current session
+
         /** @private @type {boolean} */
-        this.closed = JSON.parse(localStorage.getItem('pwa-guide-close-immediately') || 'false');
-        this.info = this.closed;
+        this.closed = localStorage.getItem('pwa-guide-close-immediately') === 'true' || sessionStorage.getItem('pwa-guide-shown') === 'true';
+        /** @private @type {boolean} */
+        this.info = localStorage.getItem('pwa-guide-close-immediately') === 'true' && sessionStorage.getItem('pwa-guide-shown') !== 'true';
 
         /** @private @type {string} */
         this.guide = 'ios'; // set to ios, because we expect android to fire a beforeinstallprompt event
@@ -320,6 +327,7 @@ export class PwaGuide extends LitElement {
             localStorage.setItem('pwa-guide-close-immediately', 'true');
         }
 
+        sessionStorage.setItem('pwa-guide-shown', 'true');
         this.closed = true;
     }
 
@@ -334,6 +342,7 @@ export class PwaGuide extends LitElement {
     notificationClose(e) {
         e.stopPropagation();
         this.info = false;
+        sessionStorage.setItem('pwa-guide-shown', 'true');
     }
 
     render() {
