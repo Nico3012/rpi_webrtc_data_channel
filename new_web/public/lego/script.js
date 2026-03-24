@@ -44,7 +44,9 @@ rightJoystick.addEventListener('stick-move', (event) => {
 
 setInterval(() => {
     if (webrtcConnection.isConnected()) {
-        webrtcConnection.sendData(`COMBO 0 ${speed.toFixed(2)} ${angle.toFixed(2)}`);
+        const motor1 = Math.max(Math.min(speed * (1 + 2 * angle), 1), -1);
+        const motor2 = Math.max(Math.min(speed * (1 - 2 * angle), 1), -1);
+        webrtcConnection.sendData(`COMBO 0 ${motor1.toFixed(2)} ${-(motor2).toFixed(2)}`);
     }
 }, 200);
 
