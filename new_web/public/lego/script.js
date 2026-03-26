@@ -21,32 +21,20 @@ webrtcConnection.addEventListener('message-received', (event) => {
     console.log('Message received:', event.detail.message);
 });
 
-let speed = 0; //  0 - 1
-let angle = 0; // -1 - 1
+let leftSpeed = 0; // -1 - 1
+let rightSpeed = 0; // -1 - 1
 
 leftJoystick.addEventListener('stick-move', (event) => {
-    speed = (event.detail.y + 1) / 2; // assign speed
-
-    if (webrtcConnection.isConnected()) {
-        // do not send every time, to ensure ir led is not waiting for cmd stack
-        // webrtcConnection.sendData(`COMBO 0 ${speed.toFixed(2)} ${angle.toFixed(2)}`);
-    }
+    leftSpeed = event.detail.y;
 });
 
 rightJoystick.addEventListener('stick-move', (event) => {
-    angle = event.detail.x; // assign angle
-
-    if (webrtcConnection.isConnected()) {
-        // do not send every time, to ensure ir led is not waiting for cmd stack
-        // webrtcConnection.sendData(`COMBO 0 ${speed.toFixed(2)} ${angle.toFixed(2)}`);
-    }
+    rightSpeed = event.detail.y;
 });
 
 setInterval(() => {
     if (webrtcConnection.isConnected()) {
-        const motor1 = Math.max(Math.min(speed * (1 + 2 * angle), 1), -1);
-        const motor2 = Math.max(Math.min(speed * (1 - 2 * angle), 1), -1);
-        webrtcConnection.sendData(`COMBO 0 ${motor1.toFixed(2)} ${-(motor2).toFixed(2)}`);
+        webrtcConnection.sendData(`COMBO 0 ${leftSpeed.toFixed(2)} ${rightSpeed.toFixed(2)}`);
     }
 }, 200);
 
