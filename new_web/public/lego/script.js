@@ -36,6 +36,6 @@ setInterval(() => {
     if (webrtcConnection.isConnected()) {
         webrtcConnection.sendData(`COMBO 0 ${leftSpeed.toFixed(2)} ${rightSpeed.toFixed(2)}`);
     }
-}, 200);
+}, 100);
 
 export { };
