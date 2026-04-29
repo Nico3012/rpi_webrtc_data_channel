@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"text/template"
 
 	"github.com/Nico3012/rpi_webrtc_data_channel/web/internal/routing"
@@ -62,7 +63,14 @@ func main() {
 		fileServer.ServeHTTP(w, r)
 	})
 
-	http.ListenAndServeTLS(":443", "cert.pem", "cert_key.pem", mux)
+	productionMode := os.Getenv("PRODUCTION_MODE")
+	if productionMode == "1" {
+		fmt.Println("Starting server in production mode on HTTP port 80")
+		http.ListenAndServe(":80", mux)
+	} else {
+		fmt.Println("Starting server on HTTPS port 443")
+		http.ListenAndServeTLS(":443", "cert.pem", "cert_key.pem", mux)
+	}
 }
 
 func buildServiceWorkerConfig(publicDir string) (cacheName string, resources []string, err error) {
