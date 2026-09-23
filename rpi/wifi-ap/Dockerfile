@@ -2,7 +2,7 @@
 FROM golang:1-alpine
 
 # install dependencies
-RUN apk update && apk add iproute2 hostapd dnsmasq
+RUN apk update && apk add iproute2 hostapd dnsmasq iptables
 
 WORKDIR /app
 
