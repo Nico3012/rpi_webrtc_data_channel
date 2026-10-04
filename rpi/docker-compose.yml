@@ -22,8 +22,9 @@ services:
     network_mode: host # Port 80 freigeben reicht nicht aus, da webrtc auch über andere ports kommuniziert. Daher host netzwerk nutzen. (Diese option funktioniert unter windows aufgrund der docker linux vm nicht richtig. Unter windows bitte den `controller` nativ mit go starten)
     privileged: true
     environment:
-      - VIDEO_MODE=linux
-      - AUDIO_MODE=linux
-      - VID=2341
-      - PID=0069
+      ## Outcommenting environment variables is supported and makes the controller work in demo mode
+      # - VIDEO_MODE=linux
+      # - AUDIO_MODE=linux
+      # - VID=2341
+      # - PID=0069
     restart: always
