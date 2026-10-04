@@ -23,12 +23,10 @@ if [ -e /sys/devices/virtual/net/br0/bridge/multicast_snooping ]; then
   echo 0 > /sys/devices/virtual/net/br0/bridge/multicast_snooping || true
 fi
 
-{{if .LanIfaces}}
-for iface in {{.LanIfaces}}; do
-  ip addr flush dev "$iface" || true
-  ip link set dev "$iface" up || true
-  ip link set dev "$iface" master br0 || true
-done
+{{if .LanIface}}
+ip addr flush dev {{.LanIface}} || true
+ip link set dev {{.LanIface}} up || true
+ip link set dev {{.LanIface}} master br0 || true
 {{end}}
 
 ip addr flush dev {{.WifiIface}} || true
@@ -89,10 +87,8 @@ cleanup() {
   echo 0 > /proc/sys/net/ipv4/ip_forward 2>/dev/null || true
 {{end}}
   iptables -D FORWARD -i br0 -o br0 -j ACCEPT 2>/dev/null || true
-{{if .LanIfaces}}
-  for iface in {{.LanIfaces}}; do
-    ip link set dev "$iface" nomaster 2>/dev/null || true
-  done
+{{if .LanIface}}
+  ip link set dev {{.LanIface}} nomaster 2>/dev/null || true
 {{end}}
   ip addr del {{.IP}} dev br0 2>/dev/null || true
   ip link set dev br0 down 2>/dev/null || true
@@ -119,7 +115,7 @@ func New(cfg Config) (func(), error) {
 			"Domain":    "device-controller.net",
 			"DomainIP":  "192.168.50.1",
 			"WifiIface": "wlan0", // Pflichtparameter: Darf kein empty string sein!
-			"LanIfaces": "eth0",  // Optional: z.B. "eth0" oder "eth0 eth1" für LAN-Bridge, oder "" falls ungenutzt
+			"LanIface":  "eth0",  // Optional: z.B. "eth0" für LAN-Bridge, oder "" falls ungenutzt
 			"WanIface":  "",      // Optional: z.B. "eth0" für WAN/Internet-Modus, oder "" falls ungenutzt
 		}
 	case "linux-work":
@@ -130,7 +126,7 @@ func New(cfg Config) (func(), error) {
 			"Domain":    "device-controller.net",
 			"DomainIP":  "192.168.50.1",
 			"WifiIface": "wlp2s0",
-			"LanIfaces": "", // z.B. "enp1s0"
+			"LanIface":  "", // z.B. "enp1s0"
 			"WanIface":  "",
 		}
 	default:
