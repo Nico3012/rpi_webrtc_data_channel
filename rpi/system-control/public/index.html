@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Raspberry Pi – Systemsteuerung</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --success: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.82rem;
+      font-weight: 500;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--success);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .btn-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: left;
+      width: 100%;
+      color: inherit;
+    }
+
+    .btn-card:hover {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: #475569;
+      transform: translateY(-1px);
+    }
+
+    .btn-card:active {
+      transform: translateY(0);
+    }
+
+    .btn-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .btn-icon-wrapper {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-card.reboot .btn-icon-wrapper {
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--primary);
+    }
+
+    .btn-card.poweroff .btn-icon-wrapper {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+    }
+
+    .btn-text h2 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .btn-text p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .chevron {
+      color: var(--text-muted);
+    }
+
+    /* Modal styles */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 100;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal h3 {
+      font-size: 1.25rem;
+      margin-bottom: 8px;
+    }
+
+    .modal p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      line-height: 1.4;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .btn-cancel {
+      background: #334155;
+      color: var(--text);
+    }
+
+    .btn-cancel:hover {
+      background: #475569;
+    }
+
+    .btn-confirm-reboot {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-confirm-reboot:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-confirm-poweroff {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-confirm-poweroff:hover {
+      background: var(--danger-hover);
+    }
+
+    /* Progress Overlay */
+    .progress-box {
+      display: none;
+      text-align: center;
+      padding: 24px 0;
+    }
+
+    .progress-box.active {
+      display: block;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s ease-in-out infinite;
+      margin: 0 auto 20px auto;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .progress-box h3 {
+      font-size: 1.2rem;
+      margin-bottom: 8px;
+    }
+
+    .progress-box p {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .countdown {
+      font-weight: 700;
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container" id="mainContainer">
+    <div class="header">
+      <h1>Raspberry Pi Steuerung</h1>
+      <div class="status-badge">
+        <div class="status-dot"></div>
+        <span>Online</span>
+      </div>
+    </div>
+
+    <!-- Normal Actions View -->
+    <div class="actions" id="actionsList">
+      <button class="btn-card reboot" onclick="openConfirm('reboot')">
+        <div class="btn-info">
+          <div class="btn-icon-wrapper">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+          </div>
+          <div class="btn-text">
+            <h2>Neustart</h2>
+            <p>Raspberry Pi sauber neu starten</p>
+          </div>
+        </div>
+        <div class="chevron">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </div>
+      </button>
+
+      <button class="btn-card poweroff" onclick="openConfirm('poweroff')">
+        <div class="btn-info">
+          <div class="btn-icon-wrapper">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+              <line x1="12" y1="2" x2="12" y2="12"></line>
+            </svg>
+          </div>
+          <div class="btn-text">
+            <h2>Herunterfahren</h2>
+            <p>System sicher ausschalten</p>
+          </div>
+        </div>
+        <div class="chevron">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </div>
+      </button>
+    </div>
+
+    <!-- Progress / Wait View -->
+    <div class="progress-box" id="progressBox">
+      <div class="spinner" id="progressSpinner"></div>
+      <h3 id="progressTitle">Aktion wird ausgeführt...</h3>
+      <p id="progressDesc"></p>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div class="modal-backdrop" id="confirmModal">
+    <div class="modal">
+      <h3 id="modalTitle">Bestätigung</h3>
+      <p id="modalDesc">Bist du sicher?</p>
+      <div class="modal-buttons">
+        <button class="btn btn-cancel" onclick="closeModal()">Abbrechen</button>
+        <button class="btn" id="modalConfirmBtn" onclick="confirmAction()">Bestätigen</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let pendingAction = null;
+
+    function openConfirm(action) {
+      pendingAction = action;
+      const modal = document.getElementById('confirmModal');
+      const title = document.getElementById('modalTitle');
+      const desc = document.getElementById('modalDesc');
+      const btn = document.getElementById('modalConfirmBtn');
+
+      if (action === 'reboot') {
+        title.innerText = 'Raspberry Pi neu starten?';
+        desc.innerText = 'Alle Dienste werden sauber beendet und der Pi startet innerhalb von ca. 30 Sekunden neu.';
+        btn.innerText = 'Neu starten';
+        btn.className = 'btn btn-confirm-reboot';
+      } else {
+        title.innerText = 'Raspberry Pi herunterfahren?';
+        desc.innerText = 'Das Betriebssystem wird vollständig heruntergefahren. Du kannst das Netzteil trennen, sobald die grüne Aktivitäts-LED am Pi erloschen ist.';
+        btn.innerText = 'Herunterfahren';
+        btn.className = 'btn btn-confirm-poweroff';
+      }
+
+      modal.classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('confirmModal').classList.remove('open');
+      pendingAction = null;
+    }
+
+    async function confirmAction() {
+      const action = pendingAction;
+      closeModal();
+      if (!action) return;
+
+      // Switch to progress screen
+      document.getElementById('actionsList').style.display = 'none';
+      const progressBox = document.getElementById('progressBox');
+      const progressTitle = document.getElementById('progressTitle');
+      const progressDesc = document.getElementById('progressDesc');
+      progressBox.classList.add('active');
+
+      if (action === 'reboot') {
+        progressTitle.innerText = 'Raspberry Pi startet neu...';
+        progressDesc.innerHTML = 'Der Neustart wurde initiiert.<br>Automatischer Wiederverbindungsversuch in <span class="countdown" id="cd">35</span>s...';
+      } else {
+        progressTitle.innerText = 'Raspberry Pi wird heruntergefahren...';
+        progressDesc.innerHTML = 'Das System schaltet sich nun ab.<br>Sobald die Aktivitäts-LED am Board nicht mehr blinkt, kann die Stromversorgung sicher getrennt werden.';
+        document.getElementById('progressSpinner').style.borderColor = 'rgba(239, 68, 68, 0.2)';
+        document.getElementById('progressSpinner').style.borderTopColor = '#ef4444';
+      }
+
+      // Trigger endpoint
+      try {
+        await fetch('/api/' + action, { method: 'POST' });
+      } catch (e) {
+        console.warn('Action sent, network disconnected (expected during reboot/poweroff):', e);
+      }
+
+      if (action === 'reboot') {
+        let count = 35;
+        const interval = setInterval(() => {
+          count--;
+          const cdEl = document.getElementById('cd');
+          if (cdEl) cdEl.innerText = count;
+          if (count <= 0) {
+            clearInterval(interval);
+            progressDesc.innerHTML = 'Prüfe Verbindung zum Server...';
+            pollServer();
+          }
+        }, 1000);
+      }
+    }
+
+    function pollServer() {
+      const timer = setInterval(async () => {
+        try {
+          const res = await fetch('/api/status', { cache: 'no-store' });
+          if (res.ok) {
+            clearInterval(timer);
+            window.location.reload();
+          }
+        } catch (e) {
+          // Still waiting for Pi to come back online
+        }
+      }, 2500);
+    }
+  </script>
+</body>
+</html>

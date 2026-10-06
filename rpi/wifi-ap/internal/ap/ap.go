@@ -18,21 +18,30 @@ const commandTemplate = `
 set -e
 echo [SH]: Starting command
 
+if [ -d /etc/NetworkManager/conf.d ]; then
+  cat > /etc/NetworkManager/conf.d/10-unmanaged.conf <<EOF
+[keyfile]
+unmanaged-devices=interface-name:{{.WifiIface}};{{if .LanIface}}interface-name:{{.LanIface}};{{end}}interface-name:br0;
+EOF
+  pkill -HUP NetworkManager 2>/dev/null || kill -HUP $(pidof NetworkManager) 2>/dev/null || true
+  sleep 1
+fi
+
 ip link add name br0 type bridge || true
 if [ -e /sys/devices/virtual/net/br0/bridge/multicast_snooping ]; then
   echo 0 > /sys/devices/virtual/net/br0/bridge/multicast_snooping || true
 fi
 
-{{if .LanIface}}
-ip addr flush dev {{.LanIface}} || true
-ip link set dev {{.LanIface}} up || true
-ip link set dev {{.LanIface}} master br0 || true
-{{end}}
-
 ip addr flush dev {{.WifiIface}} || true
 ip addr add {{.IP}} dev br0 || true
 ip link set dev br0 up || true
 iptables -I FORWARD -i br0 -o br0 -j ACCEPT 2>/dev/null || true
+
+{{if .LanIface}}
+ip addr flush dev {{.LanIface}} || true
+ip link set dev {{.LanIface}} master br0 || true
+ip link set dev {{.LanIface}} up || true
+{{end}}
 
 {{if .WanIface}}
 echo 1 > /proc/sys/net/ipv4/ip_forward
@@ -94,6 +103,17 @@ cleanup() {
   ip link set dev br0 down 2>/dev/null || true
   ip link delete dev br0 type bridge 2>/dev/null || true
   rm -f hostapd.conf dnsmasq.conf
+
+{{if .LanIface}}
+  ip link set dev {{.LanIface}} up 2>/dev/null || true
+{{end}}
+
+  if [ -d /etc/NetworkManager/conf.d ]; then
+    rm -f /etc/NetworkManager/conf.d/10-unmanaged.conf 2>/dev/null || true
+    pkill -HUP NetworkManager 2>/dev/null || kill -HUP $(pidof NetworkManager) 2>/dev/null || true
+    sleep 1
+  fi
+
   echo [SH]: Stopped command
 }
 

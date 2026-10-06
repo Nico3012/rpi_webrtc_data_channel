@@ -5,17 +5,26 @@ services:
     build: ./wifi-ap
     network_mode: host
     privileged: true
+    pid: host
     environment:
       - DEVICE=linux
       - CONFIG_PATH=/srv/wifi-ap-production-config.json
     volumes:
       - ./wifi-ap-production-config.json:/srv/wifi-ap-production-config.json:rw
+      - /etc/NetworkManager/conf.d:/etc/NetworkManager/conf.d:rw
     stop_grace_period: 60s # Wait 60 seconds before killing the container. The container performs cleanup actions
     restart: always
   hello-world:
     build: ./hello-world
     ports:
       - 3000:3000/tcp
+    restart: always
+  system-control:
+    build: ./system-control
+    ports:
+      - 5000:5000/tcp
+    privileged: true
+    pid: host
     restart: always
   controller:
     build: ./controller
