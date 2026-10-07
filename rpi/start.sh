@@ -10,7 +10,10 @@ if [ -f .env ]; then
   set +a
 fi
 
-echo "=== Starte System mit DEVICE=$DEVICE ==="
+echo "=== Baue Docker Images mit DEVICE=$DEVICE ==="
+docker compose build
+
+echo "=== Konfiguriere Interfaces für DEVICE=$DEVICE ==="
 
 # Hinweis zu INTERFACES:
 # - 'br0' bleibt immer gleich, da die Linux-Bridge vom Container immer so angelegt wird.
@@ -51,6 +54,6 @@ echo "Lade NetworkManager neu..."
 systemctl reload NetworkManager
 
 echo "Starte Docker Compose Services..."
-docker compose up -d --build --force-recreate
+docker compose up -d --force-recreate
 
 echo "=== Erfolgreich gestartet! ==="
