@@ -81,7 +81,23 @@ func main() {
 		}()
 		return nil
 	}
-	ws := web.New(getConfig, setConfig)
+	getDevices := func() ([]web.Device, error) {
+		devices, err := ap.GetConnectedDevices()
+		if err != nil {
+			return nil, err
+		}
+		var res []web.Device
+		for _, d := range devices {
+			res = append(res, web.Device{
+				MAC:      d.MAC,
+				IP:       d.IP,
+				Hostname: d.Hostname,
+				Online:   d.Online,
+			})
+		}
+		return res, nil
+	}
+	ws := web.New(getConfig, setConfig, getDevices)
 	go func() {
 		if err := ws.ListenAndServe(":80"); err != nil {
 			log.Fatalf("web server error: %v", err)

@@ -15,6 +15,55 @@ export class WifiConfig extends LitElement {
             padding: 8px;
         }
 
+        .dashboard-table {
+            width: 100%;
+            max-width: 500px;
+            border-collapse: collapse;
+            margin: 10px 0 20px 0;
+            font-size: 14px;
+        }
+
+        .dashboard-table th, .dashboard-table td {
+            border: 1px solid #ccc;
+            padding: 8px 10px;
+            text-align: left;
+        }
+
+        .dashboard-table th {
+            background-color: #f2f2f2;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-online {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-offline {
+            background-color: #f5f5f5;
+            color: #757575;
+        }
+
+        .device-hint {
+            font-size: 12px;
+            color: #666;
+            margin-top: 8px;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .refresh-btn {
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
         iframe {
             margin: 0;
             padding: 0;
@@ -33,6 +82,7 @@ export class WifiConfig extends LitElement {
     static properties = {
         state: { type: String, attribute: false },
         iFrameSrc: { type: String, attribute: false },
+        devices: { type: Array, attribute: false },
     };
 
     constructor() {
@@ -44,8 +94,28 @@ export class WifiConfig extends LitElement {
         /** @private @type {{ ssid: string; password: string; devicePassword: string; } | null} */
         this.config = null;
 
+        /** @private @type {Array<{ mac: string; ip: string; hostname: string; online: boolean; }>} */
+        this.devices = [];
+
         /** @private @type {string} */
         this.iFrameSrc = '';
+    }
+
+    /** @private */
+    async fetchDevices() {
+        if (!this.config?.devicePassword) return;
+        try {
+            const res = await fetch('/get-devices', {
+                headers: {
+                    'Authorization': `Bearer ${this.config.devicePassword}`,
+                },
+            });
+            if (res.ok) {
+                this.devices = await res.json();
+            }
+        } catch (e) {
+            console.error('Failed to fetch devices:', e);
+        }
     }
 
     /** @private */
@@ -67,6 +137,7 @@ export class WifiConfig extends LitElement {
         if (!response.ok) {
             this.state = 'login-failed';
             this.config = null;
+            this.devices = [];
             this.iFrameSrc = '';
             return;
         }
@@ -77,6 +148,7 @@ export class WifiConfig extends LitElement {
         this.state = 'config';
         this.config = data;
         this.iFrameSrc = '';
+        this.fetchDevices();
     }
 
     /** @private */
@@ -269,6 +341,38 @@ export class WifiConfig extends LitElement {
                     <button type="submit">Label erstellen</button>
                 </form>
                 <iframe src=${this.iFrameSrc} ?hidden=${!this.iFrameSrc}></iframe>
+
+                <p class="info">Bekannte Geräte</p>
+                <p class="device-hint">Hinweis: Hier werden aktive sowie kürzlich verbundene Geräte angezeigt, deren DHCP-Lease noch gültig ist. Ältere oder abgelaufene Verbindungen werden nach Ablauf des Leases automatisch entfernt.</p>
+                <button class="refresh-btn" type="button" @click=${this.fetchDevices}>Aktualisieren</button>
+                ${this.devices.length === 0 ? html`
+                    <p>Keine bekannten Geräte gefunden.</p>
+                ` : html`
+                    <table class="dashboard-table">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Name</th>
+                                <th>IP-Adresse</th>
+                                <th>MAC-Adresse</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${[...this.devices].sort((a, b) => (b.online ? 1 : 0) - (a.online ? 1 : 0)).map(device => html`
+                                <tr>
+                                    <td>
+                                        <span class="status-badge ${device.online ? 'status-online' : 'status-offline'}">
+                                            ${device.online ? 'Online' : 'Offline'}
+                                        </span>
+                                    </td>
+                                    <td>${device.hostname || '-'}</td>
+                                    <td>${device.ip}</td>
+                                    <td><code>${device.mac}</code></td>
+                                </tr>
+                            `)}
+                        </tbody>
+                    </table>
+                `}
 
                 <button type="button" @click=${this.handleBackToLogin}>Logout</button>
             </div>
