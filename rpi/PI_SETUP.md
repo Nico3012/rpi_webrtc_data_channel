@@ -47,15 +47,15 @@ Install docker from the official website recommendation with apt.
 # Git
 Clone this repository and cd into this directory. Latest version can be downloaded using git pull
 
-# Start docker services
-Ensure, that the wifi hardware is not controlled by other services
-Use `sudo`, if you are not root
+# Start services
+Die Umgebungsvariablen werden in `.env` definiert.
+Mit dem Start-Skript werden die Interfaces für NetworkManager gesperrt und Docker Compose gestartet:
 ```shell
-docker compose up -d
+sudo ./start.sh
 ```
 
 # Stop services
-Use `sudo`, if you are not root
+Stoppt die Docker Services und gibt die Netzwerk-Interfaces wieder vollständig an NetworkManager frei:
 ```shell
-docker compose down
+sudo ./stop.sh
 ```

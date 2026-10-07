@@ -18,15 +18,6 @@ const commandTemplate = `
 set -e
 echo [SH]: Starting command
 
-if [ -d /etc/NetworkManager/conf.d ]; then
-  cat > /etc/NetworkManager/conf.d/10-unmanaged.conf <<EOF
-[keyfile]
-unmanaged-devices=interface-name:{{.WifiIface}};{{if .LanIface}}interface-name:{{.LanIface}};{{end}}interface-name:br0;
-EOF
-  pkill -HUP NetworkManager 2>/dev/null || kill -HUP $(pidof NetworkManager) 2>/dev/null || true
-  sleep 1
-fi
-
 ip link add name br0 type bridge || true
 if [ -e /sys/devices/virtual/net/br0/bridge/multicast_snooping ]; then
   echo 0 > /sys/devices/virtual/net/br0/bridge/multicast_snooping || true
@@ -103,17 +94,6 @@ cleanup() {
   ip link set dev br0 down 2>/dev/null || true
   ip link delete dev br0 type bridge 2>/dev/null || true
   rm -f hostapd.conf dnsmasq.conf
-
-{{if .LanIface}}
-  ip link set dev {{.LanIface}} up 2>/dev/null || true
-{{end}}
-
-  if [ -d /etc/NetworkManager/conf.d ]; then
-    rm -f /etc/NetworkManager/conf.d/10-unmanaged.conf 2>/dev/null || true
-    pkill -HUP NetworkManager 2>/dev/null || kill -HUP $(pidof NetworkManager) 2>/dev/null || true
-    sleep 1
-  fi
-
   echo [SH]: Stopped command
 }
 

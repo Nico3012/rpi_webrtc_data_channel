@@ -1,39 +1,40 @@
 name: device-controller
 
 services:
+
   wifi-ap:
     build: ./wifi-ap
     network_mode: host
     privileged: true
-    pid: host
     environment:
-      - DEVICE=linux
-      - CONFIG_PATH=/srv/wifi-ap-production-config.json
+      - DEVICE
+      - CONFIG_PATH
     volumes:
       - ./wifi-ap-production-config.json:/srv/wifi-ap-production-config.json:rw
-      - /etc/NetworkManager/conf.d:/etc/NetworkManager/conf.d:rw
     stop_grace_period: 60s # Wait 60 seconds before killing the container. The container performs cleanup actions
     restart: always
+
+  controller:
+    build: ./controller
+    network_mode: host # Port 80 freigeben reicht nicht aus, da webrtc auch über andere ports kommuniziert. Daher host netzwerk nutzen. (Diese option funktioniert unter windows aufgrund der docker linux vm nicht richtig. Unter windows bitte den `controller` nativ mit go starten)
+    privileged: true
+    environment:
+      - VIDEO_MODE
+      - AUDIO_MODE
+      - VID
+      - PID
+    restart: always
+
   hello-world:
     build: ./hello-world
     ports:
       - 3000:3000/tcp
     restart: always
+
   system-control:
     build: ./system-control
     ports:
       - 5000:5000/tcp
     privileged: true
     pid: host
-    restart: always
-  controller:
-    build: ./controller
-    network_mode: host # Port 80 freigeben reicht nicht aus, da webrtc auch über andere ports kommuniziert. Daher host netzwerk nutzen. (Diese option funktioniert unter windows aufgrund der docker linux vm nicht richtig. Unter windows bitte den `controller` nativ mit go starten)
-    privileged: true
-    # environment:
-      ## Outcommenting environment variables is supported and makes the controller work in demo mode
-      # - VIDEO_MODE=linux
-      # - AUDIO_MODE=linux
-      # - VID=2341
-      # - PID=0069
     restart: always
