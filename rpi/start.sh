@@ -51,6 +51,6 @@ echo "Lade NetworkManager neu..."
 systemctl reload NetworkManager
 
 echo "Starte Docker Compose Services..."
-docker compose up -d
+docker compose up -d --build --force-recreate
 
 echo "=== Erfolgreich gestartet! ==="
