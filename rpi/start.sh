@@ -22,7 +22,7 @@ echo "=== Konfiguriere Interfaces für DEVICE=$DEVICE ==="
 #   damit NetworkManager sich dort automatisch per DHCP um die Internetverbindung kümmert!
 case "$DEVICE" in
   "linux")
-    INTERFACES="wlan0,eth0,br0"
+    INTERFACES="wlan0,eth1,br0"
     ;;
   "linux-work")
     INTERFACES="wlp2s0,br0"

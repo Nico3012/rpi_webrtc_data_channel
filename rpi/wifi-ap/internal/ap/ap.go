@@ -117,8 +117,8 @@ func New(cfg Config) (func(), error) {
 			"Domain":    "device-controller.net",
 			"DomainIP":  "192.168.50.1",
 			"WifiIface": "wlan0", // Pflichtparameter: Darf kein empty string sein!
-			"LanIface":  "eth0",  // Optional: z.B. "eth0" für LAN-Bridge, oder "" falls ungenutzt
-			"WanIface":  "",      // Optional: z.B. "eth0" für WAN/Internet-Modus, oder "" falls ungenutzt
+			"LanIface":  "eth1",  // Optional: z.B. "eth0" für LAN-Bridge, oder "" falls ungenutzt
+			"WanIface":  "eth0",  // Optional: z.B. "eth0" für WAN/Internet-Modus, oder "" falls ungenutzt
 		}
 	case "linux-work":
 		vars = map[string]string{
