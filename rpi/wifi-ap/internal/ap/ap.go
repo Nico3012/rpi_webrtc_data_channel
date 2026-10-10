@@ -56,7 +56,8 @@ EOF
 
 cat > dnsmasq.conf <<EOF
 interface=br0
-bind-interfaces
+bind-dynamic
+dhcp-authoritative
 dhcp-leasefile=/tmp/dnsmasq.leases
 dhcp-range={{.DHCPMin}},{{.DHCPMax}},12h
 address=/{{.Domain}}/{{.DomainIP}}
